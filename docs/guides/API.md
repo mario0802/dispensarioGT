@@ -111,7 +111,7 @@ public partial class Program;          // necesario para WebApplicationFactory e
 
 ## 7. OpenAPI + Scalar
 - `builder.Services.AddOpenApi(o => o.AddDocumentTransformer<BearerSecuritySchemeTransformer>())` declara el esquema `Bearer` para poder probar con token desde Scalar.
-- .NET 10 usa **Microsoft.OpenApi 2.x**: cambian namespaces y referencias de esquemas respecto a .NET 8/9. Hay que consultar la documentación actual (Context7) al implementar el host de la API (feature 04).
+- .NET 10 usa **Microsoft.OpenApi 2.x**: cambian namespaces y referencias de esquemas respecto a .NET 8/9. Hay que consultar la documentación actual (Context7) al implementar el host de la API (feature 05).
 
 ## 8. Configuración (`appsettings.json`)
 ```json

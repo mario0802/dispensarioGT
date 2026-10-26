@@ -19,8 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Dispensario.Application\Dispensario.Application.csproj" />
-    <ProjectReference Include="..\..\Dispensario.Infrastructure\Dispensario.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\BuildingBlocks\BuildingBlocks\BuildingBlocks.csproj" />
   </ItemGroup>
 
 </Project>

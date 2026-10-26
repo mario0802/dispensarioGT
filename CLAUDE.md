@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Backend en .NET 10 para gestionar un dispensario médico: doctores, pacientes, citas y consultas.
 El desarrollo sigue **SDD (Spec-Driven Development)** con las skills `/spec` y `/spec-impl` (en `.claude/skills/`, sincronizadas con `.agents/skills/` mediante `skills-lock.json`). Los specs viven en `specs/NN-slug.md`.
 
-> **Estado actual:** existen `Dispensario.slnx`, `global.json`, los props centrales, `BuildingBlocks` y `BuildingBlocks.Domain` (solo `DomainException`), los cuatro proyectos `Dispensario.*` (vacíos; `Api` con un `Program.cs` mínimo) y los proyectos de tests (features 01 y 02). Funcionan `dotnet build`, `dotnet test` y `dotnet run`; las migraciones llegan con la persistencia (feature 04 del backlog, `docs/PLAN.md`).
+> **Estado actual:** existen `Dispensario.slnx`, `global.json`, los props centrales, `BuildingBlocks` y `BuildingBlocks.Domain` (abstracciones DDD completas), los cuatro proyectos `Dispensario.*` (`Domain` solo con los VOs de `Common/`; `Api` con un `Program.cs` mínimo) y los proyectos de tests en `tests/` (features 01 a 03). Funcionan `dotnet build`, `dotnet test` y `dotnet run`; las migraciones llegan con la persistencia (feature 04 del backlog, `docs/PLAN.md`).
 
 ## Reglas de trabajo (obligatorias)
 1. **No escribir código sin un spec `Approved`.** Los specs se crean con `/spec` (que no escribe código) y se implementan con `/spec-impl`. Nada de andamiaje, refactors ni features "de paso".
@@ -32,14 +32,17 @@ docs/                                  # plan/backlog, arquitectura y guías
 src/
 ├─ BuildingBlocks/
 │  ├─ BuildingBlocks/                  # código común: CQRS, behaviors, excepciones, paginación
-│  ├─ BuildingBlocks.Domain/           # abstracciones DDD puras: Entity, AggregateRoot, ValueObject, IDomainEvent, DomainException
-│  └─ tests/BuildingBlocks.UnitTests/  # tests de BuildingBlocks (CustomExceptionHandler…)
+│  └─ BuildingBlocks.Domain/           # abstracciones DDD puras: Entity, AggregateRoot, ValueObject, IDomainEvent, IAuditable, DomainException
 └─ Services/Dispensario/
    ├─ Dispensario.Domain/              # aggregates, value objects, domain events (solo depende de BuildingBlocks.Domain)
    ├─ Dispensario.Application/         # commands/queries/handlers/validators por módulo
    ├─ Dispensario.Infrastructure/      # EF Core/SQLite, interceptores, JWT, seed
-   ├─ Dispensario.Api/                 # endpoints Carter, auth, OpenAPI, Program.cs
-   └─ tests/                           # Domain.UnitTests, Application.UnitTests, Api.IntegrationTests
+   └─ Dispensario.Api/                 # endpoints Carter, auth, OpenAPI, Program.cs
+tests/                                 # todos los proyectos de tests, sin subcarpetas
+├─ BuildingBlocks.UnitTests/           # tests de BuildingBlocks y BuildingBlocks.Domain (CustomExceptionHandler, Entity…)
+├─ Dispensario.Domain.UnitTests/
+├─ Dispensario.Application.UnitTests/
+└─ Dispensario.Api.IntegrationTests/
 ```
 Dentro de cada capa el código se agrupa **por módulo**: `Users/`, `Doctors/`, `Patients/`, `Appointments/`, `Consultations/`.
 
@@ -72,7 +75,7 @@ Detalle completo en:
 ```bash
 dotnet build Dispensario.slnx
 dotnet test Dispensario.slnx
-dotnet test src/Services/Dispensario/tests/Dispensario.Domain.UnitTests --filter "FullyQualifiedName~AppointmentTests"   # una clase o un test
+dotnet test tests/Dispensario.Domain.UnitTests --filter "FullyQualifiedName~AppointmentTests"   # una clase o un test
 dotnet run --project src/Services/Dispensario/Dispensario.Api            # Scalar en /scalar, health en /health
 
 # Migraciones (requiere la herramienta dotnet-ef 10.x)

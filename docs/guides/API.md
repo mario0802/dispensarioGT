@@ -8,11 +8,12 @@ La Api es delgada: traduce HTTP ↔ command/query, aplica la autorización y nad
 Endpoints/
   Auth/  Users/  Doctors/  Patients/  Appointments/  Consultations/
 Extensions/
-  ApiServiceExtensions.cs      # AddApiServices: Carter, auth, policies, OpenAPI, health, exception handler
+  ApiServiceExtensions.cs      # AddApiServices: Carter, OpenAPI, ProblemDetails, exception handler, health (auth y policies en la fila 07)
   OpenApi/BearerSecuritySchemeTransformer.cs
 Program.cs
 appsettings.json  appsettings.Development.json
 ```
+Paquetes de la Api: `Carter`, `Microsoft.AspNetCore.OpenApi`, `Scalar.AspNetCore` y `Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore`.
 
 ## 2. Plantilla de endpoint
 ```csharp
@@ -69,7 +70,7 @@ services.AddAuthorizationBuilder()
 ```
 Autenticación: `AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(...)`, que valida el issuer, la audience, la clave y el tiempo de vida con `JwtOptions`. Se usa `MapInboundClaims = false` para conservar `sub` y `role`, con `RoleClaimType = "role"`.
 
-## 5. Program.cs (forma esperada)
+## 5. Program.cs
 ```csharp
 var builder = WebApplication.CreateBuilder(args);
 
@@ -80,15 +81,15 @@ builder.Services
 
 var app = builder.Build();
 
-app.UseExceptionHandler(_ => { });
-app.UseAuthentication();
-app.UseAuthorization();
+app.UseExceptionHandler();
+app.UseStatusCodePages();              // 404/405 sin cuerpo → ProblemDetails
+// app.UseAuthentication(); app.UseAuthorization();   ← fila 07
 
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
+    app.MapOpenApi();                  // /openapi/v1.json
     app.MapScalarApiReference();       // /scalar
-    await app.InitialiseDatabaseAsync();
+    // await app.InitialiseDatabaseAsync();   ← fila 17
 }
 
 app.MapCarter();
@@ -97,6 +98,8 @@ app.Run();
 
 public partial class Program;          // necesario para WebApplicationFactory en los tests
 ```
+- `/openapi/v1.json` y `/scalar` solo existen en Development; `dotnet run` abre `/scalar` (`launchUrl` en `launchSettings.json`).
+- `/health` comprueba la base de datos con `AddDbContextCheck<DispensarioDbContext>` y una consulta propia (`SELECT 1`). La prueba por defecto (`CanConnectAsync`) en SQLite solo mira si existe el archivo, y daría Unhealthy hasta que haya migraciones. Abrir la conexión crea `dispensario.db` vacío si no existe.
 
 ## 6. Errores (ProblemDetails)
 | Excepción | HTTP |
@@ -109,11 +112,15 @@ public partial class Program;          // necesario para WebApplicationFactory e
 | `ConflictException` | 409 |
 | otra | 500 |
 
+Los errores sin excepción (ruta inexistente → 404, método no permitido → 405) también salen como `application/problem+json` gracias a `AddProblemDetails()` + `UseStatusCodePages()`.
+
 ## 7. OpenAPI + Scalar
-- `builder.Services.AddOpenApi(o => o.AddDocumentTransformer<BearerSecuritySchemeTransformer>())` declara el esquema `Bearer` para poder probar con token desde Scalar.
-- .NET 10 usa **Microsoft.OpenApi 2.x**: cambian namespaces y referencias de esquemas respecto a .NET 8/9. Hay que consultar la documentación actual (Context7) al implementar el host de la API (feature 05).
+- `builder.Services.AddOpenApi(o => o.AddDocumentTransformer<BearerSecuritySchemeTransformer>())` declara el esquema `Bearer` (`http`, `bearer`, `JWT`) y un requisito de seguridad global, para poder probar con token desde Scalar.
+- .NET 10 usa **Microsoft.OpenApi 2.x** (hoy 2.12.2): los tipos están en el namespace plano `Microsoft.OpenApi` (`OpenApiSecurityScheme`, `OpenApiSecuritySchemeReference(name, document)`, `IOpenApiSecurityScheme`), no en `Microsoft.OpenApi.Models` como en .NET 8/9.
 
 ## 8. Configuración (`appsettings.json`)
+Hoy `appsettings.json` solo tiene `ConnectionStrings:Database` y `MediatR:LicenseKey` (vacío). Cada spec añade su sección cuando la lee: `Jwt` (fila 07), `Clinic` (fila 14) y `Seed` (fila 17). Forma final:
+
 ```json
 {
   "ConnectionStrings": { "Database": "Data Source=dispensario.db" },
@@ -123,4 +130,5 @@ public partial class Program;          // necesario para WebApplicationFactory e
   "Seed": { "Admin": { "Email": "admin@dispensario.local", "Password": "", "FirstName": "System", "LastName": "Admin" } }
 }
 ```
-Los valores vacíos se cargan desde user-secrets o variables de entorno.
+Los valores vacíos se cargan desde user-secrets (el proyecto Api tiene `UserSecretsId`) o variables de entorno.
+`Data Source=dispensario.db` es relativo al directorio de trabajo: con `dotnet run --project` el archivo se crea en la carpeta del proyecto Api. `*.db` está en `.gitignore`.

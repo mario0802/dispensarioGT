@@ -1,6 +1,6 @@
 # SPEC 03 — Abstracciones de dominio y value objects comunes
 
-> **Status:** Approved
+> **Status:** Implemented
 > **Depends on:** SPEC 02
 > **Date:** 2026-10-26
 > **Objective:** Añadir a `BuildingBlocks.Domain` las abstracciones DDD (`Entity<TId>`, `AggregateRoot<TId>`, `ValueObject`, `IDomainEvent`, `IAuditable`) y a `Dispensario.Domain/Common` los VOs `FullName`, `Email`, `PhoneNumber` y `Address`, con sus tests, tras mover todos los proyectos de tests a `tests/` en la raíz.

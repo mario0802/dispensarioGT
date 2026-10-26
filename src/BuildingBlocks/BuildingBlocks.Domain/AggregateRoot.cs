@@ -1,7 +1,7 @@
 namespace BuildingBlocks.Domain;
 
 // Raíz de consistencia: acumula los domain events hasta que la infraestructura los despacha
-public abstract class AggregateRoot<TId> : Entity<TId>, IAuditable where TId : notnull
+public abstract class AggregateRoot<TId> : Entity<TId>, IAuditable, IHasDomainEvents where TId : notnull
 {
     private readonly List<IDomainEvent> _domainEvents = [];
 

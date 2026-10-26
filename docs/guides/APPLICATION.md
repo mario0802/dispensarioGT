@@ -16,6 +16,8 @@ DependencyInjection.cs
 ```
 
 ## 2. Abstracciones
+> **Estado:** `IApplicationDbContext` existe desde la fila 04 solo con `SaveChangesAsync`; cada módulo añade su `DbSet<T>` al crear su aggregate. `ICurrentUser` existe en versión mínima (`Guid? UserId`, `bool IsAuthenticated`), implementada por `AnonymousCurrentUser`; la fila 07 cambia `UserId` a `UserId?`, añade `Role` y `DoctorId` y la implementa con los claims. Abajo, la forma final.
+
 ```csharp
 public interface IApplicationDbContext
 {

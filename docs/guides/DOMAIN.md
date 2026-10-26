@@ -25,7 +25,20 @@ public abstract class Entity<TId> : IEquatable<Entity<TId>> where TId : notnull
     public TId Id { get; protected set; } = default!;
 }
 
-public abstract class AggregateRoot<TId> : Entity<TId>, IAuditable where TId : notnull
+// Vista no genérica de los eventos de un aggregate (la usa DispatchDomainEventsInterceptor)
+public interface IHasDomainEvents
+{
+    IReadOnlyCollection<IDomainEvent> DomainEvents { get; }
+    void ClearDomainEvents();
+}
+
+// Marca los IDs tipados: Infrastructure los convierte a Guid por convención
+public interface IStronglyTypedId
+{
+    Guid Value { get; }
+}
+
+public abstract class AggregateRoot<TId> : Entity<TId>, IAuditable, IHasDomainEvents where TId : notnull
 {
     private readonly List<IDomainEvent> _domainEvents = [];
     public IReadOnlyCollection<IDomainEvent> DomainEvents => _domainEvents.AsReadOnly();
@@ -47,7 +60,7 @@ public class DomainException(string message) : Exception(message);
 1. **Constructores privados + fábrica estática** `Create(...)` que valida los invariantes. EF usa un constructor privado sin parámetros.
 2. **Setters privados.** El estado solo cambia mediante métodos de negocio con nombre del dominio (`Cancel`, `Close`, `Deactivate`), no con `SetStatus`.
 3. Si un invariante se rompe se lanza `DomainException` con un mensaje claro en inglés.
-4. **IDs tipados**: `public readonly record struct PatientId(Guid Value) { public static PatientId New() => new(Guid.CreateVersion7()); }`.
+4. **IDs tipados**: `public readonly record struct PatientId(Guid Value) : IStronglyTypedId { public static PatientId New() => new(Guid.CreateVersion7()); }`. Implementar `IStronglyTypedId` y tener el constructor `(Guid)` basta para que EF los guarde como Guid; no se registran a mano.
 5. Las colecciones internas se exponen como `IReadOnlyCollection<T>` sobre un campo `List<T>` privado.
 6. Las referencias a otros aggregates se hacen **solo por ID**.
 7. Se emite un domain event cuando otro módulo (o un efecto secundario) puede interesarse en el hecho.

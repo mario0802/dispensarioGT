@@ -56,6 +56,20 @@ public sealed class AggregateRootTests
         aggregate.LastModifiedBy.ShouldBeNull();
     }
 
+    [Fact]
+    public void AggregateRoot_AsHasDomainEvents_ExposesAndClearsEvents()
+    {
+        var aggregate = new TestAggregate();
+        var domainEvent = new TestEvent(1);
+        aggregate.DoSomething(domainEvent);
+
+        IHasDomainEvents hasDomainEvents = aggregate;
+
+        hasDomainEvents.DomainEvents.ShouldBe([domainEvent]);
+        hasDomainEvents.ClearDomainEvents();
+        aggregate.DomainEvents.ShouldBeEmpty();
+    }
+
     private sealed record TestEvent(int Number) : IDomainEvent;
 
     private sealed class TestAggregate : AggregateRoot<Guid>

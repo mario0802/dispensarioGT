@@ -87,7 +87,9 @@ public class CustomExceptionHandler
             problemDetails.Extensions.Add("ValidationErrors", validationException.Errors);
         }
 
-        await context.Response.WriteAsJsonAsync(problemDetails, cancellationToken: cancellationToken);
+        // Sin contentType explícito WriteAsJsonAsync escribe application/json
+        await context.Response.WriteAsJsonAsync(
+            problemDetails, options: null, contentType: "application/problem+json", cancellationToken);
         return true;
     }
 }

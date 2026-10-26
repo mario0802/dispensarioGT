@@ -1,5 +1,6 @@
 using Dispensario.Application.UnitTests.Persistence.Fakes;
 using Dispensario.Domain.Common;
+using Dispensario.Domain.Users;
 using Microsoft.EntityFrameworkCore;
 using NSubstitute;
 
@@ -14,7 +15,7 @@ public sealed class AuditableEntityInterceptorTests : IDisposable
     [Fact]
     public async Task SaveChangesAsync_WhenAdded_SetsCreatedFields()
     {
-        var userId = Guid.CreateVersion7();
+        var userId = UserId.New();
         _db.CurrentUser.UserId.Returns(userId);
         var aggregate = TestAggregate.Create(FullName.Create("Ana", "Pérez"), ScheduledAtUtc);
 
@@ -22,7 +23,7 @@ public sealed class AuditableEntityInterceptorTests : IDisposable
 
         var loaded = await LoadAsync(aggregate.Id);
         loaded.CreatedAtUtc.ShouldBe(TestDb.StartTime.UtcDateTime);
-        loaded.CreatedBy.ShouldBe(userId.ToString());
+        loaded.CreatedBy.ShouldBe(userId.Value.ToString());
         loaded.LastModifiedAtUtc.ShouldBeNull();
         loaded.LastModifiedBy.ShouldBeNull();
     }
@@ -32,7 +33,7 @@ public sealed class AuditableEntityInterceptorTests : IDisposable
     {
         var aggregate = TestAggregate.Create(FullName.Create("Ana", "Pérez"), ScheduledAtUtc);
         await AddAsync(aggregate);
-        var userId = Guid.CreateVersion7();
+        var userId = UserId.New();
         _db.CurrentUser.UserId.Returns(userId);
         _db.TimeProvider.Advance(TimeSpan.FromHours(1));
 
@@ -46,7 +47,7 @@ public sealed class AuditableEntityInterceptorTests : IDisposable
         var loaded = await LoadAsync(aggregate.Id);
         loaded.CreatedAtUtc.ShouldBe(TestDb.StartTime.UtcDateTime);
         loaded.LastModifiedAtUtc.ShouldBe(TestDb.StartTime.AddHours(1).UtcDateTime);
-        loaded.LastModifiedBy.ShouldBe(userId.ToString());
+        loaded.LastModifiedBy.ShouldBe(userId.Value.ToString());
     }
 
     [Fact]
@@ -71,7 +72,7 @@ public sealed class AuditableEntityInterceptorTests : IDisposable
     [Fact]
     public async Task SaveChangesAsync_WithAnonymousUser_LeavesCreatedByNull()
     {
-        _db.CurrentUser.UserId.Returns((Guid?)null);
+        _db.CurrentUser.UserId.Returns((UserId?)null);
         var aggregate = TestAggregate.Create(FullName.Create("Ana", "Pérez"), ScheduledAtUtc);
 
         await AddAsync(aggregate);

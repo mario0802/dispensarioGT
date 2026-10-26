@@ -42,6 +42,17 @@ public sealed class CustomExceptionHandlerTests
         problemDetails.Title.ShouldBe(nameof(ForbiddenException));
     }
 
+    [Fact]
+    public async Task TryHandleAsync_AnyException_WritesProblemJsonContentType()
+    {
+        var context = new DefaultHttpContext();
+        context.Response.Body = new MemoryStream();
+
+        await _handler.TryHandleAsync(context, new NotFoundException("Missing"), TestContext.Current.CancellationToken);
+
+        context.Response.ContentType.ShouldStartWith("application/problem+json");
+    }
+
     // Ejecuta el handler sobre un HttpContext en memoria y deserializa el ProblemDetails escrito en el body
     private async Task<(int StatusCode, ProblemDetails ProblemDetails)> HandleAsync(Exception exception)
     {

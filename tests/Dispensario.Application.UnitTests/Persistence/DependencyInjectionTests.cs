@@ -28,7 +28,7 @@ public sealed class DependencyInjectionTests
     }
 
     [Fact]
-    public void AddInfrastructure_Always_RegistersAnonymousCurrentUser()
+    public void AddInfrastructure_WithoutHttpRequest_ResolvesCurrentUserAsAnonymous()
     {
         using var provider = BuildProvider(new Dictionary<string, string?>
         {
@@ -38,7 +38,7 @@ public sealed class DependencyInjectionTests
 
         var currentUser = scope.ServiceProvider.GetRequiredService<ICurrentUser>();
 
-        currentUser.ShouldBeOfType<AnonymousCurrentUser>();
+        currentUser.ShouldBeOfType<CurrentUser>();
         currentUser.UserId.ShouldBeNull();
         currentUser.IsAuthenticated.ShouldBeFalse();
     }
@@ -61,6 +61,8 @@ public sealed class DependencyInjectionTests
 
         // MediatR registra IPublisher en AddApplication (fila 05); aquí se sustituye
         services.AddSingleton(Substitute.For<IPublisher>());
+        // El logging lo registra el host; DatabaseSeeder lo necesita
+        services.AddLogging();
         services.AddInfrastructure(configuration);
 
         return services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true, ValidateOnBuild = true });

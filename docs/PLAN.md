@@ -31,39 +31,40 @@ Al crear un spec con `/spec`, anota su archivo en la columna **Spec** de este ba
 ### Fase 0 — Fundaciones
 | # | Feature | Contenido | Spec |
 |---|---|---|---|
-| 01 | Solución y BuildingBlocks | `Dispensario.slnx`, `Directory.Build.props`, `Directory.Packages.props`, los cuatro proyectos y los tres de tests con sus referencias. BuildingBlocks a net10, nuevo `BuildingBlocks.Domain` y ajustes de `CustomExceptionHandler` y `LoggingBehavior` (ver ARCHITECTURE §5). Añadir `*.db`, `*.db-shm` y `*.db-wal` a `.gitignore` | — |
-| 02 | Abstracciones de dominio | `Entity<TId>`, `AggregateRoot<TId>`, `ValueObject`, `IDomainEvent`, `IAuditable`, `DomainException` + VOs comunes (`FullName`, `Email`, `PhoneNumber`, `Address`) + unit tests | — |
-| 03 | Persistencia base | `IApplicationDbContext`, `DispensarioDbContext`, interceptores de auditoría y domain events, conversión de IDs tipados, SQLite, `AddInfrastructure` | — |
-| 04 | Host de la API | `Program.cs`, `AddApplication` (MediatR + behaviors + validadores), Carter, OpenAPI + Scalar con Bearer, ProblemDetails, `/health`, appsettings y user-secrets | — |
+| 01 | Solución y BuildingBlocks | `Dispensario.slnx`, `global.json`, `Directory.Build.props`, `Directory.Packages.props`. BuildingBlocks a net10 dentro de la solución y ajustes de paquetes (ver ARCHITECTURE §5) | `specs/01-solution-and-buildingblocks-net10.md` |
+| 02 | Proyectos del servicio y BuildingBlocks.Domain | Los cuatro proyectos `Dispensario.*` y los tres de tests con sus referencias. Nuevo `BuildingBlocks.Domain` y ajustes de `CustomExceptionHandler` y `LoggingBehavior` (ver ARCHITECTURE §5). Añadir `*.db`, `*.db-shm` y `*.db-wal` a `.gitignore` | — |
+| 03 | Abstracciones de dominio | `Entity<TId>`, `AggregateRoot<TId>`, `ValueObject`, `IDomainEvent`, `IAuditable`, `DomainException` + VOs comunes (`FullName`, `Email`, `PhoneNumber`, `Address`) + unit tests | — |
+| 04 | Persistencia base | `IApplicationDbContext`, `DispensarioDbContext`, interceptores de auditoría y domain events, conversión de IDs tipados, SQLite, `AddInfrastructure` | — |
+| 05 | Host de la API | `Program.cs`, `AddApplication` (MediatR + behaviors + validadores), Carter, OpenAPI + Scalar con Bearer, ProblemDetails, `/health`, appsettings y user-secrets | — |
 
 ### Fase 1 — Identidad
 | # | Feature | Contenido | Spec |
 |---|---|---|---|
-| 05 | Users: dominio y persistencia | Aggregate `User`, `Role`, configuración EF e índice único de email | — |
-| 06 | Auth: login y JWT | `IPasswordHasher`, `IJwtTokenGenerator`, `ICurrentUser`, `POST /api/auth/login`, `GET /api/auth/me`, políticas, seed del Admin | — |
-| 07 | Gestión de usuarios | RegisterUser, ChangePassword, DeactivateUser, GetUsers | — |
+| 06 | Users: dominio y persistencia | Aggregate `User`, `Role`, configuración EF e índice único de email | — |
+| 07 | Auth: login y JWT | `IPasswordHasher`, `IJwtTokenGenerator`, `ICurrentUser`, `POST /api/auth/login`, `GET /api/auth/me`, políticas, seed del Admin | — |
+| 08 | Gestión de usuarios | RegisterUser, ChangePassword, DeactivateUser, GetUsers | — |
 
 ### Fase 2 — Catálogos clínicos
 | # | Feature | Contenido | Spec |
 |---|---|---|---|
-| 08 | Doctors: CRUD | Aggregate `Doctor` (matrícula única, especialidad, duración de la cita), Create/Update/Deactivate, GetDoctors/GetById, vínculo opcional con `User` | — |
-| 09 | Doctors: horario semanal | `WeeklySchedule` sin solapes, SetWeeklySchedule, `IsAvailableAt` | — |
-| 10 | Patients: CRUD | Aggregate `Patient` (documento único), Create/Update/Deactivate, GetPatients (búsqueda + paginación), GetById, GetByDocument | — |
+| 09 | Doctors: CRUD | Aggregate `Doctor` (matrícula única, especialidad, duración de la cita), Create/Update/Deactivate, GetDoctors/GetById, vínculo opcional con `User` | — |
+| 10 | Doctors: horario semanal | `WeeklySchedule` sin solapes, SetWeeklySchedule, `IsAvailableAt` | — |
+| 11 | Patients: CRUD | Aggregate `Patient` (documento único), Create/Update/Deactivate, GetPatients (búsqueda + paginación), GetById, GetByDocument | — |
 
 ### Fase 3 — Agenda y atención
 | # | Feature | Contenido | Spec |
 |---|---|---|---|
-| 11 | Appointments: agendar | Aggregate `Appointment`, ScheduleAppointment (horario, duración, sin cruces de doctor ni paciente), GetAppointments (filtros) y GetById | — |
-| 12 | Appointments: ciclo de vida | Confirm, Reschedule, Cancel, MarkNoShow; máquina de estados | — |
-| 13 | Slots disponibles | `GET /api/doctors/{id}/available-slots?date=` | — |
-| 14 | Consultations | Aggregate `Consultation`, Start/Update/Close, validación de que el doctor es el usuario actual, GetById, historia del paciente | — |
-| 15 | Consulta cerrada → cita completada | `ConsultationClosedDomainEvent` + handler en Appointments | — |
+| 12 | Appointments: agendar | Aggregate `Appointment`, ScheduleAppointment (horario, duración, sin cruces de doctor ni paciente), GetAppointments (filtros) y GetById | — |
+| 13 | Appointments: ciclo de vida | Confirm, Reschedule, Cancel, MarkNoShow; máquina de estados | — |
+| 14 | Slots disponibles | `GET /api/doctors/{id}/available-slots?date=` | — |
+| 15 | Consultations | Aggregate `Consultation`, Start/Update/Close, validación de que el doctor es el usuario actual, GetById, historia del paciente | — |
+| 16 | Consulta cerrada → cita completada | `ConsultationClosedDomainEvent` + handler en Appointments | — |
 
 ### Fase 4 — Cierre de v1
 | # | Feature | Contenido | Spec |
 |---|---|---|---|
-| 16 | Migración inicial y seed | `InitialCreate`, migración automática en Development y datos de ejemplo opcionales | — |
-| 17 | Tests de integración E2E | Flujo completo login → doctor → paciente → cita → consulta → cita Completed, más casos 401/403/404/409 | — |
+| 17 | Migración inicial y seed | `InitialCreate`, migración automática en Development y datos de ejemplo opcionales | — |
+| 18 | Tests de integración E2E | Flujo completo login → doctor → paciente → cita → consulta → cita Completed, más casos 401/403/404/409 | — |
 
 > Los tests unitarios de cada feature van **dentro de su propio spec**, no en una fase aparte.
 

@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Backend en .NET 10 para gestionar un dispensario médico: doctores, pacientes, citas y consultas.
 El desarrollo sigue **SDD (Spec-Driven Development)** con las skills `/spec` y `/spec-impl` (en `.claude/skills/`, sincronizadas con `.agents/skills/` mediante `skills-lock.json`). Los specs viven en `specs/NN-slug.md`.
 
-> **Estado actual:** solo existe `src/BuildingBlocks/BuildingBlocks`, que aún apunta a `net8.0`, tiene las versiones de los paquetes en su propio `.csproj` y no forma parte de ninguna solución. La solución, los props centrales, `BuildingBlocks.Domain` y los proyectos `Dispensario.*` se crean en la feature 01 del backlog (`docs/PLAN.md`). Hasta entonces los comandos de abajo que usan `Dispensario.slnx` no funcionan. La carpeta tampoco es todavía un repositorio git, y `/spec-impl` lo necesita.
+> **Estado actual:** existen `Dispensario.slnx`, `global.json`, los props centrales y `src/BuildingBlocks/BuildingBlocks` en `net10.0` (feature 01). `BuildingBlocks.Domain`, los proyectos `Dispensario.*` y los de tests se crean en la feature 02 del backlog (`docs/PLAN.md`). Hasta entonces solo funciona `dotnet build Dispensario.slnx`; los comandos de tests, ejecución y migraciones de abajo no.
 
 ## Reglas de trabajo (obligatorias)
 1. **No escribir código sin un spec `Approved`.** Los specs se crean con `/spec` (que no escribe código) y se implementan con `/spec-impl`. Nada de andamiaje, refactors ni features "de paso".
@@ -51,7 +51,7 @@ Dentro de cada capa el código se agrupa **por módulo**: `Users/`, `Doctors/`, 
 
 ## Detalles no obvios
 - `ValidationBehavior` (BuildingBlocks) solo se aplica a `ICommand<T>`: las queries **no** pasan por FluentValidation.
-- `CustomExceptionHandler` todavía no mapea `UnauthorizedException` (hoy cae en 500) ni `DomainException`/`ForbiddenException`; se corrige en la feature 01.
+- `CustomExceptionHandler` todavía no mapea `UnauthorizedException` (hoy cae en 500) ni `DomainException`/`ForbiddenException`; se corrige en la feature 02.
 - MediatR 14 es de licencia comercial: sin `MediatR:LicenseKey` registra un aviso de licencia.
 - SQLite no admite esquemas (los módulos se separan por nombre de tabla y carpeta de configuración) y no ordena ni compara bien `DateTimeOffset`: se usa `DateTime` UTC con el sufijo `Utc`.
 - Los tests usan SQLite `:memory:`, nunca el proveedor EF InMemory.

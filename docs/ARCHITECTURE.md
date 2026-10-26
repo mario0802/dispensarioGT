@@ -95,10 +95,12 @@ Excepción en cualquier punto → CustomExceptionHandler → ProblemDetails (400
 | `CustomExceptionHandler` | `Exceptions/Handler/` | Excepción → ProblemDetails con `traceId` |
 | `PaginationRequest`, `PaginatedResult<T>` | `Pagination/` | Listados paginados |
 
-**Ajustes pendientes en BuildingBlocks** (feature 01 del backlog):
+**Ajustes en BuildingBlocks hechos en la feature 01 del backlog:**
 - `net8.0` → `net10.0`; `JwtBearer` 8.0.30 → 10.x; versiones en `Directory.Packages.props`.
 - Añadir `<FrameworkReference Include="Microsoft.AspNetCore.App" />`, que es lo que usa `CustomExceptionHandler`.
 - Quitar `StackExchange.Redis` y `Microsoft.FeatureManagement.AspNetCore` mientras no se usen.
+
+**Ajustes pendientes en BuildingBlocks** (feature 02 del backlog):
 - Crear `src/BuildingBlocks/BuildingBlocks.Domain` (abstracciones DDD + `DomainException`) y referenciarlo desde `BuildingBlocks`.
 - En `CustomExceptionHandler`: mapear `DomainException` → 400 y `UnauthorizedException` → 401 (hoy cae en 500), y añadir `ForbiddenException` → 403.
 - `LoggingBehavior`: `timeTaken.Seconds` → `timeTaken.TotalSeconds`.

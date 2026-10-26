@@ -32,8 +32,8 @@ Al crear un spec con `/spec`, anota su archivo en la columna **Spec** de este ba
 | # | Feature | Contenido | Spec |
 |---|---|---|---|
 | 01 | Solución y BuildingBlocks | `Dispensario.slnx`, `global.json`, `Directory.Build.props`, `Directory.Packages.props`. BuildingBlocks a net10 dentro de la solución y ajustes de paquetes (ver ARCHITECTURE §5) | `specs/01-solution-and-buildingblocks-net10.md` |
-| 02 | Proyectos del servicio y BuildingBlocks.Domain | Los cuatro proyectos `Dispensario.*` y los tres de tests con sus referencias. Nuevo `BuildingBlocks.Domain` y ajustes de `CustomExceptionHandler` y `LoggingBehavior` (ver ARCHITECTURE §5). Añadir `*.db`, `*.db-shm` y `*.db-wal` a `.gitignore` | — |
-| 03 | Abstracciones de dominio | `Entity<TId>`, `AggregateRoot<TId>`, `ValueObject`, `IDomainEvent`, `IAuditable`, `DomainException` + VOs comunes (`FullName`, `Email`, `PhoneNumber`, `Address`) + unit tests | — |
+| 02 | Proyectos del servicio y BuildingBlocks.Domain | Los cuatro proyectos `Dispensario.*` y los tres de tests con sus referencias. Nuevo `BuildingBlocks.Domain` y ajustes de `CustomExceptionHandler` y `LoggingBehavior` (ver ARCHITECTURE §5). Añadir `*.db`, `*.db-shm` y `*.db-wal` a `.gitignore` | `specs/02-service-projects-and-buildingblocks-domain.md` |
+| 03 | Abstracciones de dominio | `Entity<TId>`, `AggregateRoot<TId>`, `ValueObject`, `IDomainEvent`, `IAuditable` (`DomainException` ya existe desde la feature 02) + VOs comunes (`FullName`, `Email`, `PhoneNumber`, `Address`) + unit tests | — |
 | 04 | Persistencia base | `IApplicationDbContext`, `DispensarioDbContext`, interceptores de auditoría y domain events, conversión de IDs tipados, SQLite, `AddInfrastructure` | — |
 | 05 | Host de la API | `Program.cs`, `AddApplication` (MediatR + behaviors + validadores), Carter, OpenAPI + Scalar con Bearer, ProblemDetails, `/health`, appsettings y user-secrets | — |
 

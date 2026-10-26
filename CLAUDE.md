@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Backend en .NET 10 para gestionar un dispensario médico: doctores, pacientes, citas y consultas.
 El desarrollo sigue **SDD (Spec-Driven Development)** con las skills `/spec` y `/spec-impl` (en `.claude/skills/`, sincronizadas con `.agents/skills/` mediante `skills-lock.json`). Los specs viven en `specs/NN-slug.md`.
 
-> **Estado actual:** existen `Dispensario.slnx`, `global.json`, los props centrales y `src/BuildingBlocks/BuildingBlocks` en `net10.0` (feature 01). `BuildingBlocks.Domain`, los proyectos `Dispensario.*` y los de tests se crean en la feature 02 del backlog (`docs/PLAN.md`). Hasta entonces solo funciona `dotnet build Dispensario.slnx`; los comandos de tests, ejecución y migraciones de abajo no.
+> **Estado actual:** existen `Dispensario.slnx`, `global.json`, los props centrales, `BuildingBlocks` y `BuildingBlocks.Domain` (solo `DomainException`), los cuatro proyectos `Dispensario.*` (vacíos; `Api` con un `Program.cs` mínimo) y los proyectos de tests (features 01 y 02). Funcionan `dotnet build`, `dotnet test` y `dotnet run`; las migraciones llegan con la persistencia (feature 04 del backlog, `docs/PLAN.md`).
 
 ## Reglas de trabajo (obligatorias)
 1. **No escribir código sin un spec `Approved`.** Los specs se crean con `/spec` (que no escribe código) y se implementan con `/spec-impl`. Nada de andamiaje, refactors ni features "de paso".
@@ -32,7 +32,8 @@ docs/                                  # plan/backlog, arquitectura y guías
 src/
 ├─ BuildingBlocks/
 │  ├─ BuildingBlocks/                  # código común: CQRS, behaviors, excepciones, paginación
-│  └─ BuildingBlocks.Domain/           # abstracciones DDD puras: Entity, AggregateRoot, ValueObject, IDomainEvent, DomainException
+│  ├─ BuildingBlocks.Domain/           # abstracciones DDD puras: Entity, AggregateRoot, ValueObject, IDomainEvent, DomainException
+│  └─ tests/BuildingBlocks.UnitTests/  # tests de BuildingBlocks (CustomExceptionHandler…)
 └─ Services/Dispensario/
    ├─ Dispensario.Domain/              # aggregates, value objects, domain events (solo depende de BuildingBlocks.Domain)
    ├─ Dispensario.Application/         # commands/queries/handlers/validators por módulo
@@ -51,7 +52,8 @@ Dentro de cada capa el código se agrupa **por módulo**: `Users/`, `Doctors/`, 
 
 ## Detalles no obvios
 - `ValidationBehavior` (BuildingBlocks) solo se aplica a `ICommand<T>`: las queries **no** pasan por FluentValidation.
-- `CustomExceptionHandler` todavía no mapea `UnauthorizedException` (hoy cae en 500) ni `DomainException`/`ForbiddenException`; se corrige en la feature 02.
+- `CustomExceptionHandler` mapea `DomainException` → 400, `UnauthorizedException` → 401 y `ForbiddenException` → 403; cualquier excepción no mapeada cae en 500.
+- Los tests usan `xunit.v3.mtp-off` (xUnit v3 sin Microsoft.Testing.Platform) para ejecutarse con VSTest: `xunit.v3` 4.x trae MTP 2.x, que en el SDK de .NET 10 bloquea `dotnet test` con VSTest.
 - MediatR 14 es de licencia comercial: sin `MediatR:LicenseKey` registra un aviso de licencia.
 - SQLite no admite esquemas (los módulos se separan por nombre de tabla y carpeta de configuración) y no ordena ni compara bien `DateTimeOffset`: se usa `DateTime` UTC con el sufijo `Utc`.
 - Los tests usan SQLite `:memory:`, nunca el proveedor EF InMemory.

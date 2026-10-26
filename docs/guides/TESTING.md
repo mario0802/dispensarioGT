@@ -43,7 +43,9 @@ public sealed class SqliteTestDb : IDisposable
 ```
 
 ## Integración
-- `DispensarioApiFactory : WebApplicationFactory<Program>` reemplaza el `DbContextOptions` por SQLite en memoria (conexión compartida), fija `Jwt:Key`, `Seed:Admin:*` y `MediatR:LicenseKey` con `UseSetting`, y ejecuta `InitialiseDatabaseAsync`.
+- `DispensarioApiFactory : WebApplicationFactory<Program>` (en `tests/Dispensario.Api.IntegrationTests/Common/`) corre en Development y reemplaza la configuración del `DbContext` por SQLite en memoria con una conexión compartida, abierta mientras vive la factory. En EF Core 10 hay que quitar `DbContextOptions<DispensarioDbContext>` **y** `IDbContextOptionsConfiguration<DispensarioDbContext>` antes de volver a llamar a `AddDbContext`, y añadir de nuevo los interceptores. Fija `ConnectionStrings:Database` y `MediatR:LicenseKey` con `UseSetting`.
+- Cada clase de tests la usa con `IClassFixture<DispensarioApiFactory>`.
+- Pendiente: la fila 07 añade `Jwt:Key` y `Seed:Admin:*` y el helper `AuthenticateAsAsync`; la fila 17, la llamada a `InitialiseDatabaseAsync`.
 - Helper `AuthenticateAsAsync(Role)` para obtener un `HttpClient` con token.
 - Cada spec de módulo añade sus casos: un *happy path* y los errores 400/401/403/404/409 que correspondan.
 

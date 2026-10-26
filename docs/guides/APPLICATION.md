@@ -138,7 +138,11 @@ public static IServiceCollection AddApplication(this IServiceCollection services
     var assembly = typeof(DependencyInjection).Assembly;
     services.AddMediatR(cfg =>
     {
-        cfg.LicenseKey = configuration["MediatR:LicenseKey"];
+        // Solo se asigna si hay clave: una cadena vacía no es una licencia válida
+        var licenseKey = configuration["MediatR:LicenseKey"];
+        if (!string.IsNullOrWhiteSpace(licenseKey))
+            cfg.LicenseKey = licenseKey;
+
         cfg.RegisterServicesFromAssembly(assembly);
         cfg.AddOpenBehavior(typeof(LoggingBehavior<,>));
         cfg.AddOpenBehavior(typeof(ValidationBehavior<,>));

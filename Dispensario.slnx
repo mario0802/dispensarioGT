@@ -9,9 +9,6 @@
     <Project Path="src/BuildingBlocks/BuildingBlocks.Domain/BuildingBlocks.Domain.csproj" />
     <Project Path="src/BuildingBlocks/BuildingBlocks/BuildingBlocks.csproj" />
   </Folder>
-  <Folder Name="/src/BuildingBlocks/tests/">
-    <Project Path="src/BuildingBlocks/tests/BuildingBlocks.UnitTests/BuildingBlocks.UnitTests.csproj" />
-  </Folder>
   <Folder Name="/src/Services/" />
   <Folder Name="/src/Services/Dispensario/">
     <Project Path="src/Services/Dispensario/Dispensario.Api/Dispensario.Api.csproj" />
@@ -19,9 +16,10 @@
     <Project Path="src/Services/Dispensario/Dispensario.Domain/Dispensario.Domain.csproj" />
     <Project Path="src/Services/Dispensario/Dispensario.Infrastructure/Dispensario.Infrastructure.csproj" />
   </Folder>
-  <Folder Name="/src/Services/Dispensario/tests/">
-    <Project Path="src/Services/Dispensario/tests/Dispensario.Api.IntegrationTests/Dispensario.Api.IntegrationTests.csproj" />
-    <Project Path="src/Services/Dispensario/tests/Dispensario.Application.UnitTests/Dispensario.Application.UnitTests.csproj" />
-    <Project Path="src/Services/Dispensario/tests/Dispensario.Domain.UnitTests/Dispensario.Domain.UnitTests.csproj" />
+  <Folder Name="/tests/">
+    <Project Path="tests/BuildingBlocks.UnitTests/BuildingBlocks.UnitTests.csproj" />
+    <Project Path="tests/Dispensario.Api.IntegrationTests/Dispensario.Api.IntegrationTests.csproj" />
+    <Project Path="tests/Dispensario.Application.UnitTests/Dispensario.Application.UnitTests.csproj" />
+    <Project Path="tests/Dispensario.Domain.UnitTests/Dispensario.Domain.UnitTests.csproj" />
   </Folder>
 </Solution>

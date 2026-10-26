@@ -1,9 +1,10 @@
 # Guía de testing
 
-Proyectos en `src/Services/Dispensario/tests/`: **xUnit v3**, **Shouldly** para las aserciones y **NSubstitute** para los dobles.
+Proyectos en `tests/` en la raíz del repositorio, sin subcarpetas: **xUnit v3**, **Shouldly** para las aserciones y **NSubstitute** para los dobles.
 
 | Proyecto | Qué prueba | Dependencias |
 |---|---|---|
+| `BuildingBlocks.UnitTests` | Código común: `CustomExceptionHandler` (`Exceptions/`) y abstracciones DDD (`Domain/`: `Entity`, `AggregateRoot`, `ValueObject`) | BuildingBlocks (y BuildingBlocks.Domain de forma transitiva) |
 | `Dispensario.Domain.UnitTests` | Invariantes, máquinas de estado, value objects y eventos emitidos | Solo Domain |
 | `Dispensario.Application.UnitTests` | Handlers (reglas con varios aggregates, excepciones) y validadores | Application + Infrastructure (DbContext sobre SQLite en memoria) |
 | `Dispensario.Api.IntegrationTests` | HTTP de punta a punta: auth, códigos de estado y flujo completo | `WebApplicationFactory<Program>` + SQLite en memoria |

@@ -7,17 +7,22 @@ Proyectos: `src/BuildingBlocks/BuildingBlocks.Domain` (abstracciones genéricas)
 ```csharp
 namespace BuildingBlocks.Domain;
 
-// Evento de dominio: hecho de negocio ocurrido dentro de un aggregate
-public interface IDomainEvent : INotification
+// Evento de dominio: marcador sin miembros (el dominio no conoce la hora; los metadatos llegarían con un outbox)
+public interface IDomainEvent : INotification;
+
+// Auditoría: la completa AuditableEntityInterceptor (sufijo Utc, como todas las fechas)
+public interface IAuditable
 {
-    Guid EventId => Guid.NewGuid();
-    DateTime OccurredOnUtc => DateTime.UtcNow;
+    DateTime CreatedAtUtc { get; set; }
+    string? CreatedBy { get; set; }
+    DateTime? LastModifiedAtUtc { get; set; }
+    string? LastModifiedBy { get; set; }
 }
 
-public abstract class Entity<TId> where TId : notnull
+// Igualdad: mismo tipo concreto y mismo Id; implementa IEquatable<Entity<TId>>, == y !=
+public abstract class Entity<TId> : IEquatable<Entity<TId>> where TId : notnull
 {
     public TId Id { get; protected set; } = default!;
-    // Igualdad por Id (implementar Equals/GetHashCode)
 }
 
 public abstract class AggregateRoot<TId> : Entity<TId>, IAuditable where TId : notnull
@@ -27,10 +32,9 @@ public abstract class AggregateRoot<TId> : Entity<TId>, IAuditable where TId : n
     protected void Raise(IDomainEvent domainEvent) => _domainEvents.Add(domainEvent);
     public void ClearDomainEvents() => _domainEvents.Clear();
 
-    // Auditoría: la completa AuditableEntityInterceptor
-    public DateTime CreatedAt { get; set; }
+    public DateTime CreatedAtUtc { get; set; }
     public string? CreatedBy { get; set; }
-    public DateTime? LastModifiedAt { get; set; }
+    public DateTime? LastModifiedAtUtc { get; set; }
     public string? LastModifiedBy { get; set; }
 }
 
@@ -51,12 +55,14 @@ public class DomainException(string message) : Exception(message);
 9. Las validaciones de formato (longitudes, requeridos) van en FluentValidation (Application). Las **reglas de negocio** van en el dominio.
 
 ## 3. Value objects comunes (`Domain/Common`)
-| VO | Campos | Reglas |
-|---|---|---|
-| `FullName` | `FirstName`, `LastName` | no vacíos, máx. 100 cada uno; `ToString()` = "First Last" |
-| `Email` | `Value` | formato válido, normalizado a minúsculas |
-| `PhoneNumber` | `Value` | dígitos, `+`, espacios y guiones; 7–20 caracteres |
-| `Address` | `Street`, `City`, `State?`, `Reference?` | `Street` y `City` requeridos |
+Cada VO es un `sealed record : ValueObject` con constructor privado y `static Create(...)`, que recorta (`Trim`) los textos, trata `null` como vacío y lanza `DomainException` si no se cumplen las reglas. Los máximos están expuestos como constantes (`FullName.MaxLength`, `Address.StreetMaxLength`…) para reutilizarlos en validadores y configuraciones EF.
+
+| VO | Campos | Normalización | Reglas |
+|---|---|---|---|
+| `FullName` | `FirstName`, `LastName` | Trim | no vacíos, máx. 100 cada uno; `ToString()` = "First Last" |
+| `Email` | `Value` | Trim + minúsculas | máx. 254, regex `^[^@\s]+@[^@\s]+\.[^@\s]+$` |
+| `PhoneNumber` | `Value` | Trim (se guarda tal como se escribió) | regex `^[0-9+\- ]{7,20}$`: dígitos, `+`, espacios y guiones; 7–20 caracteres |
+| `Address` | `Street`, `City`, `State?`, `Reference?` | Trim; opcionales en blanco → `null` | `Street` requerido, máx. 200; `City` requerido, máx. 100; `State` máx. 100; `Reference` máx. 250 |
 
 ## 4. Modelo por módulo
 

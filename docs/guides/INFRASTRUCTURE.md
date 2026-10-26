@@ -78,7 +78,7 @@ Reglas:
 | Cadena de conexión | `Data Source=dispensario.db` (en `appsettings.json`). El `.db` está en `.gitignore` |
 
 ## 5. Interceptores
-- **AuditableEntityInterceptor** (`SavingChanges`): para cada `IAuditable` en `Added` completa `CreatedAt`/`CreatedBy`, y en `Modified`, `LastModifiedAt`/`LastModifiedBy`. Usa `TimeProvider` e `ICurrentUser`.
+- **AuditableEntityInterceptor** (`SavingChanges`): para cada `IAuditable` en `Added` completa `CreatedAtUtc`/`CreatedBy`, y en `Modified`, `LastModifiedAtUtc`/`LastModifiedBy`. Usa `TimeProvider` e `ICurrentUser`.
 - **DispatchDomainEventsInterceptor** (`SavedChanges`): recoge los eventos de los aggregates rastreados, limpia sus listas y los publica con `IPublisher.Publish`. Se despachan **después** del commit. Si un handler de eventos modifica datos, llama a su propio `SaveChangesAsync`.
   > Cuando se pase a microservicios, este interceptor se reemplaza por un *Outbox* (tabla `OutboxMessages` + worker).
 

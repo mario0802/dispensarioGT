@@ -19,7 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Dispensario.Domain\Dispensario.Domain.csproj" />
+    <ProjectReference Include="..\..\src\Services\Dispensario\Dispensario.Domain\Dispensario.Domain.csproj" />
   </ItemGroup>
 
 </Project>

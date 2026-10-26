@@ -24,7 +24,7 @@
 └────────┬─────────┘  └──────────────┬───────────────┘
          ▼                           ▼
 ┌──────────────────────────────────────────────────┐
-│     BuildingBlocks.Domain (compartido, puro)     │  Entity, AggregateRoot, ValueObject, IDomainEvent, DomainException
+│     BuildingBlocks.Domain (compartido, puro)     │  Entity, AggregateRoot, ValueObject, IDomainEvent, IAuditable, DomainException
 └──────────────────────────────────────────────────┘
 ```
 
@@ -104,7 +104,7 @@ Excepción en cualquier punto → CustomExceptionHandler → ProblemDetails (400
 - Crear `src/BuildingBlocks/BuildingBlocks.Domain` (por ahora solo con `DomainException`; el resto de las abstracciones DDD llega en la feature 03) y referenciarlo desde `BuildingBlocks`.
 - En `CustomExceptionHandler`: mapear `DomainException` → 400 y `UnauthorizedException` → 401, añadir `ForbiddenException` → 403 y quitar `DateTime.UtcNow` del log.
 - `LoggingBehavior`: `timeTaken.Seconds` → `timeTaken.TotalSeconds`.
-- Tests de los mapeos nuevos en `src/BuildingBlocks/tests/BuildingBlocks.UnitTests`.
+- Tests de los mapeos nuevos en `tests/BuildingBlocks.UnitTests` (todos los proyectos de tests se movieron a `tests/` en la feature 03).
 
 > **Por qué `BuildingBlocks.Domain` es un proyecto aparte:** el dominio no puede depender de `BuildingBlocks`, que arrastra ASP.NET, FluentValidation, etc. Con una librería pura, `Dispensario.Domain` sigue limpio y `CustomExceptionHandler` reconoce `DomainException` por su tipo. Cualquier microservicio futuro reutilizará las mismas abstracciones.
 

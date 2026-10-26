@@ -1,3 +1,6 @@
+using Dispensario.Domain.Users;
+using Microsoft.EntityFrameworkCore;
+
 namespace Dispensario.Application.Abstractions;
 
 /// <summary>
@@ -6,6 +9,7 @@ namespace Dispensario.Application.Abstractions;
 public interface IApplicationDbContext
 {
     // Cada spec de módulo añade aquí su DbSet<T>
+    DbSet<User> Users { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

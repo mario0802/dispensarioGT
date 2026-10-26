@@ -22,7 +22,7 @@ Data/
   Seed/DatabaseSeeder.cs
   Extensions/DatabaseExtensions.cs        # InitialiseDatabaseAsync (migrar + seed)
 Authentication/
-  JwtOptions.cs  JwtTokenGenerator.cs  PasswordHasher.cs  CurrentUser.cs
+  JwtOptions.cs  JwtTokenGenerator.cs  BcryptPasswordHasher.cs  CurrentUser.cs
   AnonymousCurrentUser.cs                 # provisional hasta la fila 07 (usuario anónimo)
 DependencyInjection.cs
 ```
@@ -57,7 +57,11 @@ public sealed class DispensarioDbContext(DbContextOptions<DispensarioDbContext> 
 Reglas:
 - Una clase `IEntityTypeConfiguration<T>` por aggregate, en la carpeta de su módulo.
 - **Tabla explícita** (`ToTable("Patients")`).
-- Los value objects se mapean con `ComplexProperty` (EF 10) u `OwnsOne`, con columnas prefijadas (`Document_Type`, `Document_Number`).
+- Los value objects se mapean según lo que necesiten:
+  - **Un solo valor** (`Email`, `PhoneNumber`): `HasConversion(v => v.Value, s => Email.Create(s))` a una columna con el nombre de la propiedad. Admiten índice y comparaciones en LINQ (`u.Email == email`). Para un VO opcional, `p => p!.Value` (EF no pasa `null` al converter).
+  - **Varios campos sin índice** (`FullName`, `Address`): `ComplexProperty`.
+  - **Varios campos con índice** (`Document`): `OwnsOne` en la misma tabla, con el índice dentro del builder del tipo propio (`identification.HasIndex(d => new { d.Type, d.Number }).IsUnique()`) y `builder.Navigation(...).IsRequired()` si es obligatorio. `ComplexProperty` no admite índices.
+- Las columnas de los VOs de varios campos llevan el prefijo de la propiedad y se fijan con `HasColumnName` (`FullName_FirstName`, `Identification_Number`).
 - Las propiedades de los VOs son de solo lectura y EF **no las mapea por convención**: se declaran una a una dentro del `ComplexProperty` (`name.Property(n => n.FirstName).HasMaxLength(FullName.MaxLength)`). EF las materializa con el constructor privado del VO. Un VO opcional (`Address?`) se mapea igual y se relee `null` si se guardó `null`.
 - Los enums se guardan como `string` (`HasConversion<string>()`), que es legible en SQLite.
 - Longitudes máximas iguales a las del validador.
@@ -67,7 +71,7 @@ Reglas:
 Índices obligatorios:
 | Tabla | Índice |
 |---|---|
-| `Users` | único `Email` |
+| `Users` | único `Email`; único (`Identification_Type`, `Identification_Number`) |
 | `Doctors` | único `LicenseNumber` |
 | `Patients` | único (`Document_Type`, `Document_Number`); `LastName` |
 | `Appointments` | (`DoctorId`, `StartUtc`), (`PatientId`, `StartUtc`) |
@@ -102,7 +106,7 @@ public sealed class JwtOptions
 }
 ```
 - `JwtTokenGenerator`: HS256 con los claims `sub`, `email`, `name`, `role` y `doctor_id` (opcional). Usa `JsonWebTokenHandler` (`Microsoft.IdentityModel.JsonWebTokens`).
-- `PasswordHasher`: envuelve `Microsoft.AspNetCore.Identity.PasswordHasher<User>` (paquete `Microsoft.Extensions.Identity.Core`). No se usa el resto de Identity.
+- `BcryptPasswordHasher`: implementa `IPasswordHasher` con bcrypt (paquete `BCrypt.Net-Next`), fila 07. No se usa ASP.NET Identity. La columna `Users.PasswordHash` admite hasta 100 caracteres (un hash bcrypt ocupa 60).
 - `CurrentUser`: lee los claims de `IHttpContextAccessor`.
 - La validación del token (`AddJwtBearer`) se configura en la Api con las mismas `JwtOptions`.
 
@@ -131,7 +135,7 @@ public static IServiceCollection AddInfrastructure(this IServiceCollection servi
 
     services.AddOptions<JwtOptions>().BindConfiguration(JwtOptions.SectionName).ValidateDataAnnotations().ValidateOnStart();
     services.AddSingleton<IJwtTokenGenerator, JwtTokenGenerator>();
-    services.AddSingleton<IPasswordHasher, PasswordHasher>();
+    services.AddSingleton<IPasswordHasher, BcryptPasswordHasher>();
     services.AddHttpContextAccessor();
     services.AddScoped<ICurrentUser, CurrentUser>();
     services.TryAddSingleton(TimeProvider.System);

@@ -40,7 +40,7 @@ Al crear un spec con `/spec`, anota su archivo en la columna **Spec** de este ba
 ### Fase 1 — Identidad
 | # | Feature | Contenido | Spec |
 |---|---|---|---|
-| 06 | Users: dominio y persistencia | Aggregate `User`, `Role`, configuración EF e índice único de email | — |
+| 06 | Users: dominio y persistencia | Aggregate `User`, `Role`, configuración EF e índice único de email | `specs/06-users-domain-and-persistence.md` |
 | 07 | Auth: login y JWT | `IPasswordHasher`, `IJwtTokenGenerator`, `ICurrentUser`, `POST /api/auth/login`, `GET /api/auth/me`, políticas, seed del Admin | — |
 | 08 | Gestión de usuarios | RegisterUser, ChangePassword, DeactivateUser, GetUsers | — |
 
@@ -75,4 +75,4 @@ Frontend (`/frontend`), signos vitales, recetas, exámenes, farmacia/inventario,
 - ¿Se pagan las consultas o se registra algún cobro? (por ahora no)
 - ¿Zona horaria del dispensario? Se propone guardar en UTC y configurar la zona en `Clinic:TimeZone` para calcular los slots.
 - ¿Feriados o bloqueos de agenda del doctor (vacaciones)?
-- ¿Tipos de documento válidos? Se propone `NationalId`, `Passport` y `ForeignerId`.
+- ~~¿Tipos de documento válidos?~~ Cerrada en el spec 06: `NationalId` y `Passport` (`ForeignerId` cuando haga falta).

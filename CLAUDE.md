@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Backend en .NET 10 para gestionar un dispensario médico: doctores, pacientes, citas y consultas.
 El desarrollo sigue **SDD (Spec-Driven Development)** con las skills `/spec` y `/spec-impl` (en `.claude/skills/`, sincronizadas con `.agents/skills/` mediante `skills-lock.json`). Los specs viven en `specs/NN-slug.md`.
 
-> **Estado actual:** existen `Dispensario.slnx`, `global.json`, los props centrales, `BuildingBlocks` y `BuildingBlocks.Domain` (abstracciones DDD completas), los cuatro proyectos `Dispensario.*` (`Domain` solo con los VOs de `Common/`), la persistencia base en `Infrastructure` (`DispensarioDbContext` sin `DbSet`, interceptores, convenciones y `AddInfrastructure`), el host completo de la `Api` (`AddApplication`, Carter, OpenAPI + Scalar con esquema Bearer, ProblemDetails y `/health`, todavía sin autenticación ni endpoints de negocio) y los proyectos de tests en `tests/`, incluida la `DispensarioApiFactory` de integración (features 01 a 05). Funcionan `dotnet build`, `dotnet test` y `dotnet run`; las migraciones llegan con la feature 17 del backlog (`docs/PLAN.md`).
+> **Estado actual:** existen `Dispensario.slnx`, `global.json`, los props centrales, `BuildingBlocks` y `BuildingBlocks.Domain` (abstracciones DDD completas), los cuatro proyectos `Dispensario.*` (`Domain` con los VOs de `Common/`, el aggregate `User` y el ID `DoctorId`), la persistencia en `Infrastructure` (`DispensarioDbContext` con `DbSet<User>` y `UserConfiguration`, interceptores, convenciones y `AddInfrastructure`), el host completo de la `Api` (`AddApplication`, Carter, OpenAPI + Scalar con esquema Bearer, ProblemDetails y `/health`, todavía sin autenticación ni endpoints de negocio) y los proyectos de tests en `tests/`, incluida la `DispensarioApiFactory` de integración (features 01 a 06). Funcionan `dotnet build`, `dotnet test` y `dotnet run`; las migraciones llegan con la feature 17 del backlog (`docs/PLAN.md`).
 
 ## Reglas de trabajo (obligatorias)
 1. **No escribir código sin un spec `Approved`.** Los specs se crean con `/spec` (que no escribe código) y se implementan con `/spec-impl`. Nada de andamiaje, refactors ni features "de paso".
@@ -19,7 +19,7 @@ El desarrollo sigue **SDD (Spec-Driven Development)** con las skills `/spec` y `
 - .NET 10 / C# (última versión) · ASP.NET Core Minimal APIs + **Carter**
 - **Clean Architecture + CQRS** con **MediatR 14** (requiere `MediatR:LicenseKey`) · FluentValidation 12 · Mapster
 - **EF Core 10 + SQLite** · un solo `DispensarioDbContext`
-- Autenticación con **JWT propio** (roles `Admin`, `Doctor`, `Receptionist`) y hash de contraseñas con `PasswordHasher<T>`
+- Autenticación con **JWT propio** (roles `Admin`, `Doctor`, `Receptionist`) y hash de contraseñas con **bcrypt** (`BCrypt.Net-Next`, llega con la feature 07)
 - OpenAPI nativo + **Scalar** · tests con xUnit v3, Shouldly, NSubstitute y WebApplicationFactory
 
 ## Estructura
@@ -62,6 +62,7 @@ Dentro de cada capa el código se agrupa **por módulo**: `Users/`, `Doctors/`, 
 - Los tests usan SQLite `:memory:`, nunca el proveedor EF InMemory.
 - Los IDs tipados implementan `IStronglyTypedId` (con constructor `(Guid)`) y se convierten a Guid por convención: no se registran converters a mano. Todo `DateTime` leído de SQLite sale con `Kind = Utc`.
 - Las propiedades de solo lectura de los VOs no se mapean por convención: cada `ComplexProperty` las declara una a una.
+- Mapeo de VOs: los de un solo valor (`Email`, `PhoneNumber`) con `HasConversion` a una columna; los de varios campos con `ComplexProperty`, salvo que necesiten índice (`Document`), que van con `OwnsOne` en la misma tabla porque `ComplexProperty` no admite índices.
 - Los domain events solo se despachan con `SaveChangesAsync`; `SaveChanges` síncrono con eventos pendientes lanza `InvalidOperationException`.
 - `ICurrentUser` es mínimo (`Guid? UserId`, `IsAuthenticated`) y lo implementa `AnonymousCurrentUser` hasta la feature 07.
 

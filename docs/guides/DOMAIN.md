@@ -76,6 +76,7 @@ Cada VO es un `sealed record : ValueObject` con constructor privado y `static Cr
 | `Email` | `Value` | Trim + minúsculas | máx. 254, regex `^[^@\s]+@[^@\s]+\.[^@\s]+$` |
 | `PhoneNumber` | `Value` | Trim (se guarda tal como se escribió) | regex `^[0-9+\- ]{7,20}$`: dígitos, `+`, espacios y guiones; 7–20 caracteres |
 | `Address` | `Street`, `City`, `State?`, `Reference?` | Trim; opcionales en blanco → `null` | `Street` requerido, máx. 200; `City` requerido, máx. 100; `State` máx. 100; `Reference` máx. 250 |
+| `Document` | `DocumentType Type`, `Number` | Trim del número (sin mayúsculas ni regex) | `Type` definido (`NationalId`, `Passport`); `Number` requerido, máx. 20. Lo usan Users y Patients |
 
 ## 4. Modelo por módulo
 
@@ -84,14 +85,18 @@ Cada VO es un `sealed record : ValueObject` con constructor privado y `static Cr
 |---|---|---|
 | `Id` | `UserId` | |
 | `Email` | `Email` | único |
-| `PasswordHash` | `string` | lo genera `IPasswordHasher` (Application) |
+| `PasswordHash` | `string` | hash bcrypt; lo genera `IPasswordHasher` (Application, fila 07). El dominio no hashea |
 | `FullName` | `FullName` | |
+| `Identification` | `Document` | obligatorio; único (`Type` + `Number`) |
+| `Phone` | `PhoneNumber?` | opcional |
 | `Role` | `Role` enum | `Admin`, `Doctor`, `Receptionist` |
-| `DoctorId` | `DoctorId?` | obligatorio si `Role == Doctor` |
-| `IsActive` | `bool` | |
+| `DoctorId` | `DoctorId?` | opcional; se asigna con `LinkDoctor`. La fila 09 decide si pasa a ser obligatorio con `Role == Doctor` |
+| `IsActive` | `bool` | `true` al crear |
 
-Métodos: `Create`, `ChangePassword(newHash)`, `Deactivate()`, `Activate()`, `LinkDoctor(doctorId)`.
-Eventos: `UserCreatedDomainEvent`.
+Métodos: `Create(email, passwordHash, fullName, identification, phone, role)`, `ChangePassword(newHash)`, `UpdateProfile(fullName, phone)` (`phone` null borra el teléfono), `Deactivate()`, `Activate()`, `LinkDoctor(doctorId)`.
+Reglas: el hash no puede estar vacío y el rol debe estar definido; `Deactivate` sobre un inactivo y `Activate` sobre un activo lanzan `DomainException`; `LinkDoctor` solo con `Role == Doctor` y si no hay ya un doctor vinculado.
+`Email` e `Identification` no cambian tras crear el usuario.
+Eventos: `UserCreatedDomainEvent(UserId, Email, Role)`.
 
 ### Doctors
 | Miembro | Tipo | Notas |
@@ -113,7 +118,7 @@ Métodos: `Create`, `Update(...)`, `SetWeeklySchedule(IEnumerable<...>)` (reempl
 | Miembro | Tipo | Notas |
 |---|---|---|
 | `Id` | `PatientId` | |
-| `Document` | `Document` VO (`DocumentType Type`, `string Number`) | único (`Type` + `Number`) |
+| `Document` | `Document` VO de `Common` (`DocumentType Type`, `string Number`) | único (`Type` + `Number`); tipos `NationalId`, `Passport` |
 | `FullName` | `FullName` | |
 | `BirthDate` | `DateOnly` | no puede ser futura |
 | `Gender` | `Gender` enum | `Male`, `Female`, `Other` |
@@ -166,8 +171,12 @@ Eventos: `ConsultationClosedDomainEvent(ConsultationId, AppointmentId?)`.
 ## 5. Estructura de carpetas (ejemplo)
 ```
 Dispensario.Domain/
-  Common/ FullName.cs Email.cs PhoneNumber.cs Address.cs
+  Common/ FullName.cs Email.cs PhoneNumber.cs Address.cs Document.cs DocumentType.cs
+  Doctors/ DoctorId.cs                     # el aggregate Doctor llega con la fila 09
+  Users/
+    User.cs UserId.cs Role.cs
+    Events/UserCreatedDomainEvent.cs
   Patients/
-    Patient.cs PatientId.cs Document.cs DocumentType.cs Gender.cs BloodType.cs
+    Patient.cs PatientId.cs Gender.cs BloodType.cs
     Events/PatientRegisteredDomainEvent.cs
 ```

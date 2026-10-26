@@ -1,5 +1,6 @@
 using Dispensario.Application.Abstractions;
 using Dispensario.Domain.Common;
+using Dispensario.Domain.Users;
 using Dispensario.Infrastructure.Data.Extensions;
 using Microsoft.EntityFrameworkCore;
 
@@ -11,6 +12,8 @@ namespace Dispensario.Infrastructure.Data;
 public sealed class DispensarioDbContext(DbContextOptions<DispensarioDbContext> options)
     : DbContext(options), IApplicationDbContext
 {
+    public DbSet<User> Users => Set<User>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
         => modelBuilder.ApplyConfigurationsFromAssembly(typeof(DispensarioDbContext).Assembly);
 

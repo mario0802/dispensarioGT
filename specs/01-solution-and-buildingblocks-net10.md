@@ -1,6 +1,6 @@
 # SPEC 01 — Solución y BuildingBlocks en .NET 10
 
-> **Status:** Aprove
+> **Status:** Implemented
 > **Depends on:** —
 > **Date:** 2026-10-26/spe
 > **Objective:** Crear `Dispensario.slnx` con la configuración central de build y paquetes, y migrar `BuildingBlocks` a `net10.0` dentro de esa solución.

@@ -91,7 +91,7 @@ Excepción en cualquier punto → CustomExceptionHandler → ProblemDetails (400
 | `IQuery<T>`, `IQueryHandler<…>` | `CQRS/` | Contratos de lectura |
 | `LoggingBehavior` | `Behaviors/` | Log de inicio/fin y aviso si una petición tarda más de 3 s |
 | `ValidationBehavior` | `Behaviors/` | Ejecuta los `IValidator<TCommand>` y lanza `ValidationException` |
-| Excepciones (`NotFound`, `Conflict`, `BadRequest`, `Unauthorized`, `InternalServer`) | `Exceptions/` | Errores de aplicación |
+| Excepciones (`NotFound`, `Conflict`, `BadRequest`, `Unauthorized`, `Forbidden`, `InternalServer`) | `Exceptions/` | Errores de aplicación |
 | `CustomExceptionHandler` | `Exceptions/Handler/` | Excepción → ProblemDetails con `traceId` |
 | `PaginationRequest`, `PaginatedResult<T>` | `Pagination/` | Listados paginados |
 
@@ -100,10 +100,11 @@ Excepción en cualquier punto → CustomExceptionHandler → ProblemDetails (400
 - Añadir `<FrameworkReference Include="Microsoft.AspNetCore.App" />`, que es lo que usa `CustomExceptionHandler`.
 - Quitar `StackExchange.Redis` y `Microsoft.FeatureManagement.AspNetCore` mientras no se usen.
 
-**Ajustes pendientes en BuildingBlocks** (feature 02 del backlog):
-- Crear `src/BuildingBlocks/BuildingBlocks.Domain` (abstracciones DDD + `DomainException`) y referenciarlo desde `BuildingBlocks`.
-- En `CustomExceptionHandler`: mapear `DomainException` → 400 y `UnauthorizedException` → 401 (hoy cae en 500), y añadir `ForbiddenException` → 403.
+**Ajustes en BuildingBlocks hechos en la feature 02 del backlog:**
+- Crear `src/BuildingBlocks/BuildingBlocks.Domain` (por ahora solo con `DomainException`; el resto de las abstracciones DDD llega en la feature 03) y referenciarlo desde `BuildingBlocks`.
+- En `CustomExceptionHandler`: mapear `DomainException` → 400 y `UnauthorizedException` → 401, añadir `ForbiddenException` → 403 y quitar `DateTime.UtcNow` del log.
 - `LoggingBehavior`: `timeTaken.Seconds` → `timeTaken.TotalSeconds`.
+- Tests de los mapeos nuevos en `src/BuildingBlocks/tests/BuildingBlocks.UnitTests`.
 
 > **Por qué `BuildingBlocks.Domain` es un proyecto aparte:** el dominio no puede depender de `BuildingBlocks`, que arrastra ASP.NET, FluentValidation, etc. Con una librería pura, `Dispensario.Domain` sigue limpio y `CustomExceptionHandler` reconoce `DomainException` por su tipo. Cualquier microservicio futuro reutilizará las mismas abstracciones.
 

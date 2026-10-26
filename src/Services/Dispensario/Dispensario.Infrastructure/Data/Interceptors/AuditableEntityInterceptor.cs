@@ -35,7 +35,7 @@ public sealed class AuditableEntityInterceptor(TimeProvider timeProvider, ICurre
         context.ChangeTracker.DetectChanges();
 
         var now = timeProvider.GetUtcNow().UtcDateTime;
-        var userId = currentUser.UserId?.ToString();
+        var userId = currentUser.UserId?.Value.ToString();
 
         var changedOwnedEntries = context.ChangeTracker.Entries()
             .Where(entry => entry.Metadata.IsOwned()

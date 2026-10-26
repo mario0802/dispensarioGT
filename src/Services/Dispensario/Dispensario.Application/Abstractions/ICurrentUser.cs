@@ -1,12 +1,18 @@
+using Dispensario.Domain.Doctors;
+using Dispensario.Domain.Users;
+
 namespace Dispensario.Application.Abstractions;
 
 /// <summary>
-/// Usuario que hace la petición actual.
+/// Usuario que hace la petición actual; todo es <c>null</c> si la petición es anónima.
 /// </summary>
-// Versión mínima: la fila 07 cambia UserId a UserId? y añade Role y DoctorId
 public interface ICurrentUser
 {
-    Guid? UserId { get; }
+    UserId? UserId { get; }
+
+    Role? Role { get; }
+
+    DoctorId? DoctorId { get; }
 
     bool IsAuthenticated { get; }
 }

@@ -2,6 +2,7 @@ using Dispensario.Application.Abstractions;
 using Dispensario.Infrastructure.Authentication;
 using Dispensario.Infrastructure.Data;
 using Dispensario.Infrastructure.Data.Interceptors;
+using Dispensario.Infrastructure.Data.Seed;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
@@ -32,8 +33,19 @@ public static class DependencyInjection
         });
         services.AddScoped<IApplicationDbContext>(sp => sp.GetRequiredService<DispensarioDbContext>());
 
-        services.AddScoped<ICurrentUser, AnonymousCurrentUser>();
+        // Sin una clave válida la aplicación no arranca: es mejor que fallar en el primer login
+        services.AddOptions<JwtOptions>()
+            .BindConfiguration(JwtOptions.SectionName)
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+        services.AddSingleton<IJwtTokenGenerator, JwtTokenGenerator>();
+        services.AddSingleton<IPasswordHasher, BcryptPasswordHasher>();
+        services.AddHttpContextAccessor();
+        services.AddScoped<ICurrentUser, CurrentUser>();
         services.TryAddSingleton(TimeProvider.System);
+
+        services.AddOptions<AdminSeedOptions>().BindConfiguration(AdminSeedOptions.SectionName);
+        services.AddScoped<DatabaseSeeder>();
 
         return services;
     }

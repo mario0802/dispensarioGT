@@ -16,7 +16,7 @@ DependencyInjection.cs
 ```
 
 ## 2. Abstracciones
-> **Estado:** `IApplicationDbContext` existe desde la fila 04 solo con `SaveChangesAsync`; cada módulo añade su `DbSet<T>` al crear su aggregate. `ICurrentUser` existe en versión mínima (`Guid? UserId`, `bool IsAuthenticated`), implementada por `AnonymousCurrentUser`; la fila 07 cambia `UserId` a `UserId?`, añade `Role` y `DoctorId` y la implementa con los claims. Abajo, la forma final.
+> **Estado:** `IApplicationDbContext` existe desde la fila 04; cada módulo añade su `DbSet<T>` al crear su aggregate (hoy solo `Users`). `ICurrentUser`, `IPasswordHasher` e `IJwtTokenGenerator` ya están en su forma final (fila 07): `ICurrentUser` lo implementa `CurrentUser` con los claims del JWT, y todas sus propiedades son `null` en una petición anónima o sin `HttpContext`. Abajo, la forma final.
 
 ```csharp
 public interface IApplicationDbContext
@@ -40,6 +40,15 @@ public interface ICurrentUser
 public interface IPasswordHasher { string Hash(string password); bool Verify(string hash, string password); }
 public interface IJwtTokenGenerator { (string Token, DateTime ExpiresAtUtc) Generate(User user); }
 ```
+
+### Módulo Users: autenticación
+La autenticación es parte del módulo Users (los endpoints viven en `Api/Endpoints/Auth/`, con la ruta `/api/auth`):
+| Caso de uso | Ubicación | Reglas |
+|---|---|---|
+| `LoginCommand` → `LoginResult(AccessToken, TokenType, ExpiresAtUtc)` | `Users/Commands/Login/` | Es un command (aunque no escribe) para pasar por `ValidationBehavior`. Email inexistente, contraseña incorrecta o usuario inactivo → `UnauthorizedException("Invalid credentials.")`, el mismo mensaje en los tres casos. El email se normaliza con `Email.Create`, así que no distingue mayúsculas |
+| `GetCurrentUserQuery` → `CurrentUserDto` | `Users/Queries/GetCurrentUser/` | Lee el usuario de la BD por `ICurrentUser.UserId`: sin usuario autenticado → 401, inexistente → `NotFoundException`, inactivo → `UnauthorizedException("User is inactive.")` |
+
+`UsersMappingConfig` (`Users/Dtos/`) mapea `User → CurrentUserDto` (IDs a `Guid`, VOs a sus valores).
 
 ## 3. Plantilla de un command
 ```csharp

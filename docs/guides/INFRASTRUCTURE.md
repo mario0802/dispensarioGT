@@ -19,11 +19,10 @@ Data/
   Interceptors/AuditableEntityInterceptor.cs
   Interceptors/DispatchDomainEventsInterceptor.cs
   Migrations/
-  Seed/DatabaseSeeder.cs
-  Extensions/DatabaseExtensions.cs        # InitialiseDatabaseAsync (migrar + seed)
+  Seed/AdminSeedOptions.cs  Seed/DatabaseSeeder.cs
+  Extensions/DatabaseExtensions.cs        # InitialiseDatabaseAsync (EnsureCreated + seed; MigrateAsync desde la fila 17)
 Authentication/
   JwtOptions.cs  JwtTokenGenerator.cs  BcryptPasswordHasher.cs  CurrentUser.cs
-  AnonymousCurrentUser.cs                 # provisional hasta la fila 07 (usuario anónimo)
 DependencyInjection.cs
 ```
 
@@ -95,27 +94,35 @@ Reglas:
   > Cuando se pase a microservicios, este interceptor se reemplaza por un *Outbox* (tabla `OutboxMessages` + worker).
 
 ## 6. Autenticación
+Infrastructure referencia `Microsoft.AspNetCore.App` (`FrameworkReference`) para `IHttpContextAccessor`, `IHost` y el logging, y los paquetes `BCrypt.Net-Next` y `Microsoft.IdentityModel.JsonWebTokens` (misma versión que trae `JwtBearer` de forma transitiva).
+
 ```csharp
 public sealed class JwtOptions
 {
     public const string SectionName = "Jwt";
-    public required string Issuer { get; init; }
-    public required string Audience { get; init; }
-    public required string Key { get; init; }          // mínimo 32 caracteres, en user-secrets
-    public int ExpirationMinutes { get; init; } = 60;
+    [Required] public required string Issuer { get; init; }
+    [Required] public required string Audience { get; init; }
+    [Required, MinLength(32)] public required string Key { get; init; }   // en user-secrets
+    [Range(1, 1440)] public int ExpirationMinutes { get; init; } = 60;
 }
 ```
-- `JwtTokenGenerator`: HS256 con los claims `sub`, `email`, `name`, `role` y `doctor_id` (opcional). Usa `JsonWebTokenHandler` (`Microsoft.IdentityModel.JsonWebTokens`).
-- `BcryptPasswordHasher`: implementa `IPasswordHasher` con bcrypt (paquete `BCrypt.Net-Next`), fila 07. No se usa ASP.NET Identity. La columna `Users.PasswordHash` admite hasta 100 caracteres (un hash bcrypt ocupa 60).
-- `CurrentUser`: lee los claims de `IHttpContextAccessor`.
-- La validación del token (`AddJwtBearer`) se configura en la Api con las mismas `JwtOptions`.
+- `JwtOptions` se valida con `ValidateDataAnnotations().ValidateOnStart()`: sin `Jwt:Key`, o con menos de 32 caracteres, la aplicación **no arranca**.
+- `JwtTokenGenerator`: HS256 con `JsonWebTokenHandler` (`Microsoft.IdentityModel.JsonWebTokens`). Claims `sub` (UserId), `email`, `name` (`FullName`), `role`, `jti` (Guid nuevo por token) y `doctor_id` (solo si el usuario tiene doctor). `iat`, `nbf` y `exp` salen de `TimeProvider`. Los nombres de `role` y `doctor_id` están en las constantes `CurrentUser.RoleClaimType` y `CurrentUser.DoctorIdClaimType`.
+- `BcryptPasswordHasher`: implementa `IPasswordHasher` con bcrypt (`BCrypt.Net-Next`) y factor de trabajo **12** fijo (unos 250 ms por hash). No se usa ASP.NET Identity. La columna `Users.PasswordHash` admite hasta 100 caracteres (un hash bcrypt ocupa 60).
+- `CurrentUser`: lee los claims de `IHttpContextAccessor`. Un claim ausente o inválido da `null`. Sin `HttpContext` (seed, procesos en segundo plano) o con un usuario no autenticado, todo es `null` e `IsAuthenticated = false`, así que esos guardados quedan con `CreatedBy = null`.
+- La validación del token (`AddJwtBearer`) se configura en la Api con las mismas `JwtOptions` (ver `API.md` §4).
 
 ## 7. Seed e inicialización
-- `DatabaseSeeder` crea el usuario Admin si no existe un usuario con ese email, leyendo `Seed:Admin:Email`, `Seed:Admin:Password` y `Seed:Admin:FirstName/LastName`.
-- `app.InitialiseDatabaseAsync()` (en Development y en tests de integración) ejecuta `Database.MigrateAsync()` y luego el seed.
+- `AdminSeedOptions` (sección `Seed:Admin`): `Email`, `Password`, `FirstName`, `LastName`, `DocumentType` y `DocumentNumber`. No usa `ValidateOnStart`.
+- `DatabaseSeeder.SeedAsync` crea el usuario Admin (`Role.Admin`, sin teléfono) si no existe un usuario con ese email:
+  - Si `Seed:Admin:Password` está vacío, registra el warning `Admin seed skipped: 'Seed:Admin:Password' is empty.` y no crea nada.
+  - Los VOs validan la configuración: un email o un documento inválidos lanzan `DomainException` al arrancar.
+  - Si otro usuario ya tiene el mismo documento con otro email, el guardado falla por el índice único: se cambia `Seed:Admin:DocumentNumber`.
+- `app.InitialiseDatabaseAsync()` (solo en Development, y por tanto también en los tests de integración) ejecuta `Database.EnsureCreatedAsync()` y luego el seed.
+  > Hasta la fila 17 no hay migraciones: `EnsureCreated` no actualiza una base ya creada. Si el modelo cambia, hay que borrar `dispensario.db` en local. La fila 17 sustituye `EnsureCreatedAsync` por `MigrateAsync` (y habrá que borrar la base una vez).
 
 ## 8. Registro en DI
-> **Estado:** hoy `AddInfrastructure` registra la persistencia (interceptores, `DispensarioDbContext`, `IApplicationDbContext`), `AnonymousCurrentUser` como `ICurrentUser` y `TimeProvider.System` (con `TryAddSingleton`). Falla al registrarse si no existe `ConnectionStrings:Database`. La fila 07 añade JWT, hasher, `HttpContextAccessor` y `CurrentUser`, y la fila 17 el seed. `IPublisher` lo registra MediatR en `AddApplication`.
+> **Estado:** registro real desde la fila 07. Falla al registrarse si no existe `ConnectionStrings:Database`. `IPublisher` lo registra MediatR en `AddApplication`, y el logging que necesita `DatabaseSeeder`, el host.
 
 ```csharp
 public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
@@ -139,6 +146,8 @@ public static IServiceCollection AddInfrastructure(this IServiceCollection servi
     services.AddHttpContextAccessor();
     services.AddScoped<ICurrentUser, CurrentUser>();
     services.TryAddSingleton(TimeProvider.System);
+
+    services.AddOptions<AdminSeedOptions>().BindConfiguration(AdminSeedOptions.SectionName);
     services.AddScoped<DatabaseSeeder>();
     return services;
 }

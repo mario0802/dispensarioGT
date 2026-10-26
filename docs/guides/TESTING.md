@@ -45,8 +45,12 @@ public sealed class SqliteTestDb : IDisposable
 ## Integración
 - `DispensarioApiFactory : WebApplicationFactory<Program>` (en `tests/Dispensario.Api.IntegrationTests/Common/`) corre en Development y reemplaza la configuración del `DbContext` por SQLite en memoria con una conexión compartida, abierta mientras vive la factory. En EF Core 10 hay que quitar `DbContextOptions<DispensarioDbContext>` **y** `IDbContextOptionsConfiguration<DispensarioDbContext>` antes de volver a llamar a `AddDbContext`, y añadir de nuevo los interceptores. Fija `ConnectionStrings:Database` y `MediatR:LicenseKey` con `UseSetting`.
 - Cada clase de tests la usa con `IClassFixture<DispensarioApiFactory>`.
-- Pendiente: la fila 07 añade `Jwt:Key` y `Seed:Admin:*` y el helper `AuthenticateAsAsync`; la fila 17, la llamada a `InitialiseDatabaseAsync`.
-- Helper `AuthenticateAsAsync(Role)` para obtener un `HttpClient` con token.
+- Fija también los secretos con `UseSetting`: `Jwt:Issuer`, `Jwt:Audience`, `Jwt:Key` (clave de test de 32+ caracteres) y `Seed:Admin:Email`/`Seed:Admin:Password`. Las constantes `JwtIssuer`, `JwtAudience`, `JwtKey`, `AdminEmail` y `AdminPassword` de la factory sirven para los tests.
+- Como corre en Development, `InitialiseDatabaseAsync` crea el esquema (`EnsureCreated`) y siembra el Admin sobre la conexión en memoria: no hace falta preparar la base en cada test.
+- Helper `AuthenticateAsAsync(Role)`: inserta un usuario activo del rol pedido (email y documento únicos por llamada, hash con el `IPasswordHasher` real), hace `POST /api/auth/login` y devuelve un `HttpClient` con `Authorization: Bearer <token>`. Cada llamada cuesta un hash bcrypt (~250 ms).
+- Los tests de handlers usan `IPasswordHasher` e `IJwtTokenGenerator` de NSubstitute; solo los tests del hasher, del seed y de integración pagan el coste de bcrypt.
+- Las queries que mapean con Mapster registran su `IRegister` en el test (`TypeAdapterConfig.GlobalSettings.Apply(new UsersMappingConfig())`), porque `AddApplication` no se ejecuta en los tests unitarios.
+- Los datos de prueba de usuarios salen de `Common/TestUsers.cs` en `Application.UnitTests`.
 - Cada spec de módulo añade sus casos: un *happy path* y los errores 400/401/403/404/409 que correspondan.
 
 ## Definición de "hecho" para un spec

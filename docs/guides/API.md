@@ -5,15 +5,20 @@ La Api es delgada: traduce HTTP ↔ command/query, aplica la autorización y nad
 
 ## 1. Estructura
 ```
+Authorization/
+  Policies.cs                  # nombres de las políticas por rol
 Endpoints/
-  Auth/  Users/  Doctors/  Patients/  Appointments/  Consultations/
+  Auth/                        # LoginEndpoint (POST /api/auth/login), GetCurrentUserEndpoint (GET /api/auth/me)
+  Users/  Doctors/  Patients/  Appointments/  Consultations/
 Extensions/
-  ApiServiceExtensions.cs      # AddApiServices: Carter, OpenAPI, ProblemDetails, exception handler, health (auth y policies en la fila 07)
+  ApiServiceExtensions.cs      # AddApiServices: Carter, OpenAPI, JSON, ProblemDetails, exception handler, JWT, políticas, health
   OpenApi/BearerSecuritySchemeTransformer.cs
 Program.cs
 appsettings.json  appsettings.Development.json
 ```
-Paquetes de la Api: `Carter`, `Microsoft.AspNetCore.OpenApi`, `Scalar.AspNetCore` y `Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore`.
+Paquetes de la Api: `Carter`, `Microsoft.AspNetCore.OpenApi`, `Scalar.AspNetCore`, `Microsoft.AspNetCore.Authentication.JwtBearer` y `Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore`.
+
+**JSON:** `AddApiServices` registra `JsonStringEnumConverter` con `ConfigureHttpJsonOptions`, así que los enums viajan como texto en las peticiones y las respuestas (`"role": "Admin"`), igual que se guardan en SQLite.
 
 ## 2. Plantilla de endpoint
 ```csharp
@@ -68,7 +73,14 @@ services.AddAuthorizationBuilder()
     .AddPolicy(Policies.Reception, p => p.RequireRole(nameof(Role.Admin), nameof(Role.Receptionist)))
     .AddPolicy(Policies.Clinical,  p => p.RequireRole(nameof(Role.Doctor)));
 ```
-Autenticación: `AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(...)`, que valida el issuer, la audience, la clave y el tiempo de vida con `JwtOptions`. Se usa `MapInboundClaims = false` para conservar `sub` y `role`, con `RoleClaimType = "role"`.
+- `Policies` vive en `Dispensario.Api/Authorization/Policies.cs`. Las lecturas generales solo exigen `RequireAuthorization()`; los endpoints anónimos (login) llevan `AllowAnonymous()`.
+
+Autenticación: `AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer()`. `JwtBearerOptions` se configura desde `IOptions<JwtOptions>` (`AddOptions<JwtBearerOptions>(scheme).Configure<IOptions<JwtOptions>>`), así que el emisor y la validación usan siempre la misma clave, también cuando los tests la sobrescriben:
+- Valida issuer, audience, clave de firma y tiempo de vida, con `ClockSkew = TimeSpan.Zero` (el token caduca exactamente en `expiresAtUtc`).
+- `MapInboundClaims = false` para conservar `sub` y `role`, con `NameClaimType = "name"` y `RoleClaimType = "role"`.
+- Sin token o con un token inválido, el middleware responde 401 y `UseStatusCodePages` lo convierte en `application/problem+json`.
+
+Un token sigue siendo válido hasta que caduca aunque el usuario se desactive: solo `/api/auth/me` comprueba `IsActive`.
 
 ## 5. Program.cs
 ```csharp
@@ -83,13 +95,14 @@ var app = builder.Build();
 
 app.UseExceptionHandler();
 app.UseStatusCodePages();              // 404/405 sin cuerpo → ProblemDetails
-// app.UseAuthentication(); app.UseAuthorization();   ← fila 07
+app.UseAuthentication();
+app.UseAuthorization();
 
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();                  // /openapi/v1.json
     app.MapScalarApiReference();       // /scalar
-    // await app.InitialiseDatabaseAsync();   ← fila 17
+    await app.InitialiseDatabaseAsync();   // EnsureCreated + seed del Admin; MigrateAsync desde la fila 17
 }
 
 app.MapCarter();
@@ -112,14 +125,16 @@ public partial class Program;          // necesario para WebApplicationFactory e
 | `ConflictException` | 409 |
 | otra | 500 |
 
-Los errores sin excepción (ruta inexistente → 404, método no permitido → 405) también salen como `application/problem+json` gracias a `AddProblemDetails()` + `UseStatusCodePages()`.
+Todas las respuestas de error salen como `application/problem+json`:
+- Con excepción: `CustomExceptionHandler` escribe el ProblemDetails con `contentType: "application/problem+json"` (desde la fila 07; antes salía `application/json`).
+- Sin excepción (ruta inexistente → 404, método no permitido → 405, sin token → 401): `AddProblemDetails()` + `UseStatusCodePages()`.
 
 ## 7. OpenAPI + Scalar
 - `builder.Services.AddOpenApi(o => o.AddDocumentTransformer<BearerSecuritySchemeTransformer>())` declara el esquema `Bearer` (`http`, `bearer`, `JWT`) y un requisito de seguridad global, para poder probar con token desde Scalar.
 - .NET 10 usa **Microsoft.OpenApi 2.x** (hoy 2.12.2): los tipos están en el namespace plano `Microsoft.OpenApi` (`OpenApiSecurityScheme`, `OpenApiSecuritySchemeReference(name, document)`, `IOpenApiSecurityScheme`), no en `Microsoft.OpenApi.Models` como en .NET 8/9.
 
 ## 8. Configuración (`appsettings.json`)
-Hoy `appsettings.json` solo tiene `ConnectionStrings:Database` y `MediatR:LicenseKey` (vacío). Cada spec añade su sección cuando la lee: `Jwt` (fila 07), `Clinic` (fila 14) y `Seed` (fila 17). Forma final:
+Hoy `appsettings.json` tiene `ConnectionStrings`, `Jwt`, `MediatR` y `Seed` (los secretos vacíos). Cada spec añade su sección cuando la lee: falta `Clinic` (fila 14). Forma final:
 
 ```json
 {
@@ -127,8 +142,21 @@ Hoy `appsettings.json` solo tiene `ConnectionStrings:Database` y `MediatR:Licens
   "Jwt": { "Issuer": "Dispensario", "Audience": "Dispensario.Clients", "Key": "", "ExpirationMinutes": 60 },
   "MediatR": { "LicenseKey": "" },
   "Clinic": { "TimeZone": "America/Guayaquil" },
-  "Seed": { "Admin": { "Email": "admin@dispensario.local", "Password": "", "FirstName": "System", "LastName": "Admin" } }
+  "Seed": {
+    "Admin": {
+      "Email": "admin@dispensario.local", "Password": "",
+      "FirstName": "System", "LastName": "Admin",
+      "DocumentType": "NationalId", "DocumentNumber": "0000000000"
+    }
+  }
 }
 ```
-Los valores vacíos se cargan desde user-secrets (el proyecto Api tiene `UserSecretsId`) o variables de entorno.
+Los valores vacíos se cargan desde user-secrets (el proyecto Api tiene `UserSecretsId`) o variables de entorno:
+- `Jwt:Key` es obligatoria (mínimo 32 caracteres): sin ella la aplicación no arranca.
+- `Seed:Admin:Password` es opcional: si está vacía, el seed avisa en el log y no crea el Admin.
+
+```bash
+dotnet user-secrets set "Jwt:Key" "<min-32-chars>" --project src/Services/Dispensario/Dispensario.Api
+dotnet user-secrets set "Seed:Admin:Password" "<password>" --project src/Services/Dispensario/Dispensario.Api
+```
 `Data Source=dispensario.db` es relativo al directorio de trabajo: con `dotnet run --project` el archivo se crea en la carpeta del proyecto Api. `*.db` está en `.gitignore`.

@@ -13,7 +13,9 @@ Data/
     Patients/PatientConfiguration.cs
     Appointments/AppointmentConfiguration.cs
     Consultations/ConsultationConfiguration.cs
-  Converters/StronglyTypedIdConverters.cs
+  Converters/StronglyTypedIdConverter.cs   # genérico para todo IStronglyTypedId
+  Converters/UtcDateTimeConverter.cs       # UtcDateTimeConverter y NullableUtcDateTimeConverter
+  Extensions/ModelConfigurationBuilderExtensions.cs   # convenciones de IDs tipados y DateTime UTC
   Interceptors/AuditableEntityInterceptor.cs
   Interceptors/DispatchDomainEventsInterceptor.cs
   Migrations/
@@ -21,6 +23,7 @@ Data/
   Extensions/DatabaseExtensions.cs        # InitialiseDatabaseAsync (migrar + seed)
 Authentication/
   JwtOptions.cs  JwtTokenGenerator.cs  PasswordHasher.cs  CurrentUser.cs
+  AnonymousCurrentUser.cs                 # provisional hasta la fila 07 (usuario anónimo)
 DependencyInjection.cs
 ```
 
@@ -38,20 +41,24 @@ public sealed class DispensarioDbContext(DbContextOptions<DispensarioDbContext> 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
         => modelBuilder.ApplyConfigurationsFromAssembly(typeof(DispensarioDbContext).Assembly);
 
-    protected override void ConfigureConventions(ModelConfigurationBuilder builder)
+    protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
     {
-        // Conversión global de IDs tipados a Guid
-        builder.Properties<PatientId>().HaveConversion<PatientIdConverter>();
-        // ... uno por cada ID
+        // Ensamblado de Dispensario.Domain, localizado con un tipo ancla de ese proyecto
+        configurationBuilder.ApplyStronglyTypedIdConventions(typeof(Email).Assembly);
+        configurationBuilder.ApplyUtcDateTimeConventions();
     }
 }
 ```
+- Cada módulo añade su `DbSet<T>` aquí y en `IApplicationDbContext` cuando crea su aggregate.
+- **IDs tipados por convención:** `ApplyStronglyTypedIdConventions` busca en el ensamblado todos los `struct` que implementan `IStronglyTypedId` (con constructor público `(Guid)`) y les aplica `StronglyTypedIdConverter<TId>`, que los guarda como Guid (`TEXT` en SQLite). Sirve también para los IDs nullable. Un ID nuevo no requiere tocar el `DbContext`.
+- **`DateTime` en UTC:** `ApplyUtcDateTimeConventions` marca con `DateTimeKind.Utc` todo `DateTime` y `DateTime?` leído de la base de datos (SQLite los devuelve `Unspecified`). Una conversión explícita en una configuración tiene prioridad sobre esta convención.
 
 ## 3. Configuraciones EF por módulo
 Reglas:
 - Una clase `IEntityTypeConfiguration<T>` por aggregate, en la carpeta de su módulo.
 - **Tabla explícita** (`ToTable("Patients")`).
 - Los value objects se mapean con `ComplexProperty` (EF 10) u `OwnsOne`, con columnas prefijadas (`Document_Type`, `Document_Number`).
+- Las propiedades de los VOs son de solo lectura y EF **no las mapea por convención**: se declaran una a una dentro del `ComplexProperty` (`name.Property(n => n.FirstName).HasMaxLength(FullName.MaxLength)`). EF las materializa con el constructor privado del VO. Un VO opcional (`Address?`) se mapea igual y se relee `null` si se guardó `null`.
 - Los enums se guardan como `string` (`HasConversion<string>()`), que es legible en SQLite.
 - Longitudes máximas iguales a las del validador.
 - **Sin navegaciones entre módulos.** Si se quiere FK física, se declara sin navegación: `builder.HasOne<Patient>().WithMany().HasForeignKey(a => a.PatientId).OnDelete(DeleteBehavior.Restrict);`.
@@ -78,8 +85,9 @@ Reglas:
 | Cadena de conexión | `Data Source=dispensario.db` (en `appsettings.json`). El `.db` está en `.gitignore` |
 
 ## 5. Interceptores
-- **AuditableEntityInterceptor** (`SavingChanges`): para cada `IAuditable` en `Added` completa `CreatedAtUtc`/`CreatedBy`, y en `Modified`, `LastModifiedAtUtc`/`LastModifiedBy`. Usa `TimeProvider` e `ICurrentUser`.
-- **DispatchDomainEventsInterceptor** (`SavedChanges`): recoge los eventos de los aggregates rastreados, limpia sus listas y los publica con `IPublisher.Publish`. Se despachan **después** del commit. Si un handler de eventos modifica datos, llama a su propio `SaveChangesAsync`.
+- **AuditableEntityInterceptor** (`SavingChanges` y `SavingChangesAsync`): para cada `IAuditable` en `Added` completa `CreatedAtUtc`/`CreatedBy`, y en `Modified`, `LastModifiedAtUtc`/`LastModifiedBy`. Un aggregate `Unchanged` cuyas entidades propias (`OwnsOne`/`OwnsMany`) se añadieron, modificaron o borraron también cuenta como modificado. Usa `TimeProvider` e `ICurrentUser` (`CreatedBy` = `UserId` como texto, `null` si es anónimo).
+- **DispatchDomainEventsInterceptor** (`SavedChangesAsync`): recoge los eventos de los aggregates rastreados (`IHasDomainEvents`), limpia sus listas **antes** de publicar y los publica en orden con `IPublisher.Publish`. Se despachan **después** del commit; si el guardado falla, no se publica nada y los eventos siguen en el aggregate. Si un handler de eventos modifica datos, llama a su propio `SaveChangesAsync`.
+- Los eventos solo se despachan con `SaveChangesAsync`: un `SaveChanges` síncrono con eventos pendientes lanza `InvalidOperationException` **antes** de guardar.
   > Cuando se pase a microservicios, este interceptor se reemplaza por un *Outbox* (tabla `OutboxMessages` + worker).
 
 ## 6. Autenticación
@@ -103,16 +111,21 @@ public sealed class JwtOptions
 - `app.InitialiseDatabaseAsync()` (en Development y en tests de integración) ejecuta `Database.MigrateAsync()` y luego el seed.
 
 ## 8. Registro en DI
+> **Estado:** hoy `AddInfrastructure` registra la persistencia (interceptores, `DispensarioDbContext`, `IApplicationDbContext`), `AnonymousCurrentUser` como `ICurrentUser` y `TimeProvider.System` (con `TryAddSingleton`). Falla al registrarse si no existe `ConnectionStrings:Database`. La fila 07 añade JWT, hasher, `HttpContextAccessor` y `CurrentUser`, y la fila 17 el seed. `IPublisher` lo registra MediatR en `AddApplication`.
+
 ```csharp
 public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
 {
+    var connectionString = configuration.GetConnectionString("Database")
+        ?? throw new InvalidOperationException("Connection string 'Database' not found.");
+
     services.AddScoped<ISaveChangesInterceptor, AuditableEntityInterceptor>();
     services.AddScoped<ISaveChangesInterceptor, DispatchDomainEventsInterceptor>();
 
     services.AddDbContext<DispensarioDbContext>((sp, options) =>
     {
         options.AddInterceptors(sp.GetServices<ISaveChangesInterceptor>());
-        options.UseSqlite(configuration.GetConnectionString("Database"));
+        options.UseSqlite(connectionString);
     });
     services.AddScoped<IApplicationDbContext>(sp => sp.GetRequiredService<DispensarioDbContext>());
 
@@ -121,7 +134,7 @@ public static IServiceCollection AddInfrastructure(this IServiceCollection servi
     services.AddSingleton<IPasswordHasher, PasswordHasher>();
     services.AddHttpContextAccessor();
     services.AddScoped<ICurrentUser, CurrentUser>();
-    services.AddSingleton(TimeProvider.System);
+    services.TryAddSingleton(TimeProvider.System);
     services.AddScoped<DatabaseSeeder>();
     return services;
 }

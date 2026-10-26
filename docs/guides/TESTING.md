@@ -17,6 +17,12 @@ Proyectos en `tests/` en la raíz del repositorio, sin subcarpetas: **xUnit v3**
 - **No usar** `EF Core InMemory`: no respeta las restricciones ni el SQL real. Se usa SQLite `Data Source=:memory:` con la conexión abierta durante todo el test.
 - `TimeProvider` se reemplaza por `FakeTimeProvider` (`Microsoft.Extensions.TimeProvider.Testing`) para fijar la fecha.
 
+## Tests de persistencia (Application.UnitTests/Persistence)
+Las convenciones e interceptores de Infrastructure se prueban sin aggregates reales, con tipos de prueba en `Persistence/Fakes/`:
+- `TestAggregate` (ID tipado, ID nullable, VOs `FullName` y `Address?` como `ComplexProperty`, fecha UTC, entidades propias con `OwnsMany`) y `TestDomainEvent`.
+- `TestDbContext`, que aplica las mismas convenciones que `DispensarioDbContext` (`ApplyStronglyTypedIdConventions`, `ApplyUtcDateTimeConventions`).
+- `TestDb`: SQLite `:memory:` con los interceptores reales, `FakeTimeProvider` e `ICurrentUser`/`IPublisher` de NSubstitute. `CreateContext()` da un contexto nuevo en cada llamada, para releer sin pasar por el *change tracker*.
+
 ## SQLite en memoria (Application.UnitTests)
 ```csharp
 public sealed class SqliteTestDb : IDisposable

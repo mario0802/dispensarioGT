@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Backend en .NET 10 para gestionar un dispensario médico: doctores, pacientes, citas y consultas.
 El desarrollo sigue **SDD (Spec-Driven Development)** con las skills `/spec` y `/spec-impl` (en `.claude/skills/`, sincronizadas con `.agents/skills/` mediante `skills-lock.json`). Los specs viven en `specs/NN-slug.md`.
 
-> **Estado actual:** existen `Dispensario.slnx`, `global.json`, los props centrales, `BuildingBlocks` y `BuildingBlocks.Domain` (abstracciones DDD completas), los cuatro proyectos `Dispensario.*` (`Domain` solo con los VOs de `Common/`; `Api` con un `Program.cs` mínimo) y los proyectos de tests en `tests/` (features 01 a 03). Funcionan `dotnet build`, `dotnet test` y `dotnet run`; las migraciones llegan con la persistencia (feature 04 del backlog, `docs/PLAN.md`).
+> **Estado actual:** existen `Dispensario.slnx`, `global.json`, los props centrales, `BuildingBlocks` y `BuildingBlocks.Domain` (abstracciones DDD completas), los cuatro proyectos `Dispensario.*` (`Domain` solo con los VOs de `Common/`; `Api` con un `Program.cs` mínimo), la persistencia base en `Infrastructure` (`DispensarioDbContext` sin `DbSet`, interceptores, convenciones y `AddInfrastructure`, aún sin llamar desde `Program.cs`) y los proyectos de tests en `tests/` (features 01 a 04). Funcionan `dotnet build`, `dotnet test` y `dotnet run`; las migraciones llegan con la feature 17 del backlog (`docs/PLAN.md`).
 
 ## Reglas de trabajo (obligatorias)
 1. **No escribir código sin un spec `Approved`.** Los specs se crean con `/spec` (que no escribe código) y se implementan con `/spec-impl`. Nada de andamiaje, refactors ni features "de paso".
@@ -60,6 +60,10 @@ Dentro de cada capa el código se agrupa **por módulo**: `Users/`, `Doctors/`, 
 - MediatR 14 es de licencia comercial: sin `MediatR:LicenseKey` registra un aviso de licencia.
 - SQLite no admite esquemas (los módulos se separan por nombre de tabla y carpeta de configuración) y no ordena ni compara bien `DateTimeOffset`: se usa `DateTime` UTC con el sufijo `Utc`.
 - Los tests usan SQLite `:memory:`, nunca el proveedor EF InMemory.
+- Los IDs tipados implementan `IStronglyTypedId` (con constructor `(Guid)`) y se convierten a Guid por convención: no se registran converters a mano. Todo `DateTime` leído de SQLite sale con `Kind = Utc`.
+- Las propiedades de solo lectura de los VOs no se mapean por convención: cada `ComplexProperty` las declara una a una.
+- Los domain events solo se despachan con `SaveChangesAsync`; `SaveChanges` síncrono con eventos pendientes lanza `InvalidOperationException`.
+- `ICurrentUser` es mínimo (`Guid? UserId`, `IsAuthenticated`) y lo implementa `AnonymousCurrentUser` hasta la feature 07.
 
 Detalle completo en:
 - `docs/ARCHITECTURE.md`: especificación de la arquitectura

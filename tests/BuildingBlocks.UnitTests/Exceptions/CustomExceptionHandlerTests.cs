@@ -23,6 +23,25 @@ public sealed class CustomExceptionHandlerTests
     }
 
     [Fact]
+    public async Task TryHandleAsync_WithBadHttpRequestException_ReturnsItsStatusCode()
+    {
+        var (statusCode, problemDetails) = await HandleAsync(new BadHttpRequestException("Failed to read the request body."));
+
+        statusCode.ShouldBe(StatusCodes.Status400BadRequest);
+        problemDetails.Status.ShouldBe(StatusCodes.Status400BadRequest);
+        problemDetails.Title.ShouldBe(nameof(BadHttpRequestException));
+    }
+
+    [Fact]
+    public async Task TryHandleAsync_WithPayloadTooLargeBadHttpRequestException_Returns413()
+    {
+        var (statusCode, _) = await HandleAsync(
+            new BadHttpRequestException("Request body too large.", StatusCodes.Status413PayloadTooLarge));
+
+        statusCode.ShouldBe(StatusCodes.Status413PayloadTooLarge);
+    }
+
+    [Fact]
     public async Task TryHandleAsync_WithUnauthorizedException_Returns401()
     {
         var (statusCode, problemDetails) = await HandleAsync(new UnauthorizedException("Invalid credentials"));

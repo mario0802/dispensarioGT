@@ -79,8 +79,11 @@ Usan los métodos de `Doctor` (`Create`, `Update`, `Deactivate`, `Activate`). Es
 | `DeactivateDoctorCommand` / `ActivateDoctorCommand` | `Doctors/Commands/DeactivateDoctor/`, `ActivateDoctor/` | Ya en ese estado → `DomainException`. No tocan al usuario vinculado |
 | `GetDoctorsQuery` → `PaginatedResult<DoctorDto>` | `Doctors/Queries/GetDoctors/` | Paginación validada como en `GetUsers`. `Search` con `EF.Functions.Like` en nombre, apellido, matrícula y especialidad; `Specialty` igualdad sin distinguir mayúsculas (LIKE sin comodines); filtro `IsActive`; orden por apellido, nombre e ID |
 | `GetDoctorByIdQuery` → `DoctorDto` | `Doctors/Queries/GetDoctorById/` | Inexistente → `NotFoundException` |
+| `SetDoctorScheduleCommand(DoctorId, Blocks)` | `Doctors/Commands/SetDoctorSchedule/` | Recibe `ICurrentUser`. Un `Doctor` sobre otra ficha (o sin `DoctorId`) → `ForbiddenException`, **antes** de leer la BD (no revela qué IDs existen). Inexistente → `NotFoundException`. Parsea las horas `"HH:mm"` y llama a `SetWeeklySchedule`: múltiplo de 5, inicio < fin, duración mínima, solapes y doctor inactivo → `DomainException`. Reemplaza el horario entero |
+| `GetDoctorScheduleQuery` → `DoctorScheduleDto(DoctorId, Blocks)` | `Doctors/Queries/GetDoctorSchedule/` | Inexistente → `NotFoundException`. Bloques de lunes a domingo y por hora de inicio (orden en memoria), horas `"HH:mm"`; también para doctores inactivos |
 
-- Validadores: matrícula máx. 30, especialidad máx. 100, email obligatorio, duración (si viene) entre 10 y 120 y múltiplo de 5.
+- Validadores: matrícula máx. 30, especialidad máx. 100, email obligatorio, duración (si viene) entre 10 y 120 y múltiplo de 5. `SetDoctorScheduleCommandValidator` solo comprueba la forma: `Blocks` no null (vacía vale), `DayOfWeek` del enum y horas `^([01][0-9]|2[0-3]):[0-5][0-9]$`; las reglas del horario son del dominio.
+- `UpdateDoctorCommand` falla con `DomainException` si la nueva duración es mayor que algún bloque del horario (regla de `Doctor.Update`).
 - `DoctorDto` incluye `UserId` (usuario vinculado o `null`). Lo calcula `DoctorProjections.ToDto(doctors, users)` con una subconsulta sobre `Users` (lectura entre módulos); Mapster no la expresa, por eso no hay `DoctorsMappingConfig`.
 - `LikePatterns` (`Common/`): `Contains` y `Equal` escapan `%`, `_` y `\` para `EF.Functions.Like` con `LikePatterns.Escape`. Lo usan `GetUsers` y `GetDoctors`.
 
@@ -168,7 +171,7 @@ public sealed class GetPatientsHandler(IApplicationDbContext db)
 1. El paciente existe y está activo; si no → `NotFoundException` o `BadRequestException`.
 2. El doctor existe y está activo.
 3. `EndUtc = StartUtc + doctor.AppointmentDurationMinutes`.
-4. Al convertir a la hora local del dispensario (`Clinic:TimeZone`), el rango cae dentro de un bloque del `WeeklySchedule` y está alineado a la duración del slot; si no → `BadRequestException`.
+4. Al convertir a la hora local del dispensario (`Clinic:TimeZone`), `doctor.IsAvailableAt(localStart, localEnd)` es `true` (el rango cabe en un `ScheduleBlock`) y el inicio está alineado a la duración del slot; si no → `BadRequestException`.
 5. No hay cruce con citas del doctor ni del paciente en estado `Scheduled` o `Confirmed`; si lo hay → `ConflictException`.
 6. No se agenda en el pasado.
 

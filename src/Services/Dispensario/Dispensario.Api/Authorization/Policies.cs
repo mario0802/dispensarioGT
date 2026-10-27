@@ -13,4 +13,7 @@ public static class Policies
 
     // Doctor
     public const string Clinical = nameof(Clinical);
+
+    // Admin y Doctor; si el recurso es de un doctor concreto, el handler comprueba que sea el suyo
+    public const string AdminOrDoctor = nameof(AdminOrDoctor);
 }

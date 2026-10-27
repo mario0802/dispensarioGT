@@ -1,3 +1,4 @@
+using BuildingBlocks.Domain;
 using BuildingBlocks.Exceptions;
 using Dispensario.Application.Doctors.Commands.UpdateDoctor;
 using Dispensario.Application.UnitTests.Common;
@@ -76,6 +77,20 @@ public sealed class UpdateDoctorHandlerTests : IDisposable
         await HandleAsync(CommandFor(doctor.Id, doctor.LicenseNumber, specialty: "Dermatología"));
 
         (await LoadAsync(doctor.Id)).Specialty.ShouldBe("Dermatología");
+    }
+
+    [Fact]
+    public async Task Handle_WithDurationLongerThanScheduleBlock_ThrowsDomainException()
+    {
+        var doctor = TestDoctors.Create(appointmentDurationMinutes: 30);
+        doctor.SetWeeklySchedule([ScheduleBlock.Create(DayOfWeek.Monday, new TimeOnly(9, 0), new TimeOnly(9, 30))]);
+        await AddAsync(doctor);
+
+        var act = () => HandleAsync(CommandFor(doctor.Id, doctor.LicenseNumber, duration: 45));
+
+        (await act.ShouldThrowAsync<DomainException>()).Message
+            .ShouldBe("Appointment duration cannot be longer than a schedule block.");
+        (await LoadAsync(doctor.Id)).AppointmentDurationMinutes.ShouldBe(30);
     }
 
     public void Dispose() => _db.Dispose();

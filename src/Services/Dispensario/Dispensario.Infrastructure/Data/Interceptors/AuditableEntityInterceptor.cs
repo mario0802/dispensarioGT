@@ -59,7 +59,7 @@ public sealed class AuditableEntityInterceptor(TimeProvider timeProvider, ICurre
         }
     }
 
-    // Una entidad propia apunta a su dueño con la FK de la ownership (p. ej. WeeklySchedule → Doctor)
+    // Una entidad propia apunta a su dueño con la FK de la ownership (p. ej. ScheduleBlock → Doctor)
     private static bool IsOwnedBy(EntityEntry owned, EntityEntry owner)
     {
         var ownership = owned.Metadata.FindOwnership();

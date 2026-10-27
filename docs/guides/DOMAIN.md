@@ -108,16 +108,19 @@ Eventos: `UserCreatedDomainEvent(UserId, Email, Role)`.
 | `Email` | `Email` | obligatorio; no único (independiente del email de login) |
 | `Phone` | `PhoneNumber?` | opcional |
 | `AppointmentDurationMinutes` | `int` | entre 10 y 120, múltiplo de 5; el alta usa 30 (`Doctor.DefaultAppointmentDurationMinutes`) si no se indica |
-| `Schedules` | `IReadOnlyCollection<WeeklySchedule>` | entidad hija, propiedad del aggregate (llega con la fila 10) |
+| `Schedule` | `IReadOnlyCollection<ScheduleBlock>` | horario semanal: VOs propiedad del aggregate (fila 10), en hora local del dispensario |
 | `IsActive` | `bool` | `true` al crear |
 
 Métodos (fila 09): `Create(fullName, licenseNumber, specialty, email, phone, appointmentDurationMinutes)`, `Update(...)` (mismos parámetros; reemplaza todo, `phone` null borra el teléfono y también vale sobre un doctor inactivo), `Deactivate()`, `Activate()`.
 Reglas (fila 09): matrícula y especialidad no vacías tras el `Trim` y dentro de su máximo; duración en rango y múltiplo de 5; `Deactivate` sobre un inactivo y `Activate` sobre un activo lanzan `DomainException`. El valor por defecto de 30 lo aplica el handler de alta, no el dominio.
+Regla (fila 10): `Update` rechaza una duración mayor que algún bloque del horario (`Appointment duration cannot be longer than a schedule block.`), antes de cambiar ningún campo.
 Eventos: ninguno en v1.
 
-`WeeklySchedule` (fila 10): `DayOfWeek`, `TimeOnly StartTime`, `TimeOnly EndTime` (con `Start < End`).
-Invariantes (fila 10): los bloques del mismo día no se solapan, y cada bloque dura al menos `AppointmentDurationMinutes`.
-Métodos (fila 10): `SetWeeklySchedule(IEnumerable<...>)` (reemplaza todo el horario), `IsAvailableAt(DateTime localStart, DateTime localEnd)`.
+`ScheduleBlock` (fila 10): `sealed record : ValueObject` con `DayOfWeek`, `TimeOnly StartTime`, `TimeOnly EndTime` y `DurationMinutes` calculado; `Create(dayOfWeek, startTime, endTime)`, `Overlaps(other)` y `Contains(start, end)`.
+Reglas de `ScheduleBlock.Create`: día definido; horas en minutos exactos y múltiplo de 5 (`ScheduleBlock.TimeStepMinutes`); `StartTime < EndTime`, así que un bloque nunca cruza la medianoche. Dos bloques contiguos (`09:00–12:00` y `12:00–14:00`) no se solapan.
+Métodos (fila 10):
+- `SetWeeklySchedule(IEnumerable<ScheduleBlock>)` reemplaza todo el horario (una lista vacía lo borra). Comprueba, en orden, que el doctor esté activo (`Doctor is inactive.`), que cada bloque dure al menos `AppointmentDurationMinutes` y que los bloques del mismo día no se solapen; si algo falla, el horario anterior no cambia.
+- `IsAvailableAt(DateTime localStart, DateTime localEnd)` recibe horas locales del dispensario (ignora `Kind`) y devuelve `true` solo si el rango cabe entero en un bloque de ese día. Devuelve `false` si `start >= end` o si caen en fechas distintas. No mira `IsActive`, ni la alineación a slots, ni las citas: eso lo decide el handler que lo usa (fila 12).
 
 ### Patients
 | Miembro | Tipo | Notas |
@@ -177,7 +180,7 @@ Eventos: `ConsultationClosedDomainEvent(ConsultationId, AppointmentId?)`.
 ```
 Dispensario.Domain/
   Common/ FullName.cs Email.cs PhoneNumber.cs Address.cs Document.cs DocumentType.cs
-  Doctors/ Doctor.cs DoctorId.cs           # WeeklySchedule llega con la fila 10
+  Doctors/ Doctor.cs DoctorId.cs ScheduleBlock.cs
   Users/
     User.cs UserId.cs Role.cs
     Events/UserCreatedDomainEvent.cs

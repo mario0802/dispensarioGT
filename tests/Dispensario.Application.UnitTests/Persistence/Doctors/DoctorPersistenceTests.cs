@@ -93,7 +93,114 @@ public sealed class DoctorPersistenceTests : IDisposable
             ignoreOrder: true);
     }
 
+    [Fact]
+    public async Task SaveChangesAsync_WithSchedule_ReadsBackEqualBlocks()
+    {
+        var doctor = TestDoctors.Create();
+        var monday = Block(DayOfWeek.Monday, 9, 0, 12, 30);
+        var sunday = Block(DayOfWeek.Sunday, 14, 5, 18, 55);
+        doctor.SetWeeklySchedule([monday, sunday]);
+        await AddAsync(doctor);
+
+        await using var context = _db.CreateContext();
+        var loaded = await context.Doctors.SingleAsync(TestContext.Current.CancellationToken);
+
+        loaded.Schedule.ShouldBe([monday, sunday], ignoreOrder: true);
+    }
+
+    [Fact]
+    public async Task SaveChangesAsync_WithSchedule_StoresDayOfWeekAsText()
+    {
+        var doctor = TestDoctors.Create();
+        doctor.SetWeeklySchedule([Block(DayOfWeek.Wednesday, 9, 0, 12, 0)]);
+        await AddAsync(doctor);
+
+        await using var command = _db.Connection.CreateCommand();
+        command.CommandText = "SELECT DayOfWeek FROM DoctorScheduleBlocks";
+        var day = await command.ExecuteScalarAsync(TestContext.Current.CancellationToken);
+
+        day.ShouldBe("Wednesday");
+    }
+
+    [Fact]
+    public async Task SaveChangesAsync_ReplacingSchedule_DeletesPreviousRows()
+    {
+        var doctor = TestDoctors.Create();
+        doctor.SetWeeklySchedule([Block(DayOfWeek.Monday, 9, 0, 12, 0), Block(DayOfWeek.Tuesday, 9, 0, 12, 0)]);
+        await AddAsync(doctor);
+        var friday = Block(DayOfWeek.Friday, 8, 0, 10, 0);
+        // El mismo bloque del lunes vuelve a entrar: con igualdad por valor no debe confundir al change tracker
+        var monday = Block(DayOfWeek.Monday, 9, 0, 12, 0);
+
+        await UpdateAsync(doctor.Id, d => d.SetWeeklySchedule([monday, friday]));
+
+        (await LoadAsync(doctor.Id)).Schedule.ShouldBe([monday, friday], ignoreOrder: true);
+        (await CountScheduleRowsAsync()).ShouldBe(2);
+    }
+
+    [Fact]
+    public async Task SaveChangesAsync_ClearingSchedule_DeletesAllRows()
+    {
+        var doctor = TestDoctors.Create();
+        doctor.SetWeeklySchedule([Block(DayOfWeek.Monday, 9, 0, 12, 0)]);
+        await AddAsync(doctor);
+
+        await UpdateAsync(doctor.Id, d => d.SetWeeklySchedule([]));
+
+        (await LoadAsync(doctor.Id)).Schedule.ShouldBeEmpty();
+        (await CountScheduleRowsAsync()).ShouldBe(0);
+    }
+
+    [Fact]
+    public async Task SaveChangesAsync_ChangingOnlySchedule_UpdatesLastModifiedAtUtc()
+    {
+        var doctor = TestDoctors.Create();
+        await AddAsync(doctor);
+        _db.TimeProvider.Advance(TimeSpan.FromMinutes(5));
+
+        await UpdateAsync(doctor.Id, d => d.SetWeeklySchedule([Block(DayOfWeek.Monday, 9, 0, 12, 0)]));
+
+        (await LoadAsync(doctor.Id)).LastModifiedAtUtc.ShouldBe(DispensarioTestDb.StartTime.AddMinutes(5).UtcDateTime);
+    }
+
+    [Fact]
+    public async Task EnsureCreated_DoctorScheduleBlocksTable_HasExpectedColumns()
+    {
+        var columns = new List<string>();
+        await using var command = _db.Connection.CreateCommand();
+        command.CommandText = "SELECT name FROM pragma_table_info('DoctorScheduleBlocks')";
+        await using var reader = await command.ExecuteReaderAsync(TestContext.Current.CancellationToken);
+        while (await reader.ReadAsync(TestContext.Current.CancellationToken))
+            columns.Add(reader.GetString(0));
+
+        columns.ShouldBe(["DoctorId", "Id", "DayOfWeek", "StartTime", "EndTime"], ignoreOrder: true);
+    }
+
     public void Dispose() => _db.Dispose();
+
+    private static ScheduleBlock Block(DayOfWeek day, int startHour, int startMinute, int endHour, int endMinute) =>
+        ScheduleBlock.Create(day, new TimeOnly(startHour, startMinute), new TimeOnly(endHour, endMinute));
+
+    private async Task UpdateAsync(DoctorId doctorId, Action<Doctor> change)
+    {
+        await using var context = _db.CreateContext();
+        var doctor = await context.Doctors.SingleAsync(d => d.Id == doctorId, TestContext.Current.CancellationToken);
+        change(doctor);
+        await context.SaveChangesAsync(TestContext.Current.CancellationToken);
+    }
+
+    private async Task<Doctor> LoadAsync(DoctorId doctorId)
+    {
+        await using var context = _db.CreateContext();
+        return await context.Doctors.SingleAsync(d => d.Id == doctorId, TestContext.Current.CancellationToken);
+    }
+
+    private async Task<long> CountScheduleRowsAsync()
+    {
+        await using var command = _db.Connection.CreateCommand();
+        command.CommandText = "SELECT COUNT(*) FROM DoctorScheduleBlocks";
+        return (long)(await command.ExecuteScalarAsync(TestContext.Current.CancellationToken))!;
+    }
 
     private static User LinkedUser(string email, string documentNumber, DoctorId doctorId)
     {

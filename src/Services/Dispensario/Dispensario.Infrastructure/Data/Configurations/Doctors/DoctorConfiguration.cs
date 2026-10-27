@@ -52,5 +52,27 @@ public sealed class DoctorConfiguration : IEntityTypeConfiguration<Doctor>
         builder.Property(d => d.AppointmentDurationMinutes).IsRequired();
 
         builder.Property(d => d.IsActive).IsRequired();
+
+        // Los bloques del horario son parte del aggregate: tabla propia, borrado en cascada y clave en sombra.
+        // Sus propiedades son de solo lectura y no se mapean por convención: se declaran una a una
+        builder.OwnsMany(d => d.Schedule, schedule =>
+        {
+            schedule.ToTable("DoctorScheduleBlocks");
+            schedule.WithOwner().HasForeignKey("DoctorId");
+            // Clave simple: SQLite solo autoincrementa un INTEGER PRIMARY KEY, no una clave compuesta con DoctorId
+            schedule.Property<int>("Id");
+            schedule.HasKey("Id");
+
+            schedule.Property(b => b.DayOfWeek)
+                .HasConversion<string>()
+                .HasMaxLength(DayOfWeekMaxLength)
+                .IsRequired();
+            schedule.Property(b => b.StartTime).IsRequired();
+            schedule.Property(b => b.EndTime).IsRequired();
+        });
+        builder.Navigation(d => d.Schedule).HasField("_schedule");
     }
+
+    // Largo de "Wednesday"
+    private const int DayOfWeekMaxLength = 9;
 }

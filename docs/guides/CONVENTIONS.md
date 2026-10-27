@@ -35,7 +35,7 @@ public sealed class ScheduleAppointmentHandler(...) : ICommandHandler<ScheduleAp
 | Endpoint | `<Feature>Endpoint` | `CreatePatientEndpoint` |
 | Request/Response HTTP | `<Feature>Request` / `<Feature>Response` | `CreatePatientRequest` |
 | Configuración EF | `<Entidad>Configuration` | `PatientConfiguration` |
-| Tabla | plural PascalCase | `Patients`, `DoctorSchedules` |
+| Tabla | plural PascalCase | `Patients`, `DoctorScheduleBlocks` |
 
 ## Estilo C#
 - Namespaces *file-scoped*; un tipo público por archivo, salvo el trío command + result + validator, que comparte archivo.

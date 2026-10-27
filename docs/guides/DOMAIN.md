@@ -126,17 +126,19 @@ Métodos (fila 10):
 | Miembro | Tipo | Notas |
 |---|---|---|
 | `Id` | `PatientId` | |
-| `Document` | `Document` VO de `Common` (`DocumentType Type`, `string Number`) | único (`Type` + `Number`); tipos `NationalId`, `Passport` |
-| `FullName` | `FullName` | |
-| `BirthDate` | `DateOnly` | no puede ser futura |
-| `Gender` | `Gender` enum | `Male`, `Female`, `Other` |
-| `Email?` / `Phone?` | VOs | |
-| `Address?` | `Address` | |
-| `BloodType?` | enum | `APositive`, `ANegative`, … `ONegative` |
-| `Allergies?` | `string` | texto libre |
-| `IsActive` | `bool` | |
+| `Document` | `Document` VO de `Common` (`DocumentType Type`, `string Number`) | obligatorio; único (`Type` + `Number`, el número distingue mayúsculas); **editable**; tipos `NationalId`, `Passport` |
+| `FullName` | `FullName` | obligatorio |
+| `BirthDate` | `DateOnly` | obligatoria; no puede ser posterior a `today` |
+| `Gender` | `Gender` enum | obligatorio; `Male`, `Female`, `Other` |
+| `Email?` / `Phone?` | VOs | opcionales |
+| `Address?` | `Address` | opcional |
+| `BloodType?` | enum | opcional; `APositive`, `ANegative`, … `ONegative`. La notación clínica (`"A+"`) la traduce Application (`BloodTypeNotation`) |
+| `Allergies?` | `string` | opcional; texto libre con `Trim`, en blanco → `null`; máx. 1000 (`Patient.AllergiesMaxLength`) |
+| `IsActive` | `bool` | `true` al crear |
 
-Métodos: `Create`, `UpdatePersonalData(...)`, `UpdateMedicalData(bloodType, allergies)`, `Deactivate()`.
+Métodos (fila 11): `Create(document, fullName, birthDate, gender, email, phone, address, bloodType, allergies, today)`, `Update(...)` (mismos parámetros; reemplaza todo, incluido el documento, un opcional `null` borra el valor y también vale sobre un paciente inactivo), `Deactivate()`, `Activate()`.
+Reglas: `birthDate > today` → `Birth date cannot be in the future.` (la fecha de hoy la pasa el handler con `TimeProvider`; hoy es válida); `Gender` y `BloodType` definidos; alergias dentro del máximo; `Deactivate` sobre un inactivo y `Activate` sobre un activo lanzan `DomainException`. La unicidad del documento la comprueba el handler (409).
+Eventos: ninguno en v1 (no hay consumidores).
 
 ### Appointments
 | Miembro | Tipo |
@@ -184,7 +186,5 @@ Dispensario.Domain/
   Users/
     User.cs UserId.cs Role.cs
     Events/UserCreatedDomainEvent.cs
-  Patients/
-    Patient.cs PatientId.cs Gender.cs BloodType.cs
-    Events/PatientRegisteredDomainEvent.cs
+  Patients/ Patient.cs PatientId.cs Gender.cs BloodType.cs
 ```

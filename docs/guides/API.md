@@ -12,7 +12,9 @@ Endpoints/
   Users/                       # alta, listado, detalle, perfil, contraseña, activar/desactivar, vínculo con doctor (LinkDoctorEndpoint); /api/users/me y /me/password
   Doctors/                     # alta, listado, detalle, edición, activar/desactivar (escritura AdminOnly, lecturas autenticadas);
                                # horario semanal: SetDoctorScheduleEndpoint (AdminOrDoctor) y GetDoctorScheduleEndpoint
-  Patients/  Appointments/  Consultations/
+  Patients/                    # alta, listado, detalle, búsqueda por documento (/api/patients/by-document), edición, activar/desactivar
+                               # (escritura Reception, lecturas autenticadas)
+  Appointments/  Consultations/
 Extensions/
   ApiServiceExtensions.cs      # AddApiServices: Carter, OpenAPI, JSON, ProblemDetails, exception handler, JWT, políticas, health
   OpenApi/BearerSecuritySchemeTransformer.cs

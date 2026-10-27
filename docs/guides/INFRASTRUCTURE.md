@@ -72,11 +72,13 @@ Reglas:
 |---|---|
 | `Users` | único `Email`; único (`Identification_Type`, `Identification_Number`); único `DoctorId` (sin FK; SQLite admite varios `NULL`) |
 | `Doctors` | único `LicenseNumber` (guardado en mayúsculas por el dominio) |
-
-Tabla `Doctors` (fila 09): `Id`, `FullName_FirstName`, `FullName_LastName` (`ComplexProperty`), `LicenseNumber`, `Specialty`, `Email` y `Phone` (`HasConversion`, el email sin índice), `AppointmentDurationMinutes`, `IsActive` y las columnas de auditoría. Tabla `DoctorScheduleBlocks` (fila 10): `Id` (clave autoincremental), `DoctorId` (FK a `Doctors`, en cascada, con su índice), `DayOfWeek` (texto), `StartTime` y `EndTime` (`TimeOnly` como TEXT).
-| `Patients` | único (`Document_Type`, `Document_Number`); `LastName` |
+| `Patients` | único (`Document_Type`, `Document_Number`); sin índice de `LastName` (vive en un `ComplexProperty`, que no admite índices) |
 | `Appointments` | (`DoctorId`, `StartUtc`), (`PatientId`, `StartUtc`) |
 | `Consultations` | `PatientId`, `AppointmentId` |
+
+Tabla `Doctors` (fila 09): `Id`, `FullName_FirstName`, `FullName_LastName` (`ComplexProperty`), `LicenseNumber`, `Specialty`, `Email` y `Phone` (`HasConversion`, el email sin índice), `AppointmentDurationMinutes`, `IsActive` y las columnas de auditoría. Tabla `DoctorScheduleBlocks` (fila 10): `Id` (clave autoincremental), `DoctorId` (FK a `Doctors`, en cascada, con su índice), `DayOfWeek` (texto), `StartTime` y `EndTime` (`TimeOnly` como TEXT).
+
+Tabla `Patients` (fila 11): `Id`; `Document_Type` (texto) y `Document_Number` (`OwnsOne` requerido, con el índice único compuesto); `FullName_FirstName` y `FullName_LastName` (`ComplexProperty`); `BirthDate` (`DateOnly` como TEXT); `Gender` (texto); `Email` y `Phone` (`HasConversion`, nullable, el email sin índice); `Address_Street`, `Address_City`, `Address_State` y `Address_Reference` (`ComplexProperty` **opcional**: columnas nullable, y `Street`, requerida dentro del VO, distingue la dirección `null`); `BloodType` (nombre del enum como texto, nullable); `Allergies` (máx. 1000, nullable); `IsActive` y las columnas de auditoría.
 
 ## 4. Particularidades de SQLite
 | Tema | Decisión |

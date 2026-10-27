@@ -70,8 +70,10 @@ Reglas:
 Índices obligatorios:
 | Tabla | Índice |
 |---|---|
-| `Users` | único `Email`; único (`Identification_Type`, `Identification_Number`) |
-| `Doctors` | único `LicenseNumber` |
+| `Users` | único `Email`; único (`Identification_Type`, `Identification_Number`); único `DoctorId` (sin FK; SQLite admite varios `NULL`) |
+| `Doctors` | único `LicenseNumber` (guardado en mayúsculas por el dominio) |
+
+Tabla `Doctors` (fila 09): `Id`, `FullName_FirstName`, `FullName_LastName` (`ComplexProperty`), `LicenseNumber`, `Specialty`, `Email` y `Phone` (`HasConversion`, el email sin índice), `AppointmentDurationMinutes`, `IsActive` y las columnas de auditoría. `DoctorSchedules` llega con la fila 10.
 | `Patients` | único (`Document_Type`, `Document_Number`); `LastName` |
 | `Appointments` | (`DoctorId`, `StartUtc`), (`PatientId`, `StartUtc`) |
 | `Consultations` | `PatientId`, `AppointmentId` |

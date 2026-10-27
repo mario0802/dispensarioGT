@@ -2,6 +2,7 @@ using BuildingBlocks.CQRS;
 using BuildingBlocks.Exceptions;
 using BuildingBlocks.Pagination;
 using Dispensario.Application.Abstractions;
+using Dispensario.Application.Common;
 using Dispensario.Application.Users.Dtos;
 using Mapster;
 using Microsoft.EntityFrameworkCore;
@@ -14,8 +15,6 @@ namespace Dispensario.Application.Users.Queries.GetUsers;
 public sealed class GetUsersHandler(IApplicationDbContext db) : IQueryHandler<GetUsersQuery, PaginatedResult<UserDto>>
 {
     public const int MaxPageSize = 100;
-
-    private const string LikeEscape = "\\";
 
     public async Task<PaginatedResult<UserDto>> Handle(GetUsersQuery query, CancellationToken cancellationToken)
     {
@@ -40,14 +39,14 @@ public sealed class GetUsersHandler(IApplicationDbContext db) : IQueryHandler<Ge
         if (!string.IsNullOrEmpty(search))
         {
             // LIKE en SQLite no distingue mayúsculas (en ASCII); instr, que genera Contains, sí
-            var pattern = $"%{EscapeLike(search)}%";
+            var pattern = LikePatterns.Contains(search);
 
             // El doble cast lleva a la columna Email sin pasar por el converter del VO
             source = source.Where(u =>
-                EF.Functions.Like(u.FullName.FirstName, pattern, LikeEscape) ||
-                EF.Functions.Like(u.FullName.LastName, pattern, LikeEscape) ||
-                EF.Functions.Like((string)(object)u.Email, pattern, LikeEscape) ||
-                EF.Functions.Like(u.Identification.Number, pattern, LikeEscape));
+                EF.Functions.Like(u.FullName.FirstName, pattern, LikePatterns.Escape) ||
+                EF.Functions.Like(u.FullName.LastName, pattern, LikePatterns.Escape) ||
+                EF.Functions.Like((string)(object)u.Email, pattern, LikePatterns.Escape) ||
+                EF.Functions.Like(u.Identification.Number, pattern, LikePatterns.Escape));
         }
 
         var count = await source.LongCountAsync(cancellationToken);
@@ -63,7 +62,4 @@ public sealed class GetUsersHandler(IApplicationDbContext db) : IQueryHandler<Ge
 
         return new PaginatedResult<UserDto>(pageIndex, pageSize, count, users);
     }
-
-    private static string EscapeLike(string value) =>
-        value.Replace(LikeEscape, LikeEscape + LikeEscape).Replace("%", LikeEscape + "%").Replace("_", LikeEscape + "_");
 }

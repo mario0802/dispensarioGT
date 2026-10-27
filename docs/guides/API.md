@@ -9,8 +9,9 @@ Authorization/
   Policies.cs                  # nombres de las políticas por rol
 Endpoints/
   Auth/                        # LoginEndpoint, RegisterEndpoint (autoregistro), GetCurrentUserEndpoint
-  Users/                       # alta, listado, detalle, perfil, contraseña, activar/desactivar; /api/users/me y /me/password
-  Doctors/  Patients/  Appointments/  Consultations/
+  Users/                       # alta, listado, detalle, perfil, contraseña, activar/desactivar, vínculo con doctor (LinkDoctorEndpoint); /api/users/me y /me/password
+  Doctors/                     # alta, listado, detalle, edición, activar/desactivar (escritura AdminOnly, lecturas autenticadas)
+  Patients/  Appointments/  Consultations/
 Extensions/
   ApiServiceExtensions.cs      # AddApiServices: Carter, OpenAPI, JSON, ProblemDetails, exception handler, JWT, políticas, health
   OpenApi/BearerSecuritySchemeTransformer.cs

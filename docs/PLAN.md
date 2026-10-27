@@ -47,7 +47,7 @@ Al crear un spec con `/spec`, anota su archivo en la columna **Spec** de este ba
 ### Fase 2 — Catálogos clínicos
 | # | Feature | Contenido | Spec |
 |---|---|---|---|
-| 09 | Doctors: CRUD | Aggregate `Doctor` (matrícula única, especialidad, duración de la cita), Create/Update/Deactivate, GetDoctors/GetById, vínculo opcional con `User` | — |
+| 09 | Doctors: CRUD | Aggregate `Doctor` (matrícula única, especialidad, duración de la cita), Create/Update/Deactivate, GetDoctors/GetById, vínculo opcional con `User` | `specs/09-doctors-crud.md` |
 | 10 | Doctors: horario semanal | `WeeklySchedule` sin solapes, SetWeeklySchedule, `IsAvailableAt` | — |
 | 11 | Patients: CRUD | Aggregate `Patient` (documento único), Create/Update/Deactivate, GetPatients (búsqueda + paginación), GetById, GetByDocument | — |
 

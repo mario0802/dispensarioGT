@@ -68,8 +68,10 @@ public sealed class UserConfiguration : IEntityTypeConfiguration<User>
             .HasMaxLength(EnumMaxLength)
             .IsRequired();
 
-        // Sin FK: el aggregate Doctor todavía no existe (fila 09)
+        // Sin FK: los módulos se relacionan solo por ID. Único: un doctor se vincula a un solo usuario
+        // (SQLite admite varios NULL en un índice único)
         builder.Property(u => u.DoctorId);
+        builder.HasIndex(u => u.DoctorId).IsUnique();
 
         builder.Property(u => u.IsActive).IsRequired();
     }

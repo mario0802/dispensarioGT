@@ -103,6 +103,16 @@ public sealed class Appointment : AggregateRoot<AppointmentId>
         Status = AppointmentStatus.NoShow;
     }
 
+    // Sin nowUtc: la consulta puede empezar antes de la hora de la cita.
+    // Aún no la llama nadie: el handler de ConsultationClosedDomainEvent llega en otro spec
+    public void Complete()
+    {
+        if (!IsPending)
+            throw new DomainException("Only scheduled or confirmed appointments can be completed.");
+
+        Status = AppointmentStatus.Completed;
+    }
+
     // La nueva hora necesita una nueva confirmación: la cita vuelve a Scheduled
     public void Reschedule(DateTime startUtc, DateTime endUtc, DateTime nowUtc)
     {

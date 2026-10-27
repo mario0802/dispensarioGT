@@ -172,6 +172,17 @@ public sealed class ConsultationTests
         consultation.DomainEvents.ShouldBeEmpty();
     }
 
+    // ConsultationClosedDomainEvent existe pero aún no se emite (fila 16 parcial)
+    [Fact]
+    public void Close_DoesNotRaiseDomainEvents()
+    {
+        var consultation = StartConsultation(appointmentId: AppointmentId.New());
+
+        consultation.Close("Cefalea tensional", null, ClosedAtUtc);
+
+        consultation.DomainEvents.ShouldBeEmpty();
+    }
+
     [Fact]
     public void Close_WithNullNotes_ClearsNotes()
     {

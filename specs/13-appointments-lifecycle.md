@@ -1,6 +1,6 @@
 # SPEC 13 — Appointments: ciclo de vida
 
-> **Status:** Approved
+> **Status:** Implemented
 > **Depends on:** SPEC 07, SPEC 09, SPEC 10, SPEC 11, SPEC 12
 > **Date:** 2026-10-27
 > **Objective:** Añadir al aggregate `Appointment` las transiciones `Confirm`, `Cancel`, `MarkNoShow` y `Reschedule` con su máquina de estados y exponerlas como endpoints de acción sobre `/api/appointments/{id}`.

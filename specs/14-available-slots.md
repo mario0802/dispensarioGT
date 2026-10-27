@@ -1,6 +1,6 @@
 # SPEC 14 — Slots disponibles
 
-> **Status:** Approved
+> **Status:** Implemented
 > **Depends on:** SPEC 07, SPEC 09, SPEC 10, SPEC 12, SPEC 13
 > **Date:** 2026-10-27
 > **Objective:** Exponer `GET /api/doctors/{id}/available-slots?date=` con los slots libres de un doctor en una fecha local del dispensario, generados con las mismas reglas de horario, alineación y cruces que usa el alta de citas.

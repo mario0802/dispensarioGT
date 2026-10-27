@@ -48,7 +48,24 @@ La autenticación es parte del módulo Users (los endpoints viven en `Api/Endpoi
 | `LoginCommand` → `LoginResult(AccessToken, TokenType, ExpiresAtUtc)` | `Users/Commands/Login/` | Es un command (aunque no escribe) para pasar por `ValidationBehavior`. Email inexistente, contraseña incorrecta o usuario inactivo → `UnauthorizedException("Invalid credentials.")`, el mismo mensaje en los tres casos. El email se normaliza con `Email.Create`, así que no distingue mayúsculas |
 | `GetCurrentUserQuery` → `CurrentUserDto` | `Users/Queries/GetCurrentUser/` | Lee el usuario de la BD por `ICurrentUser.UserId`: sin usuario autenticado → 401, inexistente → `NotFoundException`, inactivo → `UnauthorizedException("User is inactive.")` |
 
-`UsersMappingConfig` (`Users/Dtos/`) mapea `User → CurrentUserDto` (IDs a `Guid`, VOs a sus valores).
+`UsersMappingConfig` (`Users/Dtos/`) mapea `User → CurrentUserDto` y `User → UserDto` (IDs a `Guid`, VOs a sus valores; `UserDto` añade `CreatedAtUtc`).
+
+### Módulo Users: gestión de usuarios
+Usan los métodos que ya tiene `User` (`Create`, `ChangePassword`, `UpdateProfile`, `Deactivate`, `Activate`). Las reglas que necesitan la BD o el usuario actual van en los handlers:
+| Caso de uso | Ubicación | Reglas |
+|---|---|---|
+| `RegisterUserCommand` → `RegisterUserResult(Id)` | `Users/Commands/RegisterUser/` | Email (normalizado a minúsculas) o identificación ya usados → `ConflictException`. Lo usan el autoregistro (el endpoint fija `Role.Receptionist`) y el alta por el Admin (cualquier rol) |
+| `ChangePasswordCommand` | `Users/Commands/ChangePassword/` | Usuario actual: sin `UserId` → 401, inexistente → 404, inactivo → 401. Contraseña actual incorrecta → `BadRequestException("Current password is incorrect.")` (400, no 401). La nueva debe ser distinta de la actual |
+| `ResetUserPasswordCommand` | `Users/Commands/ResetUserPassword/` | Sobre el propio usuario → `BadRequestException` (debe usar `ChangePassword`, que exige la actual). Funciona también sobre inactivos |
+| `UpdateUserProfileCommand` / `UpdateCurrentUserProfileCommand` | `Users/Commands/UpdateUserProfile/`, `UpdateCurrentUserProfile/` | Nombre y teléfono (`null` borra el teléfono). La versión del usuario actual aplica las mismas comprobaciones 401/404/401 que `ChangePassword` |
+| `DeactivateUserCommand` | `Users/Commands/DeactivateUser/` | Sobre sí mismo → `BadRequestException`. Último Admin activo → `ConflictException`. Ya inactivo → `DomainException` |
+| `ActivateUserCommand` | `Users/Commands/ActivateUser/` | Ya activo → `DomainException` |
+| `GetUsersQuery` → `PaginatedResult<UserDto>` | `Users/Queries/GetUsers/` | `PageIndex < 0` o `PageSize` fuera de 1–100 → `BadRequestException` (las queries no pasan por `ValidationBehavior`). `Search` con `EF.Functions.Like` (insensible a mayúsculas en ASCII, comodines escapados) en nombre, apellido, email e identificación; filtros `Role` e `IsActive`; orden por apellido, nombre e ID; `ProjectToType<UserDto>` |
+| `GetUserByIdQuery` → `UserDto` | `Users/Queries/GetUserById/` | Inexistente → `NotFoundException` |
+
+- `PasswordRules` (`Users/Validation/`): extensión `ValidPassword()` de FluentValidation, de 8 a 72 caracteres (límite de bcrypt) con al menos una letra y un dígito. La usan el registro, el cambio y el reseteo.
+- `Email` se guarda con `HasConversion`: para usarlo como texto en `EF.Functions.Like` se escribe `(string)(object)u.Email`, que EF traduce a la columna. `string.Contains` en SQLite genera `instr`, que sí distingue mayúsculas.
+- Un owned type (`Identification`) no se compara entero en LINQ: se comparan `Type` y `Number` por separado.
 
 ## 3. Plantilla de un command
 ```csharp

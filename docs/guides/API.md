@@ -8,8 +8,9 @@ La Api es delgada: traduce HTTP ↔ command/query, aplica la autorización y nad
 Authorization/
   Policies.cs                  # nombres de las políticas por rol
 Endpoints/
-  Auth/                        # LoginEndpoint (POST /api/auth/login), GetCurrentUserEndpoint (GET /api/auth/me)
-  Users/  Doctors/  Patients/  Appointments/  Consultations/
+  Auth/                        # LoginEndpoint, RegisterEndpoint (autoregistro), GetCurrentUserEndpoint
+  Users/                       # alta, listado, detalle, perfil, contraseña, activar/desactivar; /api/users/me y /me/password
+  Doctors/  Patients/  Appointments/  Consultations/
 Extensions/
   ApiServiceExtensions.cs      # AddApiServices: Carter, OpenAPI, JSON, ProblemDetails, exception handler, JWT, políticas, health
   OpenApi/BearerSecuritySchemeTransformer.cs
@@ -57,7 +58,11 @@ Reglas:
 - Los parámetros de query de listados se agrupan con `[AsParameters]`.
 - Códigos de éxito: `POST` crea → **201** con `Location`; `POST` de acción (`/cancel`) → **204** o 200; `PUT` → **204**; `GET` → **200**.
 - **No** se hace `try/catch` en los endpoints: los errores los resuelve `CustomExceptionHandler`.
+- Las rutas con ID usan la restricción `{id:guid}`, para que rutas literales como `/api/users/me` no se interpreten como un ID.
+- Un enum del cuerpo que decide permisos (como `Role` en `POST /api/users`) se declara nullable en el request: si falta, el valor por defecto del enum (`Admin`) se aplicaría en silencio. El endpoint pasa un valor fuera del enum y el validador lo rechaza con 400.
+- Los endpoints no leen `ICurrentUser`: las reglas que dependen del usuario actual van en los handlers.
 - Toda ruta lleva `WithTags`, `WithName` y `WithSummary` para que se vea bien en Scalar.
+- Cada endpoint nuevo o modificado se documenta en la sección **Endpoints** del `README.md`: fila en la tabla general y apartado con ejemplo de petición/respuesta y tabla de códigos.
 
 ## 4. Autorización
 ```csharp

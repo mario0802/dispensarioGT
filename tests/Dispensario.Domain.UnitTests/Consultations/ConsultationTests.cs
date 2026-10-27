@@ -1,6 +1,7 @@
 using BuildingBlocks.Domain;
 using Dispensario.Domain.Appointments;
 using Dispensario.Domain.Consultations;
+using Dispensario.Domain.Consultations.Events;
 using Dispensario.Domain.Doctors;
 using Dispensario.Domain.Patients;
 
@@ -169,16 +170,54 @@ public sealed class ConsultationTests
         consultation.Diagnosis.ShouldBe("Cefalea tensional");
         consultation.Notes.ShouldBe("Control en dos semanas.");
         consultation.ClosedAtUtc.ShouldBe(ClosedAtUtc);
-        consultation.DomainEvents.ShouldBeEmpty();
     }
 
-    // ConsultationClosedDomainEvent existe pero aún no se emite (fila 16 parcial)
     [Fact]
-    public void Close_DoesNotRaiseDomainEvents()
+    public void Close_WithAppointment_RaisesConsultationClosedDomainEvent()
     {
-        var consultation = StartConsultation(appointmentId: AppointmentId.New());
+        var appointmentId = AppointmentId.New();
+        var consultation = StartConsultation(appointmentId: appointmentId);
 
         consultation.Close("Cefalea tensional", null, ClosedAtUtc);
+
+        var domainEvent = consultation.DomainEvents.ShouldHaveSingleItem().ShouldBeOfType<ConsultationClosedDomainEvent>();
+        domainEvent.ConsultationId.ShouldBe(consultation.Id);
+        domainEvent.AppointmentId.ShouldBe(appointmentId);
+    }
+
+    [Fact]
+    public void Close_WithoutAppointment_RaisesConsultationClosedDomainEventWithNullAppointment()
+    {
+        var consultation = StartConsultation(appointmentId: null);
+
+        consultation.Close("Cefalea tensional", null, ClosedAtUtc);
+
+        var domainEvent = consultation.DomainEvents.ShouldHaveSingleItem().ShouldBeOfType<ConsultationClosedDomainEvent>();
+        domainEvent.ConsultationId.ShouldBe(consultation.Id);
+        domainEvent.AppointmentId.ShouldBeNull();
+    }
+
+    [Fact]
+    public void Close_WhenRuleFails_RaisesNoDomainEvents()
+    {
+        var withoutDiagnosis = StartConsultation();
+        var alreadyClosed = StartConsultation();
+        alreadyClosed.Close("Cefalea tensional", null, ClosedAtUtc);
+        alreadyClosed.ClearDomainEvents();
+
+        Should.Throw<DomainException>(() => withoutDiagnosis.Close(" ", null, ClosedAtUtc));
+        Should.Throw<DomainException>(() => alreadyClosed.Close("Otro diagnóstico", null, ClosedAtUtc));
+
+        withoutDiagnosis.DomainEvents.ShouldBeEmpty();
+        alreadyClosed.DomainEvents.ShouldBeEmpty();
+    }
+
+    [Fact]
+    public void Update_RaisesNoDomainEvents()
+    {
+        var consultation = StartConsultation();
+
+        consultation.Update("Cefalea", "Cefalea tensional", null);
 
         consultation.DomainEvents.ShouldBeEmpty();
     }

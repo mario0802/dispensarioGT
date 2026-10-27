@@ -58,7 +58,7 @@ Al crear un spec con `/spec`, anota su archivo en la columna **Spec** de este ba
 | 13 | Appointments: ciclo de vida | Confirm, Reschedule, Cancel, MarkNoShow; máquina de estados | `specs/13-appointments-lifecycle.md` |
 | 14 | Slots disponibles | `GET /api/doctors/{id}/available-slots?date=` | `specs/14-available-slots.md` |
 | 15 | Consultations | Aggregate `Consultation`, Start/Update/Close, validación de que el doctor es el usuario actual, GetById, historia del paciente | `specs/15-consultations.md` |
-| 16 | Consulta cerrada → cita completada | `ConsultationClosedDomainEvent` + handler en Appointments. **Parcial:** el spec 16 define el tipo del evento (sin emitirlo) y `Appointment.Complete`; emitir el evento al cerrar y el handler en `Appointments/EventHandlers` quedan pendientes (la fila 18 depende de ello) | `specs/16-consultation-closed-event-and-appointment-complete.md` (parcial) |
+| 16 | Consulta cerrada → cita completada | `ConsultationClosedDomainEvent` + handler en Appointments. El spec 16 define el tipo del evento y `Appointment.Complete`; el spec 18 hace que `Close` lo emita y añade `ConsultationClosedHandler` en `Appointments/EventHandlers` (evento en proceso, tras el commit) | `specs/16-consultation-closed-event-and-appointment-complete.md`, `specs/18-consultation-closed-completes-appointment.md` |
 
 ### Fase 4 — Cierre de v1
 | # | Feature | Contenido | Spec |

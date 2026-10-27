@@ -1,6 +1,7 @@
 using BuildingBlocks.CQRS;
 using BuildingBlocks.Exceptions;
 using Dispensario.Application.Abstractions;
+using Dispensario.Application.Appointments.Common;
 using Dispensario.Domain.Appointments;
 using Dispensario.Domain.Doctors;
 using Dispensario.Domain.Patients;
@@ -48,40 +49,14 @@ public sealed class ScheduleAppointmentHandler(
             command.Reason,
             timeProvider.GetUtcNow().UtcDateTime);
 
-        if (!doctor.IsAvailableAt(localStart, localEnd))
-            throw new BadRequestException("The doctor is not available at that time.");
+        AppointmentSlotRules.EnsureFitsSchedule(doctor, localStart, localEnd);
 
-        if (!IsAlignedToSlots(doctor, localStart, localEnd, duration))
-            throw new BadRequestException("Start time must align with the doctor's appointment slots.");
-
-        // Se excluyen las citas canceladas, no asistidas o completadas del cálculo de cruces
-        if (await db.Appointments.AnyAsync(
-                a => a.DoctorId == doctor.Id
-                    && (a.Status == AppointmentStatus.Scheduled || a.Status == AppointmentStatus.Confirmed)
-                    && a.StartUtc < endUtc && startUtc < a.EndUtc,
-                cancellationToken))
-            throw new ConflictException("The doctor already has an appointment at that time.");
-
-        if (await db.Appointments.AnyAsync(
-                a => a.PatientId == patient.Id
-                    && (a.Status == AppointmentStatus.Scheduled || a.Status == AppointmentStatus.Confirmed)
-                    && a.StartUtc < endUtc && startUtc < a.EndUtc,
-                cancellationToken))
-            throw new ConflictException("The patient already has an appointment at that time.");
+        await AppointmentSlotRules.EnsureNoOverlapsAsync(
+            db, doctor.Id, patient.Id, startUtc, endUtc, excludedAppointmentId: null, cancellationToken);
 
         db.Appointments.Add(appointment);
         await db.SaveChangesAsync(cancellationToken);
 
         return new ScheduleAppointmentResult(appointment.Id.Value);
-    }
-
-    // Los slots se cuentan desde el inicio del bloque que contiene la cita, en pasos de la duración
-    private static bool IsAlignedToSlots(Doctor doctor, DateTime localStart, DateTime localEnd, TimeSpan duration)
-    {
-        var start = TimeOnly.FromDateTime(localStart);
-        var end = TimeOnly.FromDateTime(localEnd);
-        var block = doctor.Schedule.First(b => b.DayOfWeek == localStart.DayOfWeek && b.Contains(start, end));
-
-        return (start - block.StartTime).Ticks % duration.Ticks == 0;
     }
 }

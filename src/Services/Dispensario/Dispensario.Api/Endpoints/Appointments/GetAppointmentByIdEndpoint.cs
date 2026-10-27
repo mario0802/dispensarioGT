@@ -19,6 +19,7 @@ public sealed record AppointmentResponse(
     DateTime EndLocal,
     string Reason,
     AppointmentStatus Status,
+    string? CancellationReason,
     DateTime CreatedAtUtc);
 
 /// <summary>Devuelve una cita por su ID; un usuario Doctor solo ve las suyas.</summary>

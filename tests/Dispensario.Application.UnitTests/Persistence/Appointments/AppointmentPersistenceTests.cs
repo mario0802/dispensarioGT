@@ -26,6 +26,7 @@ public sealed class AppointmentPersistenceTests : IDisposable
         loaded.EndUtc.Kind.ShouldBe(DateTimeKind.Utc);
         loaded.Reason.ShouldBe("Control de presión");
         loaded.Status.ShouldBe(AppointmentStatus.Scheduled);
+        loaded.CancellationReason.ShouldBeNull();
         loaded.CreatedAtUtc.ShouldBe(DispensarioTestDb.StartTime.UtcDateTime);
         loaded.CreatedAtUtc.Kind.ShouldBe(DateTimeKind.Utc);
     }
@@ -43,13 +44,36 @@ public sealed class AppointmentPersistenceTests : IDisposable
     }
 
     [Fact]
+    public async Task SaveChangesAsync_WithCancelledAppointment_ReadsBackCancellationReason()
+    {
+        var appointment = TestAppointments.Create();
+        appointment.Cancel("Viaje del paciente", TestAppointments.NowUtc);
+        await AddAsync(appointment);
+
+        await using var context = _db.CreateContext();
+        var loaded = await context.Appointments.SingleAsync(a => a.Id == appointment.Id, TestContext.Current.CancellationToken);
+
+        loaded.Status.ShouldBe(AppointmentStatus.Cancelled);
+        loaded.CancellationReason.ShouldBe("Viaje del paciente");
+    }
+
+    [Fact]
+    public async Task EnsureCreated_AppointmentsTable_HasNullableCancellationReason()
+    {
+        var notNull = await QueryNamesAsync(
+            "SELECT CAST(\"notnull\" AS TEXT) FROM pragma_table_info('Appointments') WHERE name = 'CancellationReason'");
+
+        notNull.ShouldBe(["0"]);
+    }
+
+    [Fact]
     public async Task EnsureCreated_AppointmentsTable_HasExpectedColumns()
     {
         var columns = await QueryNamesAsync("SELECT name FROM pragma_table_info('Appointments')");
 
         columns.ShouldBe(
             [
-                "Id", "PatientId", "DoctorId", "StartUtc", "EndUtc", "Reason", "Status",
+                "Id", "PatientId", "DoctorId", "StartUtc", "EndUtc", "Reason", "Status", "CancellationReason",
                 "CreatedAtUtc", "CreatedBy", "LastModifiedAtUtc", "LastModifiedBy"
             ],
             ignoreOrder: true);

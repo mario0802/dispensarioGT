@@ -55,7 +55,7 @@ Al crear un spec con `/spec`, anota su archivo en la columna **Spec** de este ba
 | # | Feature | Contenido | Spec |
 |---|---|---|---|
 | 12 | Appointments: agendar | Aggregate `Appointment`, ScheduleAppointment (horario, duración, sin cruces de doctor ni paciente), GetAppointments (filtros) y GetById | `specs/12-appointments-scheduling.md` |
-| 13 | Appointments: ciclo de vida | Confirm, Reschedule, Cancel, MarkNoShow; máquina de estados | — |
+| 13 | Appointments: ciclo de vida | Confirm, Reschedule, Cancel, MarkNoShow; máquina de estados | `specs/13-appointments-lifecycle.md` |
 | 14 | Slots disponibles | `GET /api/doctors/{id}/available-slots?date=` | — |
 | 15 | Consultations | Aggregate `Consultation`, Start/Update/Close, validación de que el doctor es el usuario actual, GetById, historia del paciente | — |
 | 16 | Consulta cerrada → cita completada | `ConsultationClosedDomainEvent` + handler en Appointments | — |

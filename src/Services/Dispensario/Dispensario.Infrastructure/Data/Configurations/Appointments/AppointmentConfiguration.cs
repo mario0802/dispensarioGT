@@ -32,6 +32,10 @@ public sealed class AppointmentConfiguration : IEntityTypeConfiguration<Appointm
             .HasMaxLength(EnumMaxLength)
             .IsRequired();
 
+        // Solo tiene valor en las citas canceladas
+        builder.Property(a => a.CancellationReason)
+            .HasMaxLength(Appointment.CancellationReasonMaxLength);
+
         // Agenda del doctor y citas del paciente: los cruces se buscan por estos dos índices
         builder.HasIndex(a => new { a.DoctorId, a.StartUtc });
         builder.HasIndex(a => new { a.PatientId, a.StartUtc });

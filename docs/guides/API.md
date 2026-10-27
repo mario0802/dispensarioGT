@@ -14,8 +14,9 @@ Endpoints/
                                # horario semanal: SetDoctorScheduleEndpoint (AdminOrDoctor) y GetDoctorScheduleEndpoint
   Patients/                    # alta, listado, detalle, búsqueda por documento (/api/patients/by-document), edición, activar/desactivar
                                # (escritura Reception, lecturas autenticadas)
-  Appointments/                # ScheduleAppointmentEndpoint (Reception), GetAppointmentsEndpoint y GetAppointmentByIdEndpoint
-                               # (autenticados; el handler limita al Doctor a sus propias citas). Horas locales sin offset
+  Appointments/                # ScheduleAppointmentEndpoint, ConfirmAppointmentEndpoint y RescheduleAppointmentEndpoint (Reception),
+                               # GetAppointmentsEndpoint, GetAppointmentByIdEndpoint, CancelAppointmentEndpoint y
+                               # MarkAppointmentNoShowEndpoint (autenticados; el handler limita al Doctor a sus propias citas). Horas locales sin offset
   Consultations/
 Extensions/
   ApiServiceExtensions.cs      # AddApiServices: Carter, OpenAPI, JSON, ProblemDetails, exception handler, JWT, políticas, health

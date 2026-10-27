@@ -93,6 +93,251 @@ public sealed class AppointmentTests
         appointment.Reason.Length.ShouldBe(Appointment.ReasonMaxLength);
     }
 
+    [Fact]
+    public void Confirm_WhenScheduled_SetsConfirmed()
+    {
+        var appointment = CreateAppointment();
+
+        appointment.Confirm(NowUtc);
+
+        appointment.Status.ShouldBe(AppointmentStatus.Confirmed);
+        appointment.DomainEvents.ShouldBeEmpty();
+    }
+
+    [Theory]
+    [InlineData(AppointmentStatus.Confirmed)]
+    [InlineData(AppointmentStatus.Cancelled)]
+    [InlineData(AppointmentStatus.NoShow)]
+    public void Confirm_WhenNotScheduled_ThrowsDomainException(AppointmentStatus status)
+    {
+        var appointment = CreateAppointmentIn(status);
+
+        var act = () => appointment.Confirm(NowUtc);
+
+        act.ShouldThrow<DomainException>().Message.ShouldBe("Only scheduled appointments can be confirmed.");
+        appointment.Status.ShouldBe(status);
+    }
+
+    [Fact]
+    public void Confirm_WhenAlreadyStarted_ThrowsDomainException()
+    {
+        var appointment = CreateAppointment();
+
+        var act = () => appointment.Confirm(StartUtc);
+
+        act.ShouldThrow<DomainException>().Message.ShouldBe("Appointment has already started.");
+        appointment.Status.ShouldBe(AppointmentStatus.Scheduled);
+    }
+
+    [Theory]
+    [InlineData(AppointmentStatus.Scheduled)]
+    [InlineData(AppointmentStatus.Confirmed)]
+    public void Cancel_WhenPending_SetsCancelledWithTrimmedReason(AppointmentStatus status)
+    {
+        var appointment = CreateAppointmentIn(status);
+
+        appointment.Cancel("  Viaje  ", NowUtc);
+
+        appointment.Status.ShouldBe(AppointmentStatus.Cancelled);
+        appointment.CancellationReason.ShouldBe("Viaje");
+        appointment.DomainEvents.ShouldBeEmpty();
+    }
+
+    [Theory]
+    [InlineData(AppointmentStatus.Cancelled)]
+    [InlineData(AppointmentStatus.NoShow)]
+    public void Cancel_WhenNotPending_ThrowsDomainException(AppointmentStatus status)
+    {
+        var appointment = CreateAppointmentIn(status);
+
+        var act = () => appointment.Cancel("Viaje", NowUtc);
+
+        act.ShouldThrow<DomainException>().Message.ShouldBe("Only scheduled or confirmed appointments can be cancelled.");
+        appointment.Status.ShouldBe(status);
+    }
+
+    [Fact]
+    public void Cancel_WhenAlreadyStarted_ThrowsDomainException()
+    {
+        var appointment = CreateAppointment();
+
+        var act = () => appointment.Cancel("Viaje", StartUtc.AddMinutes(1));
+
+        act.ShouldThrow<DomainException>().Message.ShouldBe("Appointment has already started.");
+        appointment.Status.ShouldBe(AppointmentStatus.Scheduled);
+        appointment.CancellationReason.ShouldBeNull();
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    [InlineData(null)]
+    public void Cancel_WithBlankReason_ThrowsDomainException(string? reason)
+    {
+        var appointment = CreateAppointment();
+
+        var act = () => appointment.Cancel(reason!, NowUtc);
+
+        act.ShouldThrow<DomainException>().Message.ShouldBe("Cancellation reason is required.");
+        appointment.Status.ShouldBe(AppointmentStatus.Scheduled);
+    }
+
+    [Fact]
+    public void Cancel_WithTooLongReason_ThrowsDomainException()
+    {
+        var appointment = CreateAppointment();
+
+        var act = () => appointment.Cancel(new string('a', Appointment.CancellationReasonMaxLength + 1), NowUtc);
+
+        act.ShouldThrow<DomainException>().Message.ShouldBe("Cancellation reason must be at most 500 characters.");
+        appointment.Status.ShouldBe(AppointmentStatus.Scheduled);
+    }
+
+    [Fact]
+    public void Cancel_WithReasonAtMaxLength_SetsCancelled()
+    {
+        var appointment = CreateAppointment();
+
+        appointment.Cancel(new string('a', Appointment.CancellationReasonMaxLength), NowUtc);
+
+        appointment.CancellationReason!.Length.ShouldBe(Appointment.CancellationReasonMaxLength);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(45)]
+    public void MarkNoShow_FromStart_SetsNoShow(int minutesAfterStart)
+    {
+        var appointment = CreateAppointmentIn(AppointmentStatus.Confirmed);
+
+        appointment.MarkNoShow(StartUtc.AddMinutes(minutesAfterStart));
+
+        appointment.Status.ShouldBe(AppointmentStatus.NoShow);
+        appointment.DomainEvents.ShouldBeEmpty();
+    }
+
+    [Fact]
+    public void MarkNoShow_BeforeStart_ThrowsDomainException()
+    {
+        var appointment = CreateAppointment();
+
+        var act = () => appointment.MarkNoShow(StartUtc.AddMinutes(-1));
+
+        act.ShouldThrow<DomainException>().Message.ShouldBe("Appointment has not started yet.");
+        appointment.Status.ShouldBe(AppointmentStatus.Scheduled);
+    }
+
+    [Theory]
+    [InlineData(AppointmentStatus.Cancelled)]
+    [InlineData(AppointmentStatus.NoShow)]
+    public void MarkNoShow_WhenNotPending_ThrowsDomainException(AppointmentStatus status)
+    {
+        var appointment = CreateAppointmentIn(status);
+
+        var act = () => appointment.MarkNoShow(StartUtc.AddMinutes(10));
+
+        act.ShouldThrow<DomainException>().Message.ShouldBe("Only scheduled or confirmed appointments can be marked as no-show.");
+        appointment.Status.ShouldBe(status);
+    }
+
+    [Fact]
+    public void Reschedule_WhenConfirmed_SetsNewTimesAndScheduled()
+    {
+        var appointment = CreateAppointmentIn(AppointmentStatus.Confirmed);
+        var newStart = StartUtc.AddDays(1);
+
+        appointment.Reschedule(newStart, newStart.AddMinutes(45), NowUtc);
+
+        appointment.StartUtc.ShouldBe(newStart);
+        appointment.EndUtc.ShouldBe(newStart.AddMinutes(45));
+        appointment.Status.ShouldBe(AppointmentStatus.Scheduled);
+        appointment.DomainEvents.ShouldBeEmpty();
+    }
+
+    [Fact]
+    public void Reschedule_WithSameStart_ThrowsDomainException()
+    {
+        var appointment = CreateAppointmentIn(AppointmentStatus.Confirmed);
+
+        var act = () => appointment.Reschedule(StartUtc, EndUtc, NowUtc);
+
+        act.ShouldThrow<DomainException>().Message.ShouldBe("New start must be different from the current one.");
+        appointment.Status.ShouldBe(AppointmentStatus.Confirmed);
+    }
+
+    [Fact]
+    public void Reschedule_WithStartNotBeforeEnd_ThrowsDomainException()
+    {
+        var appointment = CreateAppointment();
+        var newStart = StartUtc.AddDays(1);
+
+        var act = () => appointment.Reschedule(newStart, newStart, NowUtc);
+
+        act.ShouldThrow<DomainException>().Message.ShouldBe("Appointment start must be before its end.");
+        appointment.StartUtc.ShouldBe(StartUtc);
+    }
+
+    [Fact]
+    public void Reschedule_ToThePast_ThrowsDomainException()
+    {
+        var appointment = CreateAppointment();
+        var newStart = NowUtc.AddHours(-1);
+
+        var act = () => appointment.Reschedule(newStart, newStart.AddMinutes(30), NowUtc);
+
+        act.ShouldThrow<DomainException>().Message.ShouldBe("Appointment cannot be scheduled in the past.");
+        appointment.StartUtc.ShouldBe(StartUtc);
+        appointment.EndUtc.ShouldBe(EndUtc);
+    }
+
+    [Fact]
+    public void Reschedule_WhenAlreadyStarted_ThrowsDomainException()
+    {
+        var appointment = CreateAppointment();
+        var newStart = StartUtc.AddDays(1);
+
+        var act = () => appointment.Reschedule(newStart, newStart.AddMinutes(30), StartUtc.AddMinutes(5));
+
+        act.ShouldThrow<DomainException>().Message.ShouldBe("Appointment has already started.");
+        appointment.StartUtc.ShouldBe(StartUtc);
+    }
+
+    [Theory]
+    [InlineData(AppointmentStatus.Cancelled)]
+    [InlineData(AppointmentStatus.NoShow)]
+    public void Reschedule_WhenNotPending_ThrowsDomainException(AppointmentStatus status)
+    {
+        var appointment = CreateAppointmentIn(status);
+        var newStart = StartUtc.AddDays(1);
+
+        var act = () => appointment.Reschedule(newStart, newStart.AddMinutes(30), NowUtc);
+
+        act.ShouldThrow<DomainException>().Message.ShouldBe("Only scheduled or confirmed appointments can be rescheduled.");
+        appointment.Status.ShouldBe(status);
+        appointment.StartUtc.ShouldBe(StartUtc);
+    }
+
+    // Lleva la cita al estado pedido con las transiciones del dominio
+    private static Appointment CreateAppointmentIn(AppointmentStatus status)
+    {
+        var appointment = CreateAppointment();
+
+        switch (status)
+        {
+            case AppointmentStatus.Confirmed:
+                appointment.Confirm(NowUtc);
+                break;
+            case AppointmentStatus.Cancelled:
+                appointment.Cancel("Viaje", NowUtc);
+                break;
+            case AppointmentStatus.NoShow:
+                appointment.MarkNoShow(StartUtc);
+                break;
+        }
+
+        return appointment;
+    }
+
     private static Appointment CreateAppointment(
         DateTime? startUtc = null,
         DateTime? endUtc = null,

@@ -71,9 +71,17 @@ public static class AppointmentRequests
 
     // Inserta en la BD una cita que empezó hace una hora: la Api no deja agendar en el pasado.
     // Se crea con Appointment.Create y un nowUtc anterior a su inicio, así respeta las invariantes del aggregate
-    public static async Task<Guid> SeedStartedAppointmentAsync(DispensarioApiFactory factory, Guid patientId, Guid doctorId)
+    public static Task<Guid> SeedStartedAppointmentAsync(DispensarioApiFactory factory, Guid patientId, Guid doctorId) =>
+        SeedAppointmentAsync(factory, patientId, doctorId, DateTime.UtcNow.AddHours(-1));
+
+    // Inserta en la BD una cita de hoy que empieza ahora: la fecha local de su inicio es la de hoy
+    // mientras la petición siguiente no cruce la medianoche local
+    public static Task<Guid> SeedAppointmentStartingNowAsync(DispensarioApiFactory factory, Guid patientId, Guid doctorId) =>
+        SeedAppointmentAsync(factory, patientId, doctorId, DateTime.UtcNow);
+
+    private static async Task<Guid> SeedAppointmentAsync(
+        DispensarioApiFactory factory, Guid patientId, Guid doctorId, DateTime startUtc)
     {
-        var startUtc = DateTime.UtcNow.AddHours(-1);
         var appointment = Appointment.Create(
             new PatientId(patientId),
             new DoctorId(doctorId),

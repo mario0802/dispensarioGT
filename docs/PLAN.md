@@ -42,7 +42,7 @@ Al crear un spec con `/spec`, anota su archivo en la columna **Spec** de este ba
 |---|---|---|---|
 | 06 | Users: dominio y persistencia | Aggregate `User`, `Role`, configuración EF e índice único de email | `specs/06-users-domain-and-persistence.md` |
 | 07 | Auth: login y JWT | `IPasswordHasher`, `IJwtTokenGenerator`, `ICurrentUser`, `POST /api/auth/login`, `GET /api/auth/me`, políticas, seed del Admin (con `EnsureCreated` en Development hasta la fila 17) | `specs/07-auth-login-and-jwt.md` |
-| 08 | Gestión de usuarios | RegisterUser, ChangePassword, DeactivateUser, GetUsers | — |
+| 08 | Gestión de usuarios | RegisterUser (autoregistro de recepcionistas y alta por el Admin), ChangePassword, ResetUserPassword, UpdateUserProfile, Deactivate/ActivateUser, GetUsers, GetUserById | `specs/08-user-management.md` |
 
 ### Fase 2 — Catálogos clínicos
 | # | Feature | Contenido | Spec |

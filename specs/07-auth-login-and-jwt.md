@@ -1,8 +1,8 @@
 # SPEC 07 — Auth: login y JWT
 
-> **Status:** Approved
+> **Status:** Implemented
 > **Depends on:** SPEC 05, SPEC 06
-> **Date:** 2026-10-26
+> **Date:** 2026-10-
 > **Objective:** Autenticar usuarios con email y contraseña (bcrypt) en `POST /api/auth/login`, emitir un JWT HS256, exponer el usuario actual en `GET /api/auth/me` y en `ICurrentUser`, registrar las políticas por rol y sembrar el Admin en Development.
 
 ## Por qué este spec existe

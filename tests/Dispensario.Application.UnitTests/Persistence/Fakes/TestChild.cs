@@ -1,6 +1,6 @@
 namespace Dispensario.Application.UnitTests.Persistence.Fakes;
 
-// Entidad propia de TestAggregate (OwnsMany), como lo será WeeklySchedule en Doctor
+// Entidad propia de TestAggregate (OwnsMany), como ScheduleBlock en Doctor
 public sealed class TestChild
 {
     // Constructor para EF

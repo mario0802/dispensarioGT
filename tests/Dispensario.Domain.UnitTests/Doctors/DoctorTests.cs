@@ -188,6 +188,189 @@ public sealed class DoctorTests
         act.ShouldThrow<DomainException>().Message.ShouldBe("Doctor is already active.");
     }
 
+    [Fact]
+    public void Create_WithValidData_HasEmptySchedule()
+    {
+        var doctor = CreateDoctor();
+
+        doctor.Schedule.ShouldBeEmpty();
+    }
+
+    [Fact]
+    public void SetWeeklySchedule_WithBlocks_ReplacesSchedule()
+    {
+        var doctor = CreateDoctor();
+        doctor.SetWeeklySchedule([Block(DayOfWeek.Friday, 8, 0, 10, 0)]);
+        var monday = Block(DayOfWeek.Monday, 9, 0, 12, 0);
+        var tuesday = Block(DayOfWeek.Tuesday, 14, 0, 18, 0);
+
+        doctor.SetWeeklySchedule([monday, tuesday]);
+
+        doctor.Schedule.ShouldBe([monday, tuesday], ignoreOrder: true);
+    }
+
+    [Fact]
+    public void SetWeeklySchedule_WithEmptyList_ClearsSchedule()
+    {
+        var doctor = CreateDoctor();
+        doctor.SetWeeklySchedule([Block(DayOfWeek.Monday, 9, 0, 12, 0)]);
+
+        doctor.SetWeeklySchedule([]);
+
+        doctor.Schedule.ShouldBeEmpty();
+    }
+
+    [Fact]
+    public void SetWeeklySchedule_WithContiguousBlocks_AcceptsBoth()
+    {
+        var doctor = CreateDoctor();
+
+        doctor.SetWeeklySchedule([Block(DayOfWeek.Monday, 9, 0, 12, 0), Block(DayOfWeek.Monday, 12, 0, 14, 0)]);
+
+        doctor.Schedule.Count.ShouldBe(2);
+    }
+
+    [Theory]
+    [InlineData(11, 0, 13, 0)]
+    [InlineData(9, 0, 12, 0)]
+    public void SetWeeklySchedule_WithOverlappingBlocks_ThrowsAndKeepsCurrentSchedule(
+        int startHour, int startMinute, int endHour, int endMinute)
+    {
+        var doctor = CreateDoctor();
+        var current = Block(DayOfWeek.Friday, 8, 0, 10, 0);
+        doctor.SetWeeklySchedule([current]);
+
+        var act = () => doctor.SetWeeklySchedule(
+            [Block(DayOfWeek.Monday, 9, 0, 12, 0), Block(DayOfWeek.Monday, startHour, startMinute, endHour, endMinute)]);
+
+        act.ShouldThrow<DomainException>().Message.ShouldBe("Schedule blocks must not overlap.");
+        doctor.Schedule.ShouldBe([current]);
+    }
+
+    [Fact]
+    public void SetWeeklySchedule_WithBlockShorterThanDuration_ThrowsDomainException()
+    {
+        var doctor = CreateDoctor(appointmentDurationMinutes: 30);
+
+        var act = () => doctor.SetWeeklySchedule([Block(DayOfWeek.Monday, 9, 0, 9, 20)]);
+
+        act.ShouldThrow<DomainException>().Message
+            .ShouldBe("Each schedule block must last at least the appointment duration.");
+        doctor.Schedule.ShouldBeEmpty();
+    }
+
+    [Fact]
+    public void SetWeeklySchedule_WithBlockEqualToDuration_AcceptsBlock()
+    {
+        var doctor = CreateDoctor(appointmentDurationMinutes: 30);
+
+        doctor.SetWeeklySchedule([Block(DayOfWeek.Monday, 9, 0, 9, 30)]);
+
+        doctor.Schedule.Count.ShouldBe(1);
+    }
+
+    [Fact]
+    public void SetWeeklySchedule_OnInactiveDoctor_ThrowsDomainException()
+    {
+        var doctor = CreateDoctor();
+        doctor.Deactivate();
+
+        var act = () => doctor.SetWeeklySchedule([Block(DayOfWeek.Monday, 9, 0, 12, 0)]);
+
+        act.ShouldThrow<DomainException>().Message.ShouldBe("Doctor is inactive.");
+    }
+
+    [Fact]
+    public void Update_WithDurationLongerThanScheduleBlock_ThrowsAndKeepsCurrentData()
+    {
+        var doctor = CreateDoctor(appointmentDurationMinutes: 30);
+        doctor.SetWeeklySchedule([Block(DayOfWeek.Monday, 9, 0, 12, 0), Block(DayOfWeek.Tuesday, 9, 0, 9, 40)]);
+
+        var act = () => doctor.Update(doctor.FullName, "OTHER", doctor.Specialty, doctor.Email, null, 45);
+
+        act.ShouldThrow<DomainException>().Message
+            .ShouldBe("Appointment duration cannot be longer than a schedule block.");
+        doctor.LicenseNumber.ShouldBe("MP-123");
+        doctor.AppointmentDurationMinutes.ShouldBe(30);
+    }
+
+    [Fact]
+    public void Update_WithDurationEqualToShortestBlock_UpdatesDuration()
+    {
+        var doctor = CreateDoctor(appointmentDurationMinutes: 30);
+        doctor.SetWeeklySchedule([Block(DayOfWeek.Monday, 9, 0, 12, 0), Block(DayOfWeek.Tuesday, 9, 0, 9, 40)]);
+
+        doctor.Update(doctor.FullName, doctor.LicenseNumber, doctor.Specialty, doctor.Email, null, 40);
+
+        doctor.AppointmentDurationMinutes.ShouldBe(40);
+    }
+
+    // 2026-11-02 es lunes
+    [Theory]
+    [InlineData(10, 0, 10, 30)]   // dentro
+    [InlineData(9, 0, 9, 30)]     // borde inicial
+    [InlineData(11, 30, 12, 0)]   // borde final
+    [InlineData(12, 0, 14, 0)]    // segundo bloque entero
+    public void IsAvailableAt_WithRangeInsideBlock_ReturnsTrue(int startHour, int startMinute, int endHour, int endMinute)
+    {
+        var doctor = DoctorWithMondaySchedule();
+
+        doctor.IsAvailableAt(Monday(startHour, startMinute), Monday(endHour, endMinute)).ShouldBeTrue();
+    }
+
+    [Theory]
+    [InlineData(8, 30, 9, 0)]     // antes del bloque
+    [InlineData(8, 45, 9, 15)]    // empieza fuera
+    [InlineData(14, 0, 14, 30)]   // después del último bloque
+    [InlineData(11, 45, 12, 15)]  // salta entre dos bloques contiguos
+    [InlineData(10, 30, 10, 0)]   // inicio posterior al fin
+    [InlineData(10, 0, 10, 0)]    // inicio igual al fin
+    public void IsAvailableAt_WithRangeOutsideBlock_ReturnsFalse(int startHour, int startMinute, int endHour, int endMinute)
+    {
+        var doctor = DoctorWithMondaySchedule();
+
+        doctor.IsAvailableAt(Monday(startHour, startMinute), Monday(endHour, endMinute)).ShouldBeFalse();
+    }
+
+    [Fact]
+    public void IsAvailableAt_OnDayWithoutBlocks_ReturnsFalse()
+    {
+        var doctor = DoctorWithMondaySchedule();
+        var tuesday = Monday(10, 0).AddDays(1);
+
+        doctor.IsAvailableAt(tuesday, tuesday.AddMinutes(30)).ShouldBeFalse();
+    }
+
+    [Fact]
+    public void IsAvailableAt_WithRangeAcrossDates_ReturnsFalse()
+    {
+        var doctor = CreateDoctor();
+        doctor.SetWeeklySchedule([Block(DayOfWeek.Monday, 0, 0, 23, 55), Block(DayOfWeek.Sunday, 0, 0, 23, 55)]);
+
+        doctor.IsAvailableAt(Monday(0, 0).AddMinutes(-10), Monday(0, 20)).ShouldBeFalse();
+    }
+
+    [Fact]
+    public void IsAvailableAt_OnInactiveDoctor_OnlyLooksAtSchedule()
+    {
+        var doctor = DoctorWithMondaySchedule();
+        doctor.Deactivate();
+
+        doctor.IsAvailableAt(Monday(10, 0), Monday(10, 30)).ShouldBeTrue();
+    }
+
+    private static Doctor DoctorWithMondaySchedule()
+    {
+        var doctor = CreateDoctor();
+        doctor.SetWeeklySchedule([Block(DayOfWeek.Monday, 9, 0, 12, 0), Block(DayOfWeek.Monday, 12, 0, 14, 0)]);
+        return doctor;
+    }
+
+    private static DateTime Monday(int hour, int minute) => new(2026, 11, 2, hour, minute, 0, DateTimeKind.Unspecified);
+
+    private static ScheduleBlock Block(DayOfWeek day, int startHour, int startMinute, int endHour, int endMinute) =>
+        ScheduleBlock.Create(day, new TimeOnly(startHour, startMinute), new TimeOnly(endHour, endMinute));
+
     private static Doctor CreateDoctor(
         string licenseNumber = "MP-123",
         string specialty = "Pediatría",

@@ -37,7 +37,8 @@ public static class ApiServiceExtensions
         services.AddAuthorizationBuilder()
             .AddPolicy(Policies.AdminOnly, policy => policy.RequireRole(nameof(Role.Admin)))
             .AddPolicy(Policies.Reception, policy => policy.RequireRole(nameof(Role.Admin), nameof(Role.Receptionist)))
-            .AddPolicy(Policies.Clinical, policy => policy.RequireRole(nameof(Role.Doctor)));
+            .AddPolicy(Policies.Clinical, policy => policy.RequireRole(nameof(Role.Doctor)))
+            .AddPolicy(Policies.AdminOrDoctor, policy => policy.RequireRole(nameof(Role.Admin), nameof(Role.Doctor)));
 
         // En SQLite, CanConnectAsync (la prueba por defecto) solo mira si existe el archivo;
         // abrir la conexión con una consulta comprueba de verdad que la base de datos es accesible

@@ -48,7 +48,7 @@ Al crear un spec con `/spec`, anota su archivo en la columna **Spec** de este ba
 | # | Feature | Contenido | Spec |
 |---|---|---|---|
 | 09 | Doctors: CRUD | Aggregate `Doctor` (matrícula única, especialidad, duración de la cita), Create/Update/Deactivate, GetDoctors/GetById, vínculo opcional con `User` | `specs/09-doctors-crud.md` |
-| 10 | Doctors: horario semanal | `WeeklySchedule` sin solapes, SetWeeklySchedule, `IsAvailableAt` | — |
+| 10 | Doctors: horario semanal | `WeeklySchedule` sin solapes, SetWeeklySchedule, `IsAvailableAt` | `specs/10-doctor-weekly-schedule.md` |
 | 11 | Patients: CRUD | Aggregate `Patient` (documento único), Create/Update/Deactivate, GetPatients (búsqueda + paginación), GetById, GetByDocument | — |
 
 ### Fase 3 — Agenda y atención

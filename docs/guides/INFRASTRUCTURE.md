@@ -65,7 +65,7 @@ Reglas:
 - Los enums se guardan como `string` (`HasConversion<string>()`), que es legible en SQLite.
 - Longitudes máximas iguales a las del validador.
 - **Sin navegaciones entre módulos.** Si se quiere FK física, se declara sin navegación: `builder.HasOne<Patient>().WithMany().HasForeignKey(a => a.PatientId).OnDelete(DeleteBehavior.Restrict);`.
-- Las entidades hijas del mismo aggregate (`WeeklySchedule`) usan `OwnsMany` y tabla propia (`DoctorSchedules`).
+- Las colecciones propias del aggregate (`Doctor.Schedule` de `ScheduleBlock`) usan `OwnsMany` con tabla propia (`DoctorScheduleBlocks`), FK en sombra al propietario con borrado en cascada y una clave `int` en sombra (`Id`) que es la clave primaria sola: SQLite solo autoincrementa un `INTEGER PRIMARY KEY`, no una clave compuesta. Las propiedades del VO se declaran una a una y la navegación usa el campo (`HasField("_schedule")`). EF carga la colección con el propietario, sin `Include`.
 
 Índices obligatorios:
 | Tabla | Índice |
@@ -73,7 +73,7 @@ Reglas:
 | `Users` | único `Email`; único (`Identification_Type`, `Identification_Number`); único `DoctorId` (sin FK; SQLite admite varios `NULL`) |
 | `Doctors` | único `LicenseNumber` (guardado en mayúsculas por el dominio) |
 
-Tabla `Doctors` (fila 09): `Id`, `FullName_FirstName`, `FullName_LastName` (`ComplexProperty`), `LicenseNumber`, `Specialty`, `Email` y `Phone` (`HasConversion`, el email sin índice), `AppointmentDurationMinutes`, `IsActive` y las columnas de auditoría. `DoctorSchedules` llega con la fila 10.
+Tabla `Doctors` (fila 09): `Id`, `FullName_FirstName`, `FullName_LastName` (`ComplexProperty`), `LicenseNumber`, `Specialty`, `Email` y `Phone` (`HasConversion`, el email sin índice), `AppointmentDurationMinutes`, `IsActive` y las columnas de auditoría. Tabla `DoctorScheduleBlocks` (fila 10): `Id` (clave autoincremental), `DoctorId` (FK a `Doctors`, en cascada, con su índice), `DayOfWeek` (texto), `StartTime` y `EndTime` (`TimeOnly` como TEXT).
 | `Patients` | único (`Document_Type`, `Document_Number`); `LastName` |
 | `Appointments` | (`DoctorId`, `StartUtc`), (`PatientId`, `StartUtc`) |
 | `Consultations` | `PatientId`, `AppointmentId` |

@@ -1,3 +1,4 @@
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using static Dispensario.Api.IntegrationTests.Common.UserRequests;
 
@@ -33,5 +34,27 @@ public static class DoctorRequests
         response.EnsureSuccessStatusCode();
         using var json = await ReadJsonAsync(response);
         return json.RootElement.GetProperty("id").GetGuid();
+    }
+
+    /// <summary>
+    /// Crea un usuario Doctor, lo vincula al doctor y devuelve un cliente con un token emitido tras el vínculo
+    /// (el claim doctor_id solo llega en los tokens nuevos).
+    /// </summary>
+    public static async Task<HttpClient> AuthenticateAsLinkedDoctorAsync(
+        DispensarioApiFactory factory, HttpClient adminClient, Guid doctorId)
+    {
+        var userBody = NewUserBody("Doctor");
+        var userId = await CreateUserAsync(adminClient, "Doctor", userBody);
+        var link = await adminClient.PostAsJsonAsync(
+            $"/api/users/{userId}/link-doctor", new { doctorId }, TestContext.Current.CancellationToken);
+        link.EnsureSuccessStatusCode();
+
+        var client = factory.CreateClient();
+        var login = await LoginAsync(client, userBody["email"]!, Password);
+        login.EnsureSuccessStatusCode();
+        using var json = await ReadJsonAsync(login);
+        client.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", json.RootElement.GetProperty("accessToken").GetString());
+        return client;
     }
 }

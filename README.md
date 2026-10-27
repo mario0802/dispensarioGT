@@ -36,6 +36,8 @@ Los errores responden con `application/problem+json` (ProblemDetails). Las rutas
 | `PUT` | `/api/doctors/{id}` | `AdminOnly` | Edita los datos de un doctor |
 | `POST` | `/api/doctors/{id}/deactivate` | `AdminOnly` | Desactiva un doctor |
 | `POST` | `/api/doctors/{id}/activate` | `AdminOnly` | Reactiva un doctor |
+| `PUT` | `/api/doctors/{id}/schedule` | `AdminOrDoctor` (el doctor, solo el suyo) | Reemplaza el horario semanal de un doctor |
+| `GET` | `/api/doctors/{id}/schedule` | Autenticado | Horario semanal de un doctor |
 | `GET` | `/health` | Anónimo | Estado de la Api y de la base de datos |
 | `GET` | `/scalar`, `/openapi/v1.json` | Solo Development | Referencia interactiva y documento OpenAPI |
 
@@ -46,6 +48,7 @@ Políticas de autorización:
 | `AdminOnly` | `Admin` |
 | `Reception` | `Admin`, `Receptionist` |
 | `Clinical` | `Admin`, `Doctor` |
+| `AdminOrDoctor` | `Admin`, `Doctor` (el handler comprueba que el doctor actúe sobre su propia ficha) |
 
 ### Auth
 
@@ -294,7 +297,7 @@ El usuario del token cambia su contraseña. La nueva debe ser distinta de la act
 | 404 | El usuario del token ya no existe |
 
 ### Doctors
-Todas las rutas con `{id}` esperan un GUID. Las de escritura son `AdminOnly` (**401** sin token, **403** con un token de `Doctor` o `Receptionist`); las lecturas aceptan cualquier usuario autenticado. Las respuestas de doctor tienen esta forma:
+Todas las rutas con `{id}` esperan un GUID. Las de escritura son `AdminOnly` (**401** sin token, **403** con un token de `Doctor` o `Receptionist`), salvo el horario, que también puede cambiar el propio doctor; las lecturas aceptan cualquier usuario autenticado. Las respuestas de doctor tienen esta forma:
 
 ```json
 {
@@ -377,7 +380,7 @@ Reemplaza los datos del doctor; también funciona sobre un doctor inactivo. Mism
 | Código | Cuándo |
 |---|---|
 | 204 | Doctor actualizado |
-| 400 | Datos inválidos, como en el alta |
+| 400 | Datos inválidos, como en el alta; o la nueva duración es mayor que algún bloque del horario (`Appointment duration cannot be longer than a schedule block.`) |
 | 401 / 403 | Sin token / el usuario no es Admin |
 | 404 | No existe un doctor con ese ID |
 | 409 | La matrícula pertenece a otro doctor |
@@ -400,4 +403,48 @@ Vuelve a activar un doctor desactivado. Sin cuerpo.
 | 204 | Doctor activado |
 | 400 | El doctor ya está activo |
 | 401 / 403 | Sin token / el usuario no es Admin |
+| 404 | No existe un doctor con ese ID |
+
+#### `PUT /api/doctors/{id}/schedule` — `AdminOrDoctor`
+Reemplaza el horario semanal entero del doctor; `"blocks": []` lo borra. Lo usa el Admin con cualquier doctor, o un usuario `Doctor` con su propia ficha (el claim `doctor_id`, que solo llega en los tokens emitidos tras el vínculo).
+Las horas van en formato `"HH:mm"`, en hora local del dispensario, con minutos múltiplo de 5 y el inicio antes del fin (un bloque no cruza la medianoche). Cada bloque dura al menos `appointmentDurationMinutes` y los bloques del mismo día no se solapan; dos bloques contiguos (`09:00–12:00` y `12:00–14:00`) sí valen.
+
+```json
+// Petición
+{
+  "blocks": [
+    { "dayOfWeek": "Monday", "startTime": "09:00", "endTime": "12:00" },
+    { "dayOfWeek": "Monday", "startTime": "14:00", "endTime": "18:00" }
+  ]
+}
+
+// 204 No Content
+```
+
+| Código | Cuándo |
+|---|---|
+| 204 | Horario reemplazado |
+| 400 | Formato inválido: hora que no sigue `"HH:mm"` (`ValidationErrors`) o `dayOfWeek` desconocido; o regla del horario rota: minutos no múltiplo de 5, inicio ≥ fin, bloque más corto que la duración de la cita, bloques solapados o doctor inactivo |
+| 401 | Sin token |
+| 403 | `Receptionist`, o un `Doctor` sobre una ficha que no es la suya o sin ficha vinculada (también si el ID no existe) |
+| 404 | No existe un doctor con ese ID (Admin) |
+
+#### `GET /api/doctors/{id}/schedule` — Autenticado
+Devuelve el horario del doctor, también si está inactivo. Los bloques salen de lunes a domingo y, dentro del día, por hora de inicio; sin horario, `blocks` es una lista vacía.
+
+```json
+// 200 OK
+{
+  "doctorId": "3c1a…",
+  "blocks": [
+    { "dayOfWeek": "Monday", "startTime": "09:00", "endTime": "12:00" },
+    { "dayOfWeek": "Monday", "startTime": "14:00", "endTime": "18:00" }
+  ]
+}
+```
+
+| Código | Cuándo |
+|---|---|
+| 200 | Horario del doctor |
+| 401 | Sin token |
 | 404 | No existe un doctor con ese ID |

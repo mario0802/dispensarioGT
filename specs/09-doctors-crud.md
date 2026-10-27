@@ -1,6 +1,6 @@
 # SPEC 09 — Doctors: CRUD y vínculo con el usuario
 
-> **Status:** Approved
+> **Status:** Implemented
 > **Depends on:** SPEC 06, SPEC 07, SPEC 08
 > **Date:** 2026-10-26
 > **Objective:** Crear el aggregate `Doctor` con su persistencia y exponer su alta, edición, activación, desactivación y consulta, además del vínculo de un usuario `Doctor` con su ficha de doctor.

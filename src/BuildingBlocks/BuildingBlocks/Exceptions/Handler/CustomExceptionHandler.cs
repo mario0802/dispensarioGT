@@ -34,6 +34,13 @@ public class CustomExceptionHandler
                 exception.GetType().Name,
                 context.Response.StatusCode = StatusCodes.Status400BadRequest
             ),
+            // La lanza ASP.NET al no poder leer la petición (JSON mal formado, enum desconocido…); trae su propio código (400, 413…)
+            BadHttpRequestException badHttpRequestException =>
+            (
+                exception.Message,
+                exception.GetType().Name,
+                context.Response.StatusCode = badHttpRequestException.StatusCode
+            ),
             DomainException =>
             (
                 exception.Message,

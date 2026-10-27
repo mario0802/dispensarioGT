@@ -3,7 +3,7 @@ using Dispensario.Domain.Common;
 
 namespace Dispensario.Domain.Doctors;
 
-// Ficha del doctor; el horario semanal llega con la fila 10
+// Ficha del doctor con su horario semanal de atención (bloques en hora local del dispensario)
 public sealed class Doctor : AggregateRoot<DoctorId>
 {
     public const int LicenseNumberMaxLength = 30;
@@ -12,6 +12,8 @@ public sealed class Doctor : AggregateRoot<DoctorId>
     public const int MaxAppointmentDurationMinutes = 120;
     public const int AppointmentDurationStepMinutes = 5;
     public const int DefaultAppointmentDurationMinutes = 30;
+
+    private readonly List<ScheduleBlock> _schedule = [];
 
     // Constructor para EF: los VOs y los textos los materializa EF justo después
     private Doctor()
@@ -36,6 +38,7 @@ public sealed class Doctor : AggregateRoot<DoctorId>
     public PhoneNumber? Phone { get; private set; }
     public int AppointmentDurationMinutes { get; private set; }
     public bool IsActive { get; private set; }
+    public IReadOnlyCollection<ScheduleBlock> Schedule => _schedule.AsReadOnly();
 
     public static Doctor Create(
         FullName fullName,
@@ -63,6 +66,9 @@ public sealed class Doctor : AggregateRoot<DoctorId>
         var normalizedSpecialty = NormalizeSpecialty(specialty);
         EnsureAppointmentDuration(appointmentDurationMinutes);
 
+        if (_schedule.Any(block => block.DurationMinutes < appointmentDurationMinutes))
+            throw new DomainException("Appointment duration cannot be longer than a schedule block.");
+
         FullName = fullName;
         LicenseNumber = normalizedLicense;
         Specialty = normalizedSpecialty;
@@ -85,6 +91,44 @@ public sealed class Doctor : AggregateRoot<DoctorId>
             throw new DomainException("Doctor is already active.");
 
         IsActive = true;
+    }
+
+    // Reemplaza todo el horario; una lista vacía lo borra. Si algo falla, el horario anterior no cambia
+    public void SetWeeklySchedule(IEnumerable<ScheduleBlock> blocks)
+    {
+        ArgumentNullException.ThrowIfNull(blocks);
+        var newSchedule = blocks.ToList();
+
+        if (!IsActive)
+            throw new DomainException("Doctor is inactive.");
+
+        if (newSchedule.Any(block => block.DurationMinutes < AppointmentDurationMinutes))
+            throw new DomainException("Each schedule block must last at least the appointment duration.");
+
+        for (var i = 0; i < newSchedule.Count; i++)
+        {
+            for (var j = i + 1; j < newSchedule.Count; j++)
+            {
+                if (newSchedule[i].Overlaps(newSchedule[j]))
+                    throw new DomainException("Schedule blocks must not overlap.");
+            }
+        }
+
+        _schedule.Clear();
+        _schedule.AddRange(newSchedule);
+    }
+
+    // Recibe horas locales del dispensario (ignora DateTime.Kind). Solo mira el horario:
+    // ni IsActive, ni la alineación a slots, ni las citas existentes
+    public bool IsAvailableAt(DateTime localStart, DateTime localEnd)
+    {
+        if (localStart >= localEnd || localStart.Date != localEnd.Date)
+            return false;
+
+        var start = TimeOnly.FromDateTime(localStart);
+        var end = TimeOnly.FromDateTime(localEnd);
+
+        return _schedule.Any(block => block.DayOfWeek == localStart.DayOfWeek && block.Contains(start, end));
     }
 
     // En mayúsculas para que la unicidad no distinga mayúsculas (SQLite compara el texto tal cual)

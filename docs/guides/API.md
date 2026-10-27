@@ -10,7 +10,8 @@ Authorization/
 Endpoints/
   Auth/                        # LoginEndpoint, RegisterEndpoint (autoregistro), GetCurrentUserEndpoint
   Users/                       # alta, listado, detalle, perfil, contraseña, activar/desactivar, vínculo con doctor (LinkDoctorEndpoint); /api/users/me y /me/password
-  Doctors/                     # alta, listado, detalle, edición, activar/desactivar (escritura AdminOnly, lecturas autenticadas)
+  Doctors/                     # alta, listado, detalle, edición, activar/desactivar (escritura AdminOnly, lecturas autenticadas);
+                               # horario semanal: SetDoctorScheduleEndpoint (AdminOrDoctor) y GetDoctorScheduleEndpoint
   Patients/  Appointments/  Consultations/
 Extensions/
   ApiServiceExtensions.cs      # AddApiServices: Carter, OpenAPI, JSON, ProblemDetails, exception handler, JWT, políticas, health
@@ -72,12 +73,14 @@ public static class Policies
     public const string AdminOnly = nameof(AdminOnly);   // Admin
     public const string Reception = nameof(Reception);   // Admin, Receptionist
     public const string Clinical  = nameof(Clinical);    // Doctor
+    public const string AdminOrDoctor = nameof(AdminOrDoctor);   // Admin, Doctor (el handler comprueba que el doctor sea el dueño)
 }
 
 services.AddAuthorizationBuilder()
     .AddPolicy(Policies.AdminOnly, p => p.RequireRole(nameof(Role.Admin)))
     .AddPolicy(Policies.Reception, p => p.RequireRole(nameof(Role.Admin), nameof(Role.Receptionist)))
-    .AddPolicy(Policies.Clinical,  p => p.RequireRole(nameof(Role.Doctor)));
+    .AddPolicy(Policies.Clinical,  p => p.RequireRole(nameof(Role.Doctor)))
+    .AddPolicy(Policies.AdminOrDoctor, p => p.RequireRole(nameof(Role.Admin), nameof(Role.Doctor)));
 ```
 - `Policies` vive en `Dispensario.Api/Authorization/Policies.cs`. Las lecturas generales solo exigen `RequireAuthorization()`; los endpoints anónimos (login) llevan `AllowAnonymous()`.
 
@@ -125,6 +128,7 @@ public partial class Program;          // necesario para WebApplicationFactory e
 |---|---|
 | `ValidationException` (FluentValidation) | 400 + `ValidationErrors` |
 | `BadRequestException`, `DomainException` | 400 |
+| `BadHttpRequestException` (ASP.NET no puede leer la petición: JSON mal formado, enum desconocido) | su `StatusCode` (400, 413…), sin `ValidationErrors` (fila 10) |
 | `UnauthorizedException` | 401 |
 | `ForbiddenException` | 403 |
 | `NotFoundException` | 404 |

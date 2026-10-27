@@ -17,6 +17,7 @@ Endpoints/
   Appointments/                # ScheduleAppointmentEndpoint, ConfirmAppointmentEndpoint y RescheduleAppointmentEndpoint (Reception),
                                # GetAppointmentsEndpoint, GetAppointmentByIdEndpoint, CancelAppointmentEndpoint y
                                # MarkAppointmentNoShowEndpoint (autenticados; el handler limita al Doctor a sus propias citas). Horas locales sin offset
+                               # GetAvailableSlotsEndpoint: GET /api/doctors/{id}/available-slots?date= (autenticado), en esta carpeta
   Consultations/
 Extensions/
   ApiServiceExtensions.cs      # AddApiServices: Carter, OpenAPI, JSON, ProblemDetails, exception handler, JWT, políticas, health

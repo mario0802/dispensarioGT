@@ -46,6 +46,25 @@ public static class AppointmentSlotRules
             throw new ConflictException("The patient already has an appointment at that time.");
     }
 
+    // Slots del horario del doctor en una fecha local, ordenados por inicio (Kind = Unspecified).
+    // Solo mira el horario: ni IsActive, ni el pasado, ni las citas. El sobrante final de un bloque se descarta
+    public static IReadOnlyList<(DateTime LocalStart, DateTime LocalEnd)> GetScheduleSlots(Doctor doctor, DateOnly date)
+    {
+        var duration = TimeSpan.FromMinutes(doctor.AppointmentDurationMinutes);
+        var slots = new List<(DateTime LocalStart, DateTime LocalEnd)>();
+
+        foreach (var block in doctor.Schedule.Where(b => b.DayOfWeek == date.DayOfWeek).OrderBy(b => b.StartTime))
+        {
+            var start = date.ToDateTime(block.StartTime);
+            var blockEnd = date.ToDateTime(block.EndTime);
+
+            for (var end = start + duration; end <= blockEnd; start = end, end += duration)
+                slots.Add((start, end));
+        }
+
+        return slots;
+    }
+
     // Los slots se cuentan desde el inicio del bloque que contiene la cita, en pasos de la duración
     private static bool IsAlignedToSlots(Doctor doctor, DateTime localStart, DateTime localEnd)
     {

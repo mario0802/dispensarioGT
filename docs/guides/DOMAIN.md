@@ -90,7 +90,7 @@ Cada VO es un `sealed record : ValueObject` con constructor privado y `static Cr
 | `Identification` | `Document` | obligatorio; único (`Type` + `Number`) |
 | `Phone` | `PhoneNumber?` | opcional |
 | `Role` | `Role` enum | `Admin`, `Doctor`, `Receptionist` |
-| `DoctorId` | `DoctorId?` | opcional; se asigna con `LinkDoctor`. La fila 09 decide si pasa a ser obligatorio con `Role == Doctor` |
+| `DoctorId` | `DoctorId?` | opcional también con `Role == Doctor` (decidido en la fila 09); se asigna con `LinkDoctor` desde `POST /api/users/{id}/link-doctor`. Único: un doctor se vincula a un solo usuario |
 | `IsActive` | `bool` | `true` al crear |
 
 Métodos: `Create(email, passwordHash, fullName, identification, phone, role)`, `ChangePassword(newHash)`, `UpdateProfile(fullName, phone)` (`phone` null borra el teléfono), `Deactivate()`, `Activate()`, `LinkDoctor(doctorId)`.
@@ -103,16 +103,21 @@ Eventos: `UserCreatedDomainEvent(UserId, Email, Role)`.
 |---|---|---|
 | `Id` | `DoctorId` | |
 | `FullName` | `FullName` | |
-| `LicenseNumber` | `string` | único |
-| `Specialty` | `string` | texto libre en v1 |
-| `Email` / `Phone` | `Email` / `PhoneNumber` | |
-| `AppointmentDurationMinutes` | `int` | entre 10 y 120 |
-| `Schedules` | `IReadOnlyCollection<WeeklySchedule>` | entidad hija, propiedad del aggregate |
-| `IsActive` | `bool` | |
+| `LicenseNumber` | `string` | Trim + mayúsculas; máx. 30 (`Doctor.LicenseNumberMaxLength`); único sin distinguir mayúsculas |
+| `Specialty` | `string` | Trim; texto libre en v1; máx. 100 (`Doctor.SpecialtyMaxLength`) |
+| `Email` | `Email` | obligatorio; no único (independiente del email de login) |
+| `Phone` | `PhoneNumber?` | opcional |
+| `AppointmentDurationMinutes` | `int` | entre 10 y 120, múltiplo de 5; el alta usa 30 (`Doctor.DefaultAppointmentDurationMinutes`) si no se indica |
+| `Schedules` | `IReadOnlyCollection<WeeklySchedule>` | entidad hija, propiedad del aggregate (llega con la fila 10) |
+| `IsActive` | `bool` | `true` al crear |
 
-`WeeklySchedule`: `DayOfWeek`, `TimeOnly StartTime`, `TimeOnly EndTime` (con `Start < End`).
-Invariantes: los bloques del mismo día no se solapan, y cada bloque dura al menos `AppointmentDurationMinutes`.
-Métodos: `Create`, `Update(...)`, `SetWeeklySchedule(IEnumerable<...>)` (reemplaza todo el horario), `Deactivate()`, `IsAvailableAt(DateTime localStart, DateTime localEnd)`.
+Métodos (fila 09): `Create(fullName, licenseNumber, specialty, email, phone, appointmentDurationMinutes)`, `Update(...)` (mismos parámetros; reemplaza todo, `phone` null borra el teléfono y también vale sobre un doctor inactivo), `Deactivate()`, `Activate()`.
+Reglas (fila 09): matrícula y especialidad no vacías tras el `Trim` y dentro de su máximo; duración en rango y múltiplo de 5; `Deactivate` sobre un inactivo y `Activate` sobre un activo lanzan `DomainException`. El valor por defecto de 30 lo aplica el handler de alta, no el dominio.
+Eventos: ninguno en v1.
+
+`WeeklySchedule` (fila 10): `DayOfWeek`, `TimeOnly StartTime`, `TimeOnly EndTime` (con `Start < End`).
+Invariantes (fila 10): los bloques del mismo día no se solapan, y cada bloque dura al menos `AppointmentDurationMinutes`.
+Métodos (fila 10): `SetWeeklySchedule(IEnumerable<...>)` (reemplaza todo el horario), `IsAvailableAt(DateTime localStart, DateTime localEnd)`.
 
 ### Patients
 | Miembro | Tipo | Notas |
@@ -172,7 +177,7 @@ Eventos: `ConsultationClosedDomainEvent(ConsultationId, AppointmentId?)`.
 ```
 Dispensario.Domain/
   Common/ FullName.cs Email.cs PhoneNumber.cs Address.cs Document.cs DocumentType.cs
-  Doctors/ DoctorId.cs                     # el aggregate Doctor llega con la fila 09
+  Doctors/ Doctor.cs DoctorId.cs           # WeeklySchedule llega con la fila 10
   Users/
     User.cs UserId.cs Role.cs
     Events/UserCreatedDomainEvent.cs

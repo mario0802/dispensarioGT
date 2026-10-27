@@ -27,8 +27,15 @@ Los errores responden con `application/problem+json` (ProblemDetails). Las rutas
 | `PUT` | `/api/users/{id}/password` | `AdminOnly` | Resetea la contraseña de otro usuario |
 | `POST` | `/api/users/{id}/deactivate` | `AdminOnly` | Desactiva un usuario |
 | `POST` | `/api/users/{id}/activate` | `AdminOnly` | Reactiva un usuario |
+| `POST` | `/api/users/{id}/link-doctor` | `AdminOnly` | Vincula un usuario `Doctor` con su ficha de doctor |
 | `PUT` | `/api/users/me` | Autenticado | Cambia el nombre y el teléfono propios |
 | `PUT` | `/api/users/me/password` | Autenticado | Cambia la contraseña propia |
+| `POST` | `/api/doctors` | `AdminOnly` | Registra un doctor |
+| `GET` | `/api/doctors` | Autenticado | Lista paginada de doctores con búsqueda y filtros |
+| `GET` | `/api/doctors/{id}` | Autenticado | Detalle de un doctor |
+| `PUT` | `/api/doctors/{id}` | `AdminOnly` | Edita los datos de un doctor |
+| `POST` | `/api/doctors/{id}/deactivate` | `AdminOnly` | Desactiva un doctor |
+| `POST` | `/api/doctors/{id}/activate` | `AdminOnly` | Reactiva un doctor |
 | `GET` | `/health` | Anónimo | Estado de la Api y de la base de datos |
 | `GET` | `/scalar`, `/openapi/v1.json` | Solo Development | Referencia interactiva y documento OpenAPI |
 
@@ -133,7 +140,7 @@ Todas las rutas con `{id}` esperan un GUID. Las de `AdminOnly` responden **401**
 ```
 
 #### `POST /api/users` — `AdminOnly`
-Registra un usuario de cualquier rol (`Admin`, `Doctor`, `Receptionist`). Un `Doctor` queda sin `doctorId` hasta que exista el módulo Doctors.
+Registra un usuario de cualquier rol (`Admin`, `Doctor`, `Receptionist`). Un `Doctor` queda sin `doctorId` hasta que se vincula con `POST /api/users/{id}/link-doctor`.
 
 ```json
 // Petición: el mismo cuerpo que /api/auth/register más "role" (obligatorio)
@@ -241,6 +248,24 @@ Vuelve a activar a un usuario desactivado. Sin cuerpo.
 | 401 / 403 | Sin token / el usuario no es Admin |
 | 404 | No existe un usuario con ese ID |
 
+#### `POST /api/users/{id}/link-doctor` — `AdminOnly`
+Vincula un usuario con rol `Doctor` con su ficha de doctor. El vínculo es definitivo en v1 (no hay desvinculación). El claim `doctor_id` solo aparece en los tokens emitidos después: el usuario debe volver a hacer login.
+
+```json
+// Petición
+{ "doctorId": "3c1a…" }
+
+// 204 No Content
+```
+
+| Código | Cuándo |
+|---|---|
+| 204 | Usuario vinculado |
+| 400 | `doctorId` vacío, el usuario no tiene rol `Doctor`, ya está vinculado a un doctor, o el doctor está inactivo |
+| 401 / 403 | Sin token / el usuario no es Admin |
+| 404 | No existe el usuario o el doctor |
+| 409 | El doctor ya está vinculado a otro usuario |
+
 #### `PUT /api/users/me` — Autenticado
 El usuario del token cambia su nombre y su teléfono. Mismo cuerpo que `PUT /api/users/{id}`.
 
@@ -267,3 +292,112 @@ El usuario del token cambia su contraseña. La nueva debe ser distinta de la act
 | 400 | `Current password is incorrect.`, o nueva contraseña débil o igual a la actual |
 | 401 | Sin token o usuario desactivado |
 | 404 | El usuario del token ya no existe |
+
+### Doctors
+Todas las rutas con `{id}` esperan un GUID. Las de escritura son `AdminOnly` (**401** sin token, **403** con un token de `Doctor` o `Receptionist`); las lecturas aceptan cualquier usuario autenticado. Las respuestas de doctor tienen esta forma:
+
+```json
+{
+  "id": "3c1a…",
+  "firstName": "Luis",
+  "lastName": "Mora",
+  "licenseNumber": "MP-12345",
+  "specialty": "Pediatría",
+  "email": "luis.mora@dispensario.local",
+  "phone": "0991234567",
+  "appointmentDurationMinutes": 30,
+  "isActive": true,
+  "userId": null,
+  "createdAtUtc": "2026-10-26T15:00:00Z"
+}
+```
+
+`userId` es el usuario vinculado con la ficha, o `null` si el doctor no tiene cuenta.
+
+#### `POST /api/doctors` — `AdminOnly`
+Registra un doctor activo. La matrícula se guarda sin espacios alrededor y en mayúsculas, y es única sin distinguir mayúsculas. El email es obligatorio (no tiene que ser único) y `phone` es opcional. `appointmentDurationMinutes` va de 10 a 120 en múltiplos de 5; si no se envía, vale 30.
+
+```json
+// Petición
+{
+  "firstName": "Luis",
+  "lastName": "Mora",
+  "licenseNumber": "mp-12345",
+  "specialty": "Pediatría",
+  "email": "luis.mora@dispensario.local",
+  "phone": "0991234567",
+  "appointmentDurationMinutes": 30
+}
+
+// 201 Created  (Location: /api/doctors/3c1a…)
+{ "id": "3c1a…" }
+```
+
+| Código | Cuándo |
+|---|---|
+| 201 | Doctor creado |
+| 400 | Datos inválidos (`ValidationErrors`): nombre, matrícula (máx. 30), especialidad (máx. 100) o email vacíos o inválidos, duración fuera de 10–120 o no múltiplo de 5; o teléfono con formato inválido |
+| 401 / 403 | Sin token / el usuario no es Admin |
+| 409 | La matrícula ya está registrada |
+
+#### `GET /api/doctors` — Autenticado
+Lista paginada, ordenada por apellido y nombre. Parámetros de query, todos opcionales:
+
+| Parámetro | Descripción |
+|---|---|
+| `pageIndex` | Página, desde 0 (por defecto 0) |
+| `pageSize` | Tamaño de página, de 1 a 100 (por defecto 10) |
+| `search` | Texto contenido en el nombre, el apellido, la matrícula o la especialidad, sin distinguir mayúsculas |
+| `specialty` | Especialidad exacta, sin distinguir mayúsculas |
+| `isActive` | `true` o `false` |
+
+```json
+// GET /api/doctors?specialty=pediatría&pageSize=20 → 200 OK
+{ "pageIndex": 0, "pageSize": 20, "count": 1, "data": [ { "id": "3c1a…", "lastName": "Mora", "…": "…" } ] }
+```
+
+| Código | Cuándo |
+|---|---|
+| 200 | Página de doctores |
+| 400 | `pageIndex` negativo o `pageSize` fuera de 1–100 |
+| 401 | Sin token |
+
+#### `GET /api/doctors/{id}` — Autenticado
+Devuelve un doctor con la forma de arriba.
+
+| Código | Cuándo |
+|---|---|
+| 200 | Doctor encontrado |
+| 401 | Sin token |
+| 404 | No existe un doctor con ese ID |
+
+#### `PUT /api/doctors/{id}` — `AdminOnly`
+Reemplaza los datos del doctor; también funciona sobre un doctor inactivo. Mismo cuerpo que el alta. Si falta `appointmentDurationMinutes`, se conserva la duración actual; un `phone` null borra el teléfono.
+
+| Código | Cuándo |
+|---|---|
+| 204 | Doctor actualizado |
+| 400 | Datos inválidos, como en el alta |
+| 401 / 403 | Sin token / el usuario no es Admin |
+| 404 | No existe un doctor con ese ID |
+| 409 | La matrícula pertenece a otro doctor |
+
+#### `POST /api/doctors/{id}/deactivate` — `AdminOnly`
+Desactiva al doctor. Sin cuerpo. Su usuario vinculado, si lo tiene, no cambia.
+
+| Código | Cuándo |
+|---|---|
+| 204 | Doctor desactivado |
+| 400 | El doctor ya está inactivo |
+| 401 / 403 | Sin token / el usuario no es Admin |
+| 404 | No existe un doctor con ese ID |
+
+#### `POST /api/doctors/{id}/activate` — `AdminOnly`
+Vuelve a activar un doctor desactivado. Sin cuerpo.
+
+| Código | Cuándo |
+|---|---|
+| 204 | Doctor activado |
+| 400 | El doctor ya está activo |
+| 401 / 403 | Sin token / el usuario no es Admin |
+| 404 | No existe un doctor con ese ID |

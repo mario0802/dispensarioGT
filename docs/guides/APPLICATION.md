@@ -7,6 +7,8 @@ Orquesta los casos de uso con **CQRS** usando los contratos de `BuildingBlocks.C
 ```
 Abstractions/
   IApplicationDbContext.cs   ICurrentUser.cs   IPasswordHasher.cs   IJwtTokenGenerator.cs
+Common/
+  LikePatterns.cs            # patrones de EF.Functions.Like con comodines escapados
 <Module>/
   Commands/<Feature>/ <Feature>Command.cs  <Feature>Handler.cs
   Queries/<Feature>/  <Feature>Query.cs    <Feature>Handler.cs
@@ -16,7 +18,7 @@ DependencyInjection.cs
 ```
 
 ## 2. Abstracciones
-> **Estado:** `IApplicationDbContext` existe desde la fila 04; cada módulo añade su `DbSet<T>` al crear su aggregate (hoy solo `Users`). `ICurrentUser`, `IPasswordHasher` e `IJwtTokenGenerator` ya están en su forma final (fila 07): `ICurrentUser` lo implementa `CurrentUser` con los claims del JWT, y todas sus propiedades son `null` en una petición anónima o sin `HttpContext`. Abajo, la forma final.
+> **Estado:** `IApplicationDbContext` existe desde la fila 04; cada módulo añade su `DbSet<T>` al crear su aggregate (hoy `Users` y `Doctors`). `ICurrentUser`, `IPasswordHasher` e `IJwtTokenGenerator` ya están en su forma final (fila 07): `ICurrentUser` lo implementa `CurrentUser` con los claims del JWT, y todas sus propiedades son `null` en una petición anónima o sin `HttpContext`. Abajo, la forma final.
 
 ```csharp
 public interface IApplicationDbContext
@@ -60,12 +62,27 @@ Usan los métodos que ya tiene `User` (`Create`, `ChangePassword`, `UpdateProfil
 | `UpdateUserProfileCommand` / `UpdateCurrentUserProfileCommand` | `Users/Commands/UpdateUserProfile/`, `UpdateCurrentUserProfile/` | Nombre y teléfono (`null` borra el teléfono). La versión del usuario actual aplica las mismas comprobaciones 401/404/401 que `ChangePassword` |
 | `DeactivateUserCommand` | `Users/Commands/DeactivateUser/` | Sobre sí mismo → `BadRequestException`. Último Admin activo → `ConflictException`. Ya inactivo → `DomainException` |
 | `ActivateUserCommand` | `Users/Commands/ActivateUser/` | Ya activo → `DomainException` |
+| `LinkDoctorCommand(UserId, DoctorId)` | `Users/Commands/LinkDoctor/` | Lee `Doctors` y solo escribe en `Users`. Usuario o doctor inexistentes → `NotFoundException`. Doctor inactivo → `BadRequestException("Doctor is inactive.")`. Doctor ya vinculado a otro usuario → `ConflictException` (respaldado por el índice único de `Users.DoctorId`). Rol distinto de `Doctor` o usuario ya vinculado → `DomainException`. El claim `doctor_id` llega con el siguiente login |
 | `GetUsersQuery` → `PaginatedResult<UserDto>` | `Users/Queries/GetUsers/` | `PageIndex < 0` o `PageSize` fuera de 1–100 → `BadRequestException` (las queries no pasan por `ValidationBehavior`). `Search` con `EF.Functions.Like` (insensible a mayúsculas en ASCII, comodines escapados) en nombre, apellido, email e identificación; filtros `Role` e `IsActive`; orden por apellido, nombre e ID; `ProjectToType<UserDto>` |
 | `GetUserByIdQuery` → `UserDto` | `Users/Queries/GetUserById/` | Inexistente → `NotFoundException` |
 
 - `PasswordRules` (`Users/Validation/`): extensión `ValidPassword()` de FluentValidation, de 8 a 72 caracteres (límite de bcrypt) con al menos una letra y un dígito. La usan el registro, el cambio y el reseteo.
 - `Email` se guarda con `HasConversion`: para usarlo como texto en `EF.Functions.Like` se escribe `(string)(object)u.Email`, que EF traduce a la columna. `string.Contains` en SQLite genera `instr`, que sí distingue mayúsculas.
 - Un owned type (`Identification`) no se compara entero en LINQ: se comparan `Type` y `Number` por separado.
+
+### Módulo Doctors
+Usan los métodos de `Doctor` (`Create`, `Update`, `Deactivate`, `Activate`). Escritura `AdminOnly`; lecturas para cualquier usuario autenticado:
+| Caso de uso | Ubicación | Reglas |
+|---|---|---|
+| `CreateDoctorCommand` → `CreateDoctorResult(Id)` | `Doctors/Commands/CreateDoctor/` | `AppointmentDurationMinutes` null → `Doctor.DefaultAppointmentDurationMinutes` (30). Matrícula (ya normalizada por el aggregate) repetida → `ConflictException` |
+| `UpdateDoctorCommand` | `Doctors/Commands/UpdateDoctor/` | Inexistente → `NotFoundException`. `AppointmentDurationMinutes` null conserva la actual. Matrícula de otro doctor → `ConflictException`. Vale sobre doctores inactivos |
+| `DeactivateDoctorCommand` / `ActivateDoctorCommand` | `Doctors/Commands/DeactivateDoctor/`, `ActivateDoctor/` | Ya en ese estado → `DomainException`. No tocan al usuario vinculado |
+| `GetDoctorsQuery` → `PaginatedResult<DoctorDto>` | `Doctors/Queries/GetDoctors/` | Paginación validada como en `GetUsers`. `Search` con `EF.Functions.Like` en nombre, apellido, matrícula y especialidad; `Specialty` igualdad sin distinguir mayúsculas (LIKE sin comodines); filtro `IsActive`; orden por apellido, nombre e ID |
+| `GetDoctorByIdQuery` → `DoctorDto` | `Doctors/Queries/GetDoctorById/` | Inexistente → `NotFoundException` |
+
+- Validadores: matrícula máx. 30, especialidad máx. 100, email obligatorio, duración (si viene) entre 10 y 120 y múltiplo de 5.
+- `DoctorDto` incluye `UserId` (usuario vinculado o `null`). Lo calcula `DoctorProjections.ToDto(doctors, users)` con una subconsulta sobre `Users` (lectura entre módulos); Mapster no la expresa, por eso no hay `DoctorsMappingConfig`.
+- `LikePatterns` (`Common/`): `Contains` y `Equal` escapan `%`, `_` y `\` para `EF.Functions.Like` con `LikePatterns.Escape`. Lo usan `GetUsers` y `GetDoctors`.
 
 ## 3. Plantilla de un command
 ```csharp

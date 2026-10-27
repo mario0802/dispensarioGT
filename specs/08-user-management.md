@@ -1,6 +1,6 @@
 # SPEC 08 — Gestión de usuarios
 
-> **Status:** Approved
+> **Status:** Implemented
 > **Depends on:** SPEC 06, SPEC 07
 > **Date:** 2026-10-26
 > **Objective:** Exponer la gestión de usuarios (autoregistro de recepcionistas, alta por el Admin, consulta paginada y por ID, edición de perfil, cambio y reseteo de contraseña, activación y desactivación) sobre los métodos de dominio que ya tiene `User`.

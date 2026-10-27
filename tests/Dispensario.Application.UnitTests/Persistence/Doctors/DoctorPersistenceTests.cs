@@ -76,7 +76,7 @@ public sealed class DoctorPersistenceTests : IDisposable
     }
 
     [Fact]
-    public async Task EnsureCreated_DoctorsTable_HasExpectedColumns()
+    public async Task Migrate_DoctorsTable_HasExpectedColumns()
     {
         var columns = new List<string>();
         await using var command = _db.Connection.CreateCommand();
@@ -164,7 +164,7 @@ public sealed class DoctorPersistenceTests : IDisposable
     }
 
     [Fact]
-    public async Task EnsureCreated_DoctorScheduleBlocksTable_HasExpectedColumns()
+    public async Task Migrate_DoctorScheduleBlocksTable_HasExpectedColumns()
     {
         var columns = new List<string>();
         await using var command = _db.Connection.CreateCommand();

@@ -1,6 +1,6 @@
 # SPEC 16 — Evento de consulta cerrada y `Appointment.Complete`
 
-> **Status:** Approved
+> **Status:** Implemented
 > **Depends on:** SPEC 03, SPEC 13, SPEC 15
 > **Date:** 2026-10-27
 > **Objective:** Definir el tipo `ConsultationClosedDomainEvent` sin emitirlo y añadir al aggregate `Appointment` la transición `Complete`, ambos sin consumidores, como preparación del flujo "consulta cerrada → cita completada".

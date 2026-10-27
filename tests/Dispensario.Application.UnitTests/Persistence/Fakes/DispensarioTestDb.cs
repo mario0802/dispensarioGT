@@ -22,9 +22,9 @@ public sealed class DispensarioTestDb : IDisposable
     {
         _connection.Open();
 
-        // Sin migraciones hasta la fila 17: el esquema sale del modelo
+        // El esquema sale de las migraciones, como en Development
         using var context = CreateContext();
-        context.Database.EnsureCreated();
+        context.Database.Migrate();
     }
 
     public FakeTimeProvider TimeProvider { get; } = new(StartTime);

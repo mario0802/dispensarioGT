@@ -42,6 +42,8 @@ public sealed class DispensarioApiFactory : WebApplicationFactory<Program>
         builder.UseSetting("Jwt:Key", JwtKey);
         builder.UseSetting("Seed:Admin:Email", AdminEmail);
         builder.UseSetting("Seed:Admin:Password", AdminPassword);
+        // Sin datos de ejemplo: los tests crean sus propios datos
+        builder.UseSetting("Seed:SampleData:Enabled", "false");
 
         builder.ConfigureTestServices(services =>
         {

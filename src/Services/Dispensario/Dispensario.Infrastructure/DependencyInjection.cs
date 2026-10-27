@@ -47,6 +47,9 @@ public static class DependencyInjection
         services.AddOptions<AdminSeedOptions>().BindConfiguration(AdminSeedOptions.SectionName);
         services.AddScoped<DatabaseSeeder>();
 
+        services.AddOptions<SampleDataSeedOptions>().BindConfiguration(SampleDataSeedOptions.SectionName);
+        services.AddScoped<SampleDataSeeder>();
+
         return services;
     }
 }

@@ -58,7 +58,7 @@ public sealed class AppointmentPersistenceTests : IDisposable
     }
 
     [Fact]
-    public async Task EnsureCreated_AppointmentsTable_HasNullableCancellationReason()
+    public async Task Migrate_AppointmentsTable_HasNullableCancellationReason()
     {
         var notNull = await QueryNamesAsync(
             "SELECT CAST(\"notnull\" AS TEXT) FROM pragma_table_info('Appointments') WHERE name = 'CancellationReason'");
@@ -67,7 +67,7 @@ public sealed class AppointmentPersistenceTests : IDisposable
     }
 
     [Fact]
-    public async Task EnsureCreated_AppointmentsTable_HasExpectedColumns()
+    public async Task Migrate_AppointmentsTable_HasExpectedColumns()
     {
         var columns = await QueryNamesAsync("SELECT name FROM pragma_table_info('Appointments')");
 
@@ -80,7 +80,7 @@ public sealed class AppointmentPersistenceTests : IDisposable
     }
 
     [Fact]
-    public async Task EnsureCreated_AppointmentsTable_HasIndexesAndNoForeignKeys()
+    public async Task Migrate_AppointmentsTable_HasIndexesAndNoForeignKeys()
     {
         var indexColumns = await QueryNamesAsync(
             "SELECT group_concat(c.name, ',') FROM pragma_index_list('Appointments') i " +

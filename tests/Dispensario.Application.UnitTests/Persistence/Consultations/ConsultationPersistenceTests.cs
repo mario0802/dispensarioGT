@@ -83,7 +83,7 @@ public sealed class ConsultationPersistenceTests : IDisposable
     }
 
     [Fact]
-    public async Task EnsureCreated_ConsultationsTable_HasExpectedColumns()
+    public async Task Migrate_ConsultationsTable_HasExpectedColumns()
     {
         var columns = await QueryNamesAsync("SELECT name FROM pragma_table_info('Consultations')");
 
@@ -96,7 +96,7 @@ public sealed class ConsultationPersistenceTests : IDisposable
     }
 
     [Fact]
-    public async Task EnsureCreated_ConsultationsTable_HasNullableOptionalColumns()
+    public async Task Migrate_ConsultationsTable_HasNullableOptionalColumns()
     {
         var nullable = await QueryNamesAsync(
             "SELECT name FROM pragma_table_info('Consultations') WHERE \"notnull\" = 0 AND pk = 0");
@@ -110,7 +110,7 @@ public sealed class ConsultationPersistenceTests : IDisposable
     }
 
     [Fact]
-    public async Task EnsureCreated_ConsultationsTable_HasIndexesAndNoForeignKeys()
+    public async Task Migrate_ConsultationsTable_HasIndexesAndNoForeignKeys()
     {
         var uniqueIndexColumns = await QueryNamesAsync(
             "SELECT group_concat(c.name, ',') FROM pragma_index_list('Consultations') i " +

@@ -8,6 +8,8 @@
     <PackageReference Include="Carter" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
+    <!-- Solo para dotnet ef (migraciones); no se publica con la Api -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" PrivateAssets="all" />
     <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore" />
     <PackageReference Include="Scalar.AspNetCore" />
   </ItemGroup>

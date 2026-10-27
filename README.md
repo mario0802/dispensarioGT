@@ -45,6 +45,9 @@ Los errores responden con `application/problem+json` (ProblemDetails). Las rutas
 | `PUT` | `/api/patients/{id}` | `Reception` | Edita los datos de un paciente, incluido su documento |
 | `POST` | `/api/patients/{id}/deactivate` | `Reception` | Desactiva un paciente |
 | `POST` | `/api/patients/{id}/activate` | `Reception` | Reactiva un paciente |
+| `POST` | `/api/appointments` | `Reception` | Agenda una cita en el horario del doctor |
+| `GET` | `/api/appointments` | Autenticado (el doctor, solo las suyas) | Lista paginada de citas con filtros |
+| `GET` | `/api/appointments/{id}` | Autenticado (el doctor, solo las suyas) | Detalle de una cita |
 | `GET` | `/health` | Anónimo | Estado de la Api y de la base de datos |
 | `GET` | `/scalar`, `/openapi/v1.json` | Solo Development | Referencia interactiva y documento OpenAPI |
 
@@ -588,3 +591,92 @@ Vuelve a activar un paciente desactivado. Sin cuerpo.
 | 400 | El paciente ya está activo |
 | 401 / 403 | Sin token / el usuario es `Doctor` |
 | 404 | No existe un paciente con ese ID |
+
+### Appointments
+Todas las rutas con `{id}` esperan un GUID. Agendar usa la política `Reception` (**401** sin token, **403** con un token de `Doctor`). Las lecturas aceptan cualquier usuario autenticado, pero un `Doctor` solo ve las citas de su propia ficha: necesita estar vinculado (`POST /api/users/{id}/link-doctor`) y haber iniciado sesión después del vínculo. Las respuestas de cita tienen esta forma:
+
+```json
+{
+  "id": "0193f1d0-…",
+  "patientId": "0193f1c2-…",
+  "patientFullName": "Ana Pérez",
+  "doctorId": "0193f1b8-…",
+  "doctorFullName": "Luis Andrade",
+  "startUtc": "2026-11-03T14:30:00Z",
+  "endUtc": "2026-11-03T15:00:00Z",
+  "startLocal": "2026-11-03T09:30:00",
+  "endLocal": "2026-11-03T10:00:00",
+  "reason": "Control de presión arterial",
+  "status": "Scheduled",
+  "createdAtUtc": "2026-10-27T15:02:11Z"
+}
+```
+
+- Las horas locales son las del dispensario (`Clinic:TimeZone`, por defecto `America/Guayaquil`, UTC−5) y viajan **sin offset**; las UTC llevan `Z`.
+- `status`: `Scheduled`, `Confirmed`, `Completed`, `Cancelled` o `NoShow`. Por ahora todas las citas se crean `Scheduled`; las transiciones llegan con el ciclo de vida de la cita.
+- La duración de la cita es la del doctor (`appointmentDurationMinutes`): `endUtc = startUtc + duración`.
+
+#### `POST /api/appointments` — `Reception`
+Agenda una cita. Todos los campos son obligatorios. `startLocal` es la hora local del dispensario **sin offset** (`"yyyy-MM-ddTHH:mm"`); `reason` admite hasta 500 caracteres y se guarda sin espacios alrededor.
+
+```json
+// Petición
+{
+  "patientId": "0193f1c2-…",
+  "doctorId": "0193f1b8-…",
+  "startLocal": "2026-11-03T09:30",
+  "reason": "Control de presión arterial"
+}
+
+// 201 Created  (Location: /api/appointments/0193f1d0-…)
+{ "id": "0193f1d0-…" }
+```
+
+Reglas, en este orden:
+1. El paciente y el doctor existen y están activos.
+2. La cita es futura.
+3. La cita cabe entera en un bloque del horario del doctor para ese día de la semana.
+4. El inicio está **alineado a los slots del bloque**: los slots se cuentan desde el inicio del bloque en pasos de la duración. Con un bloque `09:00–12:00` y 30 minutos valen `09:00`, `09:30`… `11:30`; con un bloque que empieza a las `09:10`, valen `09:10`, `09:40`…
+5. No se cruza con otra cita `Scheduled` o `Confirmed` del mismo doctor ni del mismo paciente. Una cita contigua (termina cuando empieza la otra) no es cruce.
+
+| Código | Cuándo |
+|---|---|
+| 201 | Cita agendada |
+| 400 | Datos inválidos (`ValidationErrors`): IDs vacíos, `startLocal` con `Z` u offset, `reason` vacío o de más de 500 caracteres. También sin `ValidationErrors`: `startLocal` ilegible, paciente o doctor inactivo, cita en el pasado, fuera del horario del doctor o desalineada |
+| 401 / 403 | Sin token / el usuario es `Doctor` |
+| 404 | No existe el paciente o el doctor |
+| 409 | El doctor o el paciente ya tienen una cita que se cruza |
+
+#### `GET /api/appointments` — Autenticado
+Lista paginada, ordenada por inicio. Parámetros de query, todos opcionales:
+
+| Parámetro | Descripción |
+|---|---|
+| `pageIndex` | Página, desde 0 (por defecto 0) |
+| `pageSize` | Tamaño de página, de 1 a 100 (por defecto 10) |
+| `doctorId` | Citas de un doctor. Un `Doctor` sin este filtro ve solo las suyas |
+| `patientId` | Citas de un paciente |
+| `status` | `Scheduled`, `Confirmed`, `Completed`, `Cancelled` o `NoShow` |
+| `from`, `to` | Fechas **locales** del dispensario (`"yyyy-MM-dd"`), ambas inclusive |
+
+```json
+// GET /api/appointments?doctorId=0193f1b8-…&from=2026-11-03&to=2026-11-03 → 200 OK
+{ "pageIndex": 0, "pageSize": 10, "count": 1, "data": [ { "id": "0193f1d0-…", "startLocal": "2026-11-03T09:30:00", "…": "…" } ] }
+```
+
+| Código | Cuándo |
+|---|---|
+| 200 | Página de citas |
+| 400 | `pageIndex` negativo, `pageSize` fuera de 1–100, `from` posterior a `to`, o `status` o fecha ilegibles |
+| 401 | Sin token |
+| 403 | El usuario es un `Doctor` sin vincular, o filtra por otro doctor |
+
+#### `GET /api/appointments/{id}` — Autenticado
+Devuelve una cita con la forma de arriba.
+
+| Código | Cuándo |
+|---|---|
+| 200 | Cita encontrada |
+| 401 | Sin token |
+| 403 | El usuario es un `Doctor` sin vincular, o la cita es de otro doctor |
+| 404 | No existe una cita con ese ID |

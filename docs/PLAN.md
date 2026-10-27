@@ -54,7 +54,7 @@ Al crear un spec con `/spec`, anota su archivo en la columna **Spec** de este ba
 ### Fase 3 — Agenda y atención
 | # | Feature | Contenido | Spec |
 |---|---|---|---|
-| 12 | Appointments: agendar | Aggregate `Appointment`, ScheduleAppointment (horario, duración, sin cruces de doctor ni paciente), GetAppointments (filtros) y GetById | — |
+| 12 | Appointments: agendar | Aggregate `Appointment`, ScheduleAppointment (horario, duración, sin cruces de doctor ni paciente), GetAppointments (filtros) y GetById | `specs/12-appointments-scheduling.md` |
 | 13 | Appointments: ciclo de vida | Confirm, Reschedule, Cancel, MarkNoShow; máquina de estados | — |
 | 14 | Slots disponibles | `GET /api/doctors/{id}/available-slots?date=` | — |
 | 15 | Consultations | Aggregate `Consultation`, Start/Update/Close, validación de que el doctor es el usuario actual, GetById, historia del paciente | — |
@@ -73,6 +73,6 @@ Frontend (`/frontend`), signos vitales, recetas, exámenes, farmacia/inventario,
 
 ## Preguntas abiertas
 - ¿Se pagan las consultas o se registra algún cobro? (por ahora no)
-- ¿Zona horaria del dispensario? Se propone guardar en UTC y configurar la zona en `Clinic:TimeZone` para calcular los slots.
+- ~~¿Zona horaria del dispensario?~~ Cerrada en el spec 12: se guarda en UTC, la Api usa horas locales sin offset y la zona se configura en `Clinic:TimeZone` (`America/Guayaquil` por defecto).
 - ¿Feriados o bloqueos de agenda del doctor (vacaciones)?
 - ~~¿Tipos de documento válidos?~~ Cerrada en el spec 06: `NationalId` y `Passport` (`ForeignerId` cuando haga falta).

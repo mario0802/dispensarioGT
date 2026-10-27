@@ -141,16 +141,20 @@ Reglas: `birthDate > today` → `Birth date cannot be in the future.` (la fecha 
 Eventos: ninguno en v1 (no hay consumidores).
 
 ### Appointments
-| Miembro | Tipo |
-|---|---|
-| `Id` | `AppointmentId` |
-| `PatientId` / `DoctorId` | IDs tipados |
-| `StartUtc` / `EndUtc` | `DateTime` (UTC) |
-| `Reason` | `string` |
-| `Status` | `AppointmentStatus` |
-| `CancellationReason?` | `string` |
+| Miembro | Tipo | Notas |
+|---|---|---|
+| `Id` | `AppointmentId` | |
+| `PatientId` / `DoctorId` | IDs tipados | solo IDs: sin navegaciones ni FKs hacia Patients y Doctors |
+| `StartUtc` / `EndUtc` | `DateTime` (UTC) | `StartUtc < EndUtc`; el fin lo calcula el handler con la duración del doctor |
+| `Reason` | `string` | obligatorio; Trim; máx. 500 (`Appointment.ReasonMaxLength`) |
+| `Status` | `AppointmentStatus` | `Scheduled`, `Confirmed`, `Completed`, `Cancelled`, `NoShow`; `Scheduled` al crear |
+| `CancellationReason?` | `string` | llega con el ciclo de vida (fila 13) |
 
-Máquina de estados:
+Métodos (fila 12): `Create(patientId, doctorId, startUtc, endUtc, reason, nowUtc)`. `nowUtc` lo pasa el handler con `TimeProvider` (regla 8).
+Reglas de `Create`, en orden: `startUtc >= endUtc` → `Appointment start must be before its end.`; `startUtc <= nowUtc` → `Appointment cannot be scheduled in the past.`; motivo en blanco → `Reason is required.`; motivo de más de 500 caracteres → `Reason must be at most 500 characters.`.
+El enum `AppointmentStatus` está completo desde la fila 12, pero hasta la fila 13 solo se crean citas `Scheduled`.
+
+Máquina de estados (fila 13):
 ```
 Scheduled ──Confirm──► Confirmed ──Complete──► Completed
     │                      │
@@ -162,7 +166,7 @@ Scheduled ──Confirm──► Confirmed ──Complete──► Completed
 - `Complete` se permite desde `Scheduled` o `Confirmed`.
 - Las reglas que dependen de **otros** aggregates (horario del doctor, cruces) se validan en el handler (ver APPLICATION.md).
 
-Eventos: `AppointmentScheduledDomainEvent`, `AppointmentCancelledDomainEvent`, `AppointmentRescheduledDomainEvent`.
+Eventos: ninguno en la fila 12 (no hay consumidores, regla 7). `AppointmentScheduledDomainEvent`, `AppointmentCancelledDomainEvent` y `AppointmentRescheduledDomainEvent` se añadirán cuando algún módulo reaccione a ellos.
 
 ### Consultations
 | Miembro | Tipo |
@@ -187,4 +191,5 @@ Dispensario.Domain/
     User.cs UserId.cs Role.cs
     Events/UserCreatedDomainEvent.cs
   Patients/ Patient.cs PatientId.cs Gender.cs BloodType.cs
+  Appointments/ Appointment.cs AppointmentId.cs AppointmentStatus.cs
 ```

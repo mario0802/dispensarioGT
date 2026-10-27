@@ -18,7 +18,7 @@ DependencyInjection.cs
 ```
 
 ## 2. Abstracciones
-> **Estado:** `IApplicationDbContext` existe desde la fila 04; cada módulo añade su `DbSet<T>` al crear su aggregate (hoy `Users` y `Doctors`). `ICurrentUser`, `IPasswordHasher` e `IJwtTokenGenerator` ya están en su forma final (fila 07): `ICurrentUser` lo implementa `CurrentUser` con los claims del JWT, y todas sus propiedades son `null` en una petición anónima o sin `HttpContext`. Abajo, la forma final.
+> **Estado:** `IApplicationDbContext` existe desde la fila 04; cada módulo añade su `DbSet<T>` al crear su aggregate (hoy `Users`, `Doctors` y `Patients`). `ICurrentUser`, `IPasswordHasher` e `IJwtTokenGenerator` ya están en su forma final (fila 07): `ICurrentUser` lo implementa `CurrentUser` con los claims del JWT, y todas sus propiedades son `null` en una petición anónima o sin `HttpContext`. Abajo, la forma final.
 
 ```csharp
 public interface IApplicationDbContext
@@ -85,7 +85,23 @@ Usan los métodos de `Doctor` (`Create`, `Update`, `Deactivate`, `Activate`). Es
 - Validadores: matrícula máx. 30, especialidad máx. 100, email obligatorio, duración (si viene) entre 10 y 120 y múltiplo de 5. `SetDoctorScheduleCommandValidator` solo comprueba la forma: `Blocks` no null (vacía vale), `DayOfWeek` del enum y horas `^([01][0-9]|2[0-3]):[0-5][0-9]$`; las reglas del horario son del dominio.
 - `UpdateDoctorCommand` falla con `DomainException` si la nueva duración es mayor que algún bloque del horario (regla de `Doctor.Update`).
 - `DoctorDto` incluye `UserId` (usuario vinculado o `null`). Lo calcula `DoctorProjections.ToDto(doctors, users)` con una subconsulta sobre `Users` (lectura entre módulos); Mapster no la expresa, por eso no hay `DoctorsMappingConfig`.
-- `LikePatterns` (`Common/`): `Contains` y `Equal` escapan `%`, `_` y `\` para `EF.Functions.Like` con `LikePatterns.Escape`. Lo usan `GetUsers` y `GetDoctors`.
+- `LikePatterns` (`Common/`): `Contains` y `Equal` escapan `%`, `_` y `\` para `EF.Functions.Like` con `LikePatterns.Escape`. Lo usan `GetUsers`, `GetDoctors` y `GetPatients`.
+
+### Módulo Patients
+Usan los métodos de `Patient` (`Create`, `Update`, `Deactivate`, `Activate`). Escritura con la política `Reception` (Admin y Receptionist); lecturas para cualquier usuario autenticado:
+| Caso de uso | Ubicación | Reglas |
+|---|---|---|
+| `CreatePatientCommand` → `CreatePatientResult(Id)` | `Patients/Commands/CreatePatient/` | Recibe `TimeProvider` y pasa la fecha UTC de hoy al dominio (nacimiento futuro → `DomainException`). Documento (tipo + número recortado) repetido → `ConflictException` |
+| `UpdatePatientCommand` | `Patients/Commands/UpdatePatient/` | Inexistente → `NotFoundException`. Reemplaza todo, incluido el documento; un opcional null borra el valor. Documento de otro paciente → `ConflictException`. Vale sobre pacientes inactivos |
+| `DeactivatePatientCommand` / `ActivatePatientCommand` | `Patients/Commands/DeactivatePatient/`, `ActivatePatient/` | Ya en ese estado → `DomainException` |
+| `GetPatientsQuery` → `PaginatedResult<PatientDto>` | `Patients/Queries/GetPatients/` | Paginación validada como en `GetUsers`. `Search` con `EF.Functions.Like` en nombre, apellido y número de documento; filtro `IsActive`; orden por apellido, nombre e ID; `ProjectToType<PatientDto>` |
+| `GetPatientByIdQuery` → `PatientDto` | `Patients/Queries/GetPatientById/` | Inexistente → `NotFoundException` |
+| `GetPatientByDocumentQuery(DocumentType, DocumentNumber)` → `PatientDto` | `Patients/Queries/GetPatientByDocument/` | Número en blanco → `BadRequestException`. Igualdad exacta por tipo y número recortado (distingue mayúsculas, como el índice único). Inexistente → `NotFoundException`. Devuelve también pacientes inactivos |
+
+- `BloodTypeNotation` (`Patients/`): traduce la notación clínica (`"A+"`, `"AB-"`…) ↔ `BloodType`. Commands, DTOs y requests llevan el texto; el dominio y la BD, el enum. Los validadores rechazan un valor fuera de los ocho con `ValidationErrors`.
+- `PatientData` (`Patients/Commands/`, interno): construye los VOs (documento, nombre, email, teléfono, dirección) y traduce el tipo de sangre a partir de los campos de `CreatePatient` y `UpdatePatient`.
+- `AddressInput` (en el archivo de `CreatePatientCommand`) es el objeto de dirección de los commands; `AddressInputValidator` lo valida (calle y ciudad obligatorias, máximos de `Address`).
+- `PatientsMappingConfig` (Mapster): `Patient` → `PatientDto`, con `Address` → `AddressDto` o `null` y `BloodType` → notación clínica. `BloodTypeNotation.ToNotation` no se traduce a SQL: EF lo evalúa en cliente en la proyección final.
 
 ## 3. Plantilla de un command
 ```csharp
@@ -118,8 +134,9 @@ public sealed class CreatePatientHandler(IApplicationDbContext db)
     {
         var document = Document.Create(command.DocumentType, command.DocumentNumber);
 
-        // Regla de unicidad: necesita la BD, así que se valida aquí y no en el dominio
-        if (await db.Patients.AnyAsync(p => p.Document == document, ct))
+        // Regla de unicidad: necesita la BD, así que se valida aquí y no en el dominio.
+        // Un owned type no se compara entero en LINQ: se comparan Type y Number por separado
+        if (await db.Patients.AnyAsync(p => p.Document.Type == document.Type && p.Document.Number == document.Number, ct))
             throw new ConflictException($"Patient with document {document} already exists.");
 
         var patient = Patient.Create(document, /* ... */);

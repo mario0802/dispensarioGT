@@ -38,6 +38,13 @@ Los errores responden con `application/problem+json` (ProblemDetails). Las rutas
 | `POST` | `/api/doctors/{id}/activate` | `AdminOnly` | Reactiva un doctor |
 | `PUT` | `/api/doctors/{id}/schedule` | `AdminOrDoctor` (el doctor, solo el suyo) | Reemplaza el horario semanal de un doctor |
 | `GET` | `/api/doctors/{id}/schedule` | Autenticado | Horario semanal de un doctor |
+| `POST` | `/api/patients` | `Reception` | Registra un paciente |
+| `GET` | `/api/patients` | Autenticado | Lista paginada de pacientes con búsqueda y filtro de estado |
+| `GET` | `/api/patients/{id}` | Autenticado | Detalle de un paciente |
+| `GET` | `/api/patients/by-document` | Autenticado | Busca un paciente por su documento exacto |
+| `PUT` | `/api/patients/{id}` | `Reception` | Edita los datos de un paciente, incluido su documento |
+| `POST` | `/api/patients/{id}/deactivate` | `Reception` | Desactiva un paciente |
+| `POST` | `/api/patients/{id}/activate` | `Reception` | Reactiva un paciente |
 | `GET` | `/health` | Anónimo | Estado de la Api y de la base de datos |
 | `GET` | `/scalar`, `/openapi/v1.json` | Solo Development | Referencia interactiva y documento OpenAPI |
 
@@ -448,3 +455,136 @@ Devuelve el horario del doctor, también si está inactivo. Los bloques salen de
 | 200 | Horario del doctor |
 | 401 | Sin token |
 | 404 | No existe un doctor con ese ID |
+
+### Patients
+Todas las rutas con `{id}` esperan un GUID. Las de escritura usan la política `Reception` (**401** sin token, **403** con un token de `Doctor`); las lecturas aceptan cualquier usuario autenticado. Las respuestas de paciente tienen esta forma:
+
+```json
+{
+  "id": "7b2e…",
+  "documentType": "NationalId",
+  "documentNumber": "0102030405",
+  "firstName": "Ana",
+  "lastName": "Pérez",
+  "birthDate": "1990-05-14",
+  "gender": "Female",
+  "email": "ana@example.com",
+  "phone": "+593 99 123 4567",
+  "address": { "street": "Av. Siempre Viva 742", "city": "Quito", "state": null, "reference": null },
+  "bloodType": "O+",
+  "allergies": "Penicillin",
+  "isActive": true,
+  "createdAtUtc": "2026-10-27T15:00:00Z"
+}
+```
+
+- `documentType`: `NationalId` o `Passport`. El número se guarda sin espacios alrededor y **distingue mayúsculas** (`ab123` y `AB123` son documentos distintos). El documento (tipo + número) es único.
+- `gender`: `Male`, `Female` u `Other`. `birthDate` va como `"yyyy-MM-dd"` y no puede ser posterior a hoy (fecha UTC).
+- `bloodType` usa la notación clínica: `A+`, `A-`, `B+`, `B-`, `AB+`, `AB-`, `O+` u `O-`, exactamente así (mayúsculas, sin espacios).
+- `email`, `phone`, `address`, `bloodType` y `allergies` (máx. 1000 caracteres) son opcionales y salen como `null` si no hay valor.
+
+#### `POST /api/patients` — `Reception`
+Registra un paciente activo. Obligatorios: `documentType`, `documentNumber`, `firstName`, `lastName`, `birthDate` y `gender`. Si se envía `address`, `street` y `city` son obligatorios.
+
+```json
+// Petición
+{
+  "documentType": "NationalId",
+  "documentNumber": "0102030405",
+  "firstName": "Ana",
+  "lastName": "Pérez",
+  "birthDate": "1990-05-14",
+  "gender": "Female",
+  "email": "ana@example.com",
+  "phone": "+593 99 123 4567",
+  "address": { "street": "Av. Siempre Viva 742", "city": "Quito", "state": null, "reference": null },
+  "bloodType": "O+",
+  "allergies": "Penicillin"
+}
+
+// 201 Created  (Location: /api/patients/7b2e…)
+{ "id": "7b2e…" }
+```
+
+| Código | Cuándo |
+|---|---|
+| 201 | Paciente creado |
+| 400 | Datos inválidos (`ValidationErrors`): documento (máx. 20), nombre o apellido vacíos o largos, email inválido, dirección sin calle o ciudad, `bloodType` desconocido o alergias de más de 1000 caracteres. También sin `ValidationErrors`: `documentType`, `gender` o `birthDate` ilegibles, fecha de nacimiento futura o teléfono con formato inválido |
+| 401 / 403 | Sin token / el usuario es `Doctor` |
+| 409 | Otro paciente ya tiene ese documento (mismo tipo y número) |
+
+#### `GET /api/patients` — Autenticado
+Lista paginada, ordenada por apellido y nombre. Parámetros de query, todos opcionales:
+
+| Parámetro | Descripción |
+|---|---|
+| `pageIndex` | Página, desde 0 (por defecto 0) |
+| `pageSize` | Tamaño de página, de 1 a 100 (por defecto 10) |
+| `search` | Texto contenido en el nombre, el apellido o el número de documento, sin distinguir mayúsculas |
+| `isActive` | `true` o `false` |
+
+```json
+// GET /api/patients?search=pérez&isActive=true → 200 OK
+{ "pageIndex": 0, "pageSize": 10, "count": 1, "data": [ { "id": "7b2e…", "lastName": "Pérez", "…": "…" } ] }
+```
+
+| Código | Cuándo |
+|---|---|
+| 200 | Página de pacientes |
+| 400 | `pageIndex` negativo o `pageSize` fuera de 1–100 |
+| 401 | Sin token |
+
+#### `GET /api/patients/{id}` — Autenticado
+Devuelve un paciente con la forma de arriba.
+
+| Código | Cuándo |
+|---|---|
+| 200 | Paciente encontrado |
+| 401 | Sin token |
+| 404 | No existe un paciente con ese ID |
+
+#### `GET /api/patients/by-document` — Autenticado
+Busca un paciente por su documento exacto, también si está inactivo. Parámetros de query obligatorios: `type` (`NationalId` o `Passport`) y `number` (se recorta; distingue mayúsculas).
+
+```json
+// GET /api/patients/by-document?type=NationalId&number=0102030405 → 200 OK
+{ "id": "7b2e…", "documentNumber": "0102030405", "…": "…" }
+```
+
+| Código | Cuándo |
+|---|---|
+| 200 | Paciente encontrado |
+| 400 | Falta `type` o `number`, `type` desconocido o `number` en blanco |
+| 401 | Sin token |
+| 404 | No hay un paciente con ese documento |
+
+#### `PUT /api/patients/{id}` — `Reception`
+Reemplaza todos los datos del paciente, incluido el documento; también funciona sobre un paciente inactivo. Mismo cuerpo que el alta. Un opcional `null` u omitido (`email`, `phone`, `address`, `bloodType`, `allergies`) borra el valor actual.
+
+| Código | Cuándo |
+|---|---|
+| 204 | Paciente actualizado |
+| 400 | Datos inválidos, como en el alta |
+| 401 / 403 | Sin token / el usuario es `Doctor` |
+| 404 | No existe un paciente con ese ID |
+| 409 | El documento pertenece a otro paciente |
+
+#### `POST /api/patients/{id}/deactivate` — `Reception`
+Desactiva al paciente. Sin cuerpo.
+
+| Código | Cuándo |
+|---|---|
+| 204 | Paciente desactivado |
+| 400 | El paciente ya está inactivo |
+| 401 / 403 | Sin token / el usuario es `Doctor` |
+| 404 | No existe un paciente con ese ID |
+
+#### `POST /api/patients/{id}/activate` — `Reception`
+Vuelve a activar un paciente desactivado. Sin cuerpo.
+
+| Código | Cuándo |
+|---|---|
+| 204 | Paciente activado |
+| 400 | El paciente ya está activo |
+| 401 / 403 | Sin token / el usuario es `Doctor` |
+| 404 | No existe un paciente con ese ID |

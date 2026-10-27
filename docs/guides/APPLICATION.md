@@ -6,9 +6,10 @@ Orquesta los casos de uso con **CQRS** usando los contratos de `BuildingBlocks.C
 ## 1. Estructura
 ```
 Abstractions/
-  IApplicationDbContext.cs   ICurrentUser.cs   IPasswordHasher.cs   IJwtTokenGenerator.cs
+  IApplicationDbContext.cs   ICurrentUser.cs   IPasswordHasher.cs   IJwtTokenGenerator.cs   IClinicTimeZone.cs
 Common/
   LikePatterns.cs            # patrones de EF.Functions.Like con comodines escapados
+  ClinicOptions.cs  ClinicTimeZone.cs   # zona horaria del dispensario (Clinic:TimeZone) y su conversión local ↔ UTC
 <Module>/
   Commands/<Feature>/ <Feature>Command.cs  <Feature>Handler.cs
   Queries/<Feature>/  <Feature>Query.cs    <Feature>Handler.cs
@@ -18,7 +19,7 @@ DependencyInjection.cs
 ```
 
 ## 2. Abstracciones
-> **Estado:** `IApplicationDbContext` existe desde la fila 04; cada módulo añade su `DbSet<T>` al crear su aggregate (hoy `Users`, `Doctors` y `Patients`). `ICurrentUser`, `IPasswordHasher` e `IJwtTokenGenerator` ya están en su forma final (fila 07): `ICurrentUser` lo implementa `CurrentUser` con los claims del JWT, y todas sus propiedades son `null` en una petición anónima o sin `HttpContext`. Abajo, la forma final.
+> **Estado:** `IApplicationDbContext` existe desde la fila 04; cada módulo añade su `DbSet<T>` al crear su aggregate (hoy `Users`, `Doctors`, `Patients` y `Appointments`). `ICurrentUser`, `IPasswordHasher` e `IJwtTokenGenerator` ya están en su forma final (fila 07): `ICurrentUser` lo implementa `CurrentUser` con los claims del JWT, y todas sus propiedades son `null` en una petición anónima o sin `HttpContext`. `IClinicTimeZone` llega con la fila 12. Abajo, la forma final.
 
 ```csharp
 public interface IApplicationDbContext
@@ -41,7 +42,16 @@ public interface ICurrentUser
 
 public interface IPasswordHasher { string Hash(string password); bool Verify(string hash, string password); }
 public interface IJwtTokenGenerator { (string Token, DateTime ExpiresAtUtc) Generate(User user); }
+
+public interface IClinicTimeZone
+{
+    DateTime ToUtc(DateTime local);   // hora local sin offset → UTC; una hora inexistente (salto de DST) → BadRequestException
+    DateTime ToLocal(DateTime utc);   // UTC → hora local (Kind = Unspecified)
+    DateOnly Today { get; }           // fecha local de hoy según TimeProvider
+}
 ```
+
+`IClinicTimeZone` (fila 12) lo implementa `ClinicTimeZone` (`Common/`) con `TimeZoneInfo` y la zona de `ClinicOptions` (sección `Clinic`, `TimeZone` con un ID IANA; por defecto `America/Guayaquil`). Se registra como singleton en `AddApplication`, que valida la zona al arrancar: si no existe, la aplicación no arranca (`Clinic:TimeZone is not a valid time zone.`). Una hora ambigua se toma como hora estándar.
 
 ### Módulo Users: autenticación
 La autenticación es parte del módulo Users (los endpoints viven en `Api/Endpoints/Auth/`, con la ruta `/api/auth`):
@@ -102,6 +112,17 @@ Usan los métodos de `Patient` (`Create`, `Update`, `Deactivate`, `Activate`). E
 - `PatientData` (`Patients/Commands/`, interno): construye los VOs (documento, nombre, email, teléfono, dirección) y traduce el tipo de sangre a partir de los campos de `CreatePatient` y `UpdatePatient`.
 - `AddressInput` (en el archivo de `CreatePatientCommand`) es el objeto de dirección de los commands; `AddressInputValidator` lo valida (calle y ciudad obligatorias, máximos de `Address`).
 - `PatientsMappingConfig` (Mapster): `Patient` → `PatientDto`, con `Address` → `AddressDto` o `null` y `BloodType` → notación clínica. `BloodTypeNotation.ToNotation` no se traduce a SQL: EF lo evalúa en cliente en la proyección final.
+
+### Módulo Appointments
+Agenda la recepción (política `Reception`); leen todos los autenticados, pero un `Doctor` solo ve sus citas. Las horas de la Api son locales del dispensario y la BD guarda UTC:
+| Caso de uso | Ubicación | Reglas |
+|---|---|---|
+| `ScheduleAppointmentCommand(PatientId, DoctorId, StartLocal, Reason)` → `ScheduleAppointmentResult(Id)` | `Appointments/Commands/ScheduleAppointment/` | Recibe `IClinicTimeZone` y `TimeProvider`. Lee `Patients` y `Doctors` y solo escribe en `Appointments`. Orden de comprobaciones en §6 |
+| `GetAppointmentsQuery(Pagination, DoctorId?, PatientId?, Status?, From?, To?)` → `PaginatedResult<AppointmentDto>` | `Appointments/Queries/GetAppointments/` | Recibe `ICurrentUser`. Un `Doctor` sin `DoctorId` → `ForbiddenException("Your user is not linked to a doctor.")`; con un `DoctorId` ajeno en el filtro → `ForbiddenException("You can only view your own appointments.")`; sin filtro se filtra por el suyo. Todo antes de leer la BD. Paginación validada como en `GetUsers`; `From > To` → `BadRequestException`. `From`/`To` son fechas locales inclusive: se convierten a límites UTC `[From 00:00, To + 1 día 00:00)`. Orden por `StartUtc` e ID |
+| `GetAppointmentByIdQuery` → `AppointmentDto` | `Appointments/Queries/GetAppointmentById/` | `Doctor` sin `DoctorId` → `ForbiddenException`. Inexistente → `NotFoundException`. Cita de otro doctor → `ForbiddenException` (el 404 va antes: hay que leer la cita para saber de quién es) |
+
+- `ScheduleAppointmentCommandValidator`: IDs no vacíos; `StartLocal` no vacío y con `Kind == Unspecified` (`Start time must be a local time without offset.`), porque System.Text.Json solo deja `Unspecified` cuando el texto no trae `Z` ni offset; `Reason` no vacío y máx. 500.
+- `AppointmentDto` lleva `PatientFullName` y `DoctorFullName` (subconsultas sobre `Patients` y `Doctors` en `AppointmentProjections.ToDto`, sin Mapster), las horas UTC y las locales. `TimeZoneInfo` no se traduce a SQL: `ToDto` deja `StartLocal`/`EndLocal` vacías y `WithLocalTimes(clinicTimeZone)` las rellena en memoria tras leer la página (máximo 100 filas).
 
 ## 3. Plantilla de un command
 ```csharp
@@ -184,13 +205,15 @@ public sealed class GetPatientsHandler(IApplicationDbContext db)
 | Mapeo | Mapster: `TypeAdapterConfig` por módulo en `<Module>/Dtos/<Module>MappingConfig.cs` (`IRegister`) |
 
 ## 6. Reglas de negocio con varios aggregates
-**ScheduleAppointment** (y Reschedule):
-1. El paciente existe y está activo; si no → `NotFoundException` o `BadRequestException`.
-2. El doctor existe y está activo.
-3. `EndUtc = StartUtc + doctor.AppointmentDurationMinutes`.
-4. Al convertir a la hora local del dispensario (`Clinic:TimeZone`), `doctor.IsAvailableAt(localStart, localEnd)` es `true` (el rango cabe en un `ScheduleBlock`) y el inicio está alineado a la duración del slot; si no → `BadRequestException`.
-5. No hay cruce con citas del doctor ni del paciente en estado `Scheduled` o `Confirmed`; si lo hay → `ConflictException`.
-6. No se agenda en el pasado.
+**ScheduleAppointment** (fila 12; Reschedule reutilizará las mismas reglas), en este orden:
+1. El paciente existe (`NotFoundException`) y está activo (`BadRequestException("Patient is inactive.")`).
+2. El doctor existe (`NotFoundException`) y está activo (`BadRequestException("Doctor is inactive.")`).
+3. `StartUtc = IClinicTimeZone.ToUtc(StartLocal)`, `EndUtc = StartUtc + doctor.AppointmentDurationMinutes` y `localEnd = StartLocal + duración`.
+4. `Appointment.Create(..., nowUtc)`: cita en el pasado o motivo inválido → `DomainException`.
+5. `doctor.IsAvailableAt(StartLocal, localEnd)` (el rango local cabe entero en un `ScheduleBlock`); si no → `BadRequestException("The doctor is not available at that time.")`.
+6. Alineación **desde el inicio del bloque** que contiene la cita: `(inicio local − bloque.StartTime)` es múltiplo de la duración; si no → `BadRequestException("Start time must align with the doctor's appointment slots.")`. Con un bloque `09:10–12:10` y 30 minutos valen `09:10`, `09:40`…
+7. No hay cruce (`StartUtc < endUtc && startUtc < EndUtc`) con citas `Scheduled` o `Confirmed` del doctor (`ConflictException("The doctor already has an appointment at that time.")`) ni, después, del paciente (`ConflictException("The patient already has an appointment at that time.")`). Una cita contigua no es cruce.
+8. Un único `SaveChangesAsync`. Dos altas simultáneas podrían pasar los dos la comprobación de cruces: aceptado en v1.
 
 **StartConsultation**: el usuario actual es `Doctor` y `ICurrentUser.DoctorId` es el doctor de la consulta. Si se envía `AppointmentId`, la cita debe ser de ese doctor y paciente y estar `Scheduled` o `Confirmed`. Solo puede haber una consulta `Open` por cita.
 
@@ -212,6 +235,14 @@ public static IServiceCollection AddApplication(this IServiceCollection services
     });
     services.AddValidatorsFromAssembly(assembly);
     TypeAdapterConfig.GlobalSettings.Scan(assembly);
+
+    // Con una zona inexistente la aplicación no arranca (fila 12)
+    services.AddOptions<ClinicOptions>()
+        .Bind(configuration.GetSection(ClinicOptions.SectionName))
+        .Validate(o => o.TimeZone is not null && TimeZoneInfo.TryFindSystemTimeZoneById(o.TimeZone, out _),
+            "Clinic:TimeZone is not a valid time zone.")
+        .ValidateOnStart();
+    services.AddSingleton<IClinicTimeZone, ClinicTimeZone>();
     return services;
 }
 ```

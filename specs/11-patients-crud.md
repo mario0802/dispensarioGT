@@ -1,6 +1,6 @@
 # SPEC 11 — Patients: CRUD
 
-> **Status:** Approved
+> **Status:** Implemented
 > **Depends on:** SPEC 07, SPEC 08, SPEC 09
 > **Date:** 2026-10-27
 > **Objective:** Crear el aggregate `Patient` con documento único y exponer su alta, edición, activación, desactivación, listado con búsqueda, detalle y búsqueda por documento.

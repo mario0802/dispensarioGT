@@ -1,9 +1,11 @@
 using Dispensario.Application.Abstractions;
+using Dispensario.Application.Common;
 using Dispensario.Infrastructure.Data;
 using Dispensario.Infrastructure.Data.Interceptors;
 using MediatR;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Time.Testing;
 using NSubstitute;
 
@@ -26,6 +28,9 @@ public sealed class DispensarioTestDb : IDisposable
     }
 
     public FakeTimeProvider TimeProvider { get; } = new(StartTime);
+
+    // Zona del dispensario por defecto (America/Guayaquil, UTC-5) sobre el reloj falso
+    public IClinicTimeZone ClinicTimeZone => new ClinicTimeZone(Options.Create(new ClinicOptions()), TimeProvider);
 
     public ICurrentUser CurrentUser { get; } = Substitute.For<ICurrentUser>();
 

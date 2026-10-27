@@ -14,7 +14,9 @@ Endpoints/
                                # horario semanal: SetDoctorScheduleEndpoint (AdminOrDoctor) y GetDoctorScheduleEndpoint
   Patients/                    # alta, listado, detalle, búsqueda por documento (/api/patients/by-document), edición, activar/desactivar
                                # (escritura Reception, lecturas autenticadas)
-  Appointments/  Consultations/
+  Appointments/                # ScheduleAppointmentEndpoint (Reception), GetAppointmentsEndpoint y GetAppointmentByIdEndpoint
+                               # (autenticados; el handler limita al Doctor a sus propias citas). Horas locales sin offset
+  Consultations/
 Extensions/
   ApiServiceExtensions.cs      # AddApiServices: Carter, OpenAPI, JSON, ProblemDetails, exception handler, JWT, políticas, health
   OpenApi/BearerSecuritySchemeTransformer.cs
@@ -146,7 +148,7 @@ Todas las respuestas de error salen como `application/problem+json`:
 - .NET 10 usa **Microsoft.OpenApi 2.x** (hoy 2.12.2): los tipos están en el namespace plano `Microsoft.OpenApi` (`OpenApiSecurityScheme`, `OpenApiSecuritySchemeReference(name, document)`, `IOpenApiSecurityScheme`), no en `Microsoft.OpenApi.Models` como en .NET 8/9.
 
 ## 8. Configuración (`appsettings.json`)
-Hoy `appsettings.json` tiene `ConnectionStrings`, `Jwt`, `MediatR` y `Seed` (los secretos vacíos). Cada spec añade su sección cuando la lee: falta `Clinic` (fila 14). Forma final:
+Hoy `appsettings.json` tiene `ConnectionStrings`, `Jwt`, `MediatR`, `Clinic` (desde la fila 12) y `Seed` (los secretos vacíos). Cada spec añade su sección cuando la lee. Forma final:
 
 ```json
 {
@@ -166,6 +168,7 @@ Hoy `appsettings.json` tiene `ConnectionStrings`, `Jwt`, `MediatR` y `Seed` (los
 Los valores vacíos se cargan desde user-secrets (el proyecto Api tiene `UserSecretsId`) o variables de entorno:
 - `Jwt:Key` es obligatoria (mínimo 32 caracteres): sin ella la aplicación no arranca.
 - `Seed:Admin:Password` es opcional: si está vacía, el seed avisa en el log y no crea el Admin.
+- `Clinic:TimeZone` (ID IANA, por defecto `America/Guayaquil`) se valida al arrancar: con una zona inexistente la aplicación no arranca.
 
 ```bash
 dotnet user-secrets set "Jwt:Key" "<min-32-chars>" --project src/Services/Dispensario/Dispensario.Api

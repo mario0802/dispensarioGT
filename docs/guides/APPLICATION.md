@@ -19,7 +19,7 @@ DependencyInjection.cs
 ```
 
 ## 2. Abstracciones
-> **Estado:** `IApplicationDbContext` existe desde la fila 04; cada módulo añade su `DbSet<T>` al crear su aggregate (hoy `Users`, `Doctors`, `Patients` y `Appointments`). `ICurrentUser`, `IPasswordHasher` e `IJwtTokenGenerator` ya están en su forma final (fila 07): `ICurrentUser` lo implementa `CurrentUser` con los claims del JWT, y todas sus propiedades son `null` en una petición anónima o sin `HttpContext`. `IClinicTimeZone` llega con la fila 12. Abajo, la forma final.
+> **Estado:** `IApplicationDbContext` existe desde la fila 04; cada módulo añade su `DbSet<T>` al crear su aggregate (hoy `Users`, `Doctors`, `Patients`, `Appointments` y `Consultations`). `ICurrentUser`, `IPasswordHasher` e `IJwtTokenGenerator` ya están en su forma final (fila 07): `ICurrentUser` lo implementa `CurrentUser` con los claims del JWT, y todas sus propiedades son `null` en una petición anónima o sin `HttpContext`. `IClinicTimeZone` llega con la fila 12. Abajo, la forma final.
 
 ```csharp
 public interface IApplicationDbContext
@@ -131,6 +131,19 @@ Agendan, confirman y reprograman la recepción (política `Reception`); leen, ca
 - `AppointmentDto` lleva `PatientFullName` y `DoctorFullName` (subconsultas sobre `Patients` y `Doctors` en `AppointmentProjections.ToDto`, sin Mapster), las horas UTC y las locales, y `CancellationReason` (fila 13). `TimeZoneInfo` no se traduce a SQL: `ToDto` deja `StartLocal`/`EndLocal` vacías y `WithLocalTimes(clinicTimeZone)` las rellena en memoria tras leer la página (máximo 100 filas).
 - `AvailableSlotsDto(DoctorId, Date, DurationMinutes, Slots)` con `AvailableSlotDto(StartLocal, EndLocal)` en hora local sin offset (fila 14). `DurationMinutes` es la duración vigente del doctor.
 
+### Módulo Consultations
+Fila 15. Inician, editan y cierran solo los `Doctor` (política `Clinical`), cada uno sus consultas; leen el Admin y cualquier `Doctor` vinculado (política `AdminOrDoctor`). La recepción no lee datos clínicos. El doctor de la consulta es siempre `ICurrentUser.DoctorId`, nunca llega en el cuerpo:
+| Caso de uso | Ubicación | Reglas |
+|---|---|---|
+| `StartConsultationCommand(PatientId, AppointmentId?, Reason)` → `StartConsultationResult(Id)` | `Consultations/Commands/StartConsultation/` | Recibe `ICurrentUser`, `IClinicTimeZone` y `TimeProvider`. Lee `Doctors`, `Patients` y `Appointments` y solo escribe en `Consultations`; no cambia la cita. Orden en §6. Validador: `PatientId` no vacío, `AppointmentId` distinto de `Guid.Empty` si llega (`NotEmpty` sobre un `Guid?` solo rechaza `null`), `Reason` no vacío y máx. 500 |
+| `UpdateConsultationCommand(ConsultationId, Reason, Diagnosis?, Notes?)` | `Consultations/Commands/UpdateConsultation/` | Recibe `ICurrentUser`. Sin `DoctorId` → `ForbiddenException("Your user is not linked to a doctor.")`; inexistente → `NotFoundException`; de otro doctor → `ForbiddenException("You can only manage your own consultations.")`; `consultation.Update(...)` (cerrada → `DomainException`). Reemplaza los tres textos. No comprueba si el doctor o el paciente siguen activos. Validador: ID no vacío, `Reason` no vacío y máx. 500, `Diagnosis` máx. 1000, `Notes` máx. 4000 |
+| `CloseConsultationCommand(ConsultationId, Diagnosis, Notes?)` | `Consultations/Commands/CloseConsultation/` | Recibe `ICurrentUser` y `TimeProvider`. Como `UpdateConsultation`, con `consultation.Close(diagnosis, notes, nowUtc)`. Sin domain events hasta la fila 16. Validador: ID no vacío, `Diagnosis` no vacío y máx. 1000, `Notes` máx. 4000 |
+| `GetConsultationByIdQuery` → `ConsultationDto` | `Consultations/Queries/GetConsultationById/` | Recibe `ICurrentUser` e `IClinicTimeZone`. `Doctor` sin `DoctorId` → `ForbiddenException` antes de leer; inexistente → `NotFoundException`. Cualquier doctor vinculado lee cualquier consulta; el Admin no necesita vínculo |
+| `GetPatientConsultationsQuery(PatientId, Pagination)` → `PaginatedResult<ConsultationDto>` | `Consultations/Queries/GetPatientConsultations/` | Recibe `ICurrentUser` e `IClinicTimeZone`. La ruta cuelga de `/api/patients`. `Doctor` sin `DoctorId` → `ForbiddenException`; paginación validada como en `GetUsers` (máx. 100); paciente inexistente → `NotFoundException` (uno inactivo sí se lee). Todas las consultas del paciente, `Open` y `Closed`, de cualquier doctor, por `StartedAtUtc` e `Id` descendentes |
+
+- `ConsultationDto` lleva `PatientFullName` y `DoctorFullName` (subconsultas sobre `Patients` y `Doctors` en `ConsultationProjections.ToDto`, sin Mapster), las horas UTC y las locales (`StartedAtLocal`, `ClosedAtLocal?`). Como en `AppointmentDto`, `ToDto` deja las locales vacías y `WithLocalTimes(clinicTimeZone)` las rellena en memoria tras leer.
+- En los commands, el orden de 403/404 es el de las citas: sin vincular, 403 antes de leer; ajena, 403 después del 404.
+
 ## 3. Plantilla de un command
 ```csharp
 // CreatePatientCommand.cs
@@ -239,7 +252,12 @@ public sealed class GetPatientsHandler(IApplicationDbContext db)
 5. Se leen con `AsNoTracking` las citas `Scheduled` o `Confirmed` del doctor que se cruzan con el día local (`[ToUtc(Date 00:00), ToUtc(Date + 1 día 00:00))`), solo `StartUtc` y `EndUtc`.
 6. En memoria se descartan los slots que se cruzan con alguna (una contigua no cuenta). Las citas del paciente no se miran: ese cruce lo detecta el alta (409).
 
-**StartConsultation**: el usuario actual es `Doctor` y `ICurrentUser.DoctorId` es el doctor de la consulta. Si se envía `AppointmentId`, la cita debe ser de ese doctor y paciente y estar `Scheduled` o `Confirmed`. Solo puede haber una consulta `Open` por cita.
+**StartConsultation** (fila 15), en este orden:
+1. `ICurrentUser.DoctorId` es `null` → `ForbiddenException("Your user is not linked to a doctor.")`. La política `Clinical` ya garantiza el rol `Doctor`.
+2. Su doctor existe (`NotFoundException`) y está activo (`BadRequestException("Doctor is inactive.")`).
+3. El paciente existe (`NotFoundException`) y está activo (`BadRequestException("Patient is inactive.")`).
+4. Si llega `AppointmentId`: la cita existe (`NotFoundException`); es del doctor actual (`ForbiddenException("You can only manage your own appointments.")`); es del paciente (`BadRequestException("Appointment does not belong to the patient.")`); está `Scheduled` o `Confirmed` (`BadRequestException("Only scheduled or confirmed appointments can start a consultation.")`); su fecha local (`ToLocal(StartUtc)`) es `IClinicTimeZone.Today` (`BadRequestException("Appointment is not scheduled for today.")`); y no tiene ya **ninguna** consulta, abierta o cerrada (`ConflictException("The appointment already has a consultation.")`).
+5. `Consultation.Start(..., nowUtc)` (motivo inválido → `DomainException`) y un único `SaveChangesAsync`. El índice único de `Consultations.AppointmentId` respalda la regla de una consulta por cita: dos inicios simultáneos con la misma cita dan un 500 en el segundo, aceptado en v1.
 
 ## 7. DependencyInjection
 ```csharp

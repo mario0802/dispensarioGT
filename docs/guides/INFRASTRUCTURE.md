@@ -74,13 +74,15 @@ Reglas:
 | `Doctors` | único `LicenseNumber` (guardado en mayúsculas por el dominio) |
 | `Patients` | único (`Document_Type`, `Document_Number`); sin índice de `LastName` (vive en un `ComplexProperty`, que no admite índices) |
 | `Appointments` | (`DoctorId`, `StartUtc`), (`PatientId`, `StartUtc`) |
-| `Consultations` | `PatientId`, `AppointmentId` |
+| `Consultations` | único `AppointmentId` (sin FK; SQLite admite varios `NULL`, así que las consultas sin cita no chocan); (`PatientId`, `StartedAtUtc`) para la historia del paciente |
 
 Tabla `Doctors` (fila 09): `Id`, `FullName_FirstName`, `FullName_LastName` (`ComplexProperty`), `LicenseNumber`, `Specialty`, `Email` y `Phone` (`HasConversion`, el email sin índice), `AppointmentDurationMinutes`, `IsActive` y las columnas de auditoría. Tabla `DoctorScheduleBlocks` (fila 10): `Id` (clave autoincremental), `DoctorId` (FK a `Doctors`, en cascada, con su índice), `DayOfWeek` (texto), `StartTime` y `EndTime` (`TimeOnly` como TEXT).
 
 Tabla `Patients` (fila 11): `Id`; `Document_Type` (texto) y `Document_Number` (`OwnsOne` requerido, con el índice único compuesto); `FullName_FirstName` y `FullName_LastName` (`ComplexProperty`); `BirthDate` (`DateOnly` como TEXT); `Gender` (texto); `Email` y `Phone` (`HasConversion`, nullable, el email sin índice); `Address_Street`, `Address_City`, `Address_State` y `Address_Reference` (`ComplexProperty` **opcional**: columnas nullable, y `Street`, requerida dentro del VO, distingue la dirección `null`); `BloodType` (nombre del enum como texto, nullable); `Allergies` (máx. 1000, nullable); `IsActive` y las columnas de auditoría.
 
 Tabla `Appointments` (fila 12): `Id`; `PatientId` y `DoctorId` (Guid por convención, requeridos, **sin FK** hacia `Patients` ni `Doctors`: los módulos solo se relacionan por ID, igual que `Users.DoctorId`); `StartUtc` y `EndUtc` (`DateTime` UTC como TEXT ISO, que ordena y compara bien en las consultas de cruces y rangos); `Reason` (máx. 500); `Status` (nombre del enum como texto); `CancellationReason` (fila 13; máx. 500, nullable, solo con valor en las citas `Cancelled`); y las columnas de auditoría. Índices no únicos (`DoctorId`, `StartUtc`) y (`PatientId`, `StartUtc`).
+
+Tabla `Consultations` (fila 15): `Id`; `PatientId` y `DoctorId` (Guid por convención, requeridos) y `AppointmentId` (nullable), los tres **sin FK** hacia `Patients`, `Doctors` ni `Appointments`; `Reason` (máx. 500, requerido); `Diagnosis` (máx. 1000, nullable) y `Notes` (máx. 4000, nullable); `Status` (nombre del enum como texto, `Open` o `Closed`); `StartedAtUtc` y `ClosedAtUtc` (`DateTime` UTC como TEXT ISO; `ClosedAtUtc` nullable, solo con valor en las consultas cerradas); y las columnas de auditoría. Índice único `AppointmentId` (una sola consulta por cita) e índice no único (`PatientId`, `StartedAtUtc`).
 
 ## 4. Particularidades de SQLite
 | Tema | Decisión |

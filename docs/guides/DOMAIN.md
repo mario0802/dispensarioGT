@@ -185,18 +185,33 @@ Reglas (`DomainException`), en este orden dentro de cada método:
 Eventos: ninguno en las filas 12 y 13 (no hay consumidores, regla 7). `AppointmentScheduledDomainEvent`, `AppointmentCancelledDomainEvent` y `AppointmentRescheduledDomainEvent` se añadirán cuando algún módulo reaccione a ellos.
 
 ### Consultations
-| Miembro | Tipo |
-|---|---|
-| `Id` | `ConsultationId` |
-| `PatientId` / `DoctorId` | IDs tipados |
-| `AppointmentId?` | `AppointmentId?` (consulta sin cita = null) |
-| `Reason` | `string` |
-| `Diagnosis?` / `Notes?` | `string` |
-| `StartedAtUtc` / `ClosedAtUtc?` | `DateTime` |
-| `Status` | `Open`, `Closed` |
+| Miembro | Tipo | Notas |
+|---|---|---|
+| `Id` | `ConsultationId` | |
+| `PatientId` / `DoctorId` | IDs tipados | solo IDs: sin navegaciones ni FKs hacia Patients y Doctors |
+| `AppointmentId?` | `AppointmentId?` | consulta sin cita = `null`; sin FK hacia Appointments |
+| `Reason` | `string` | obligatorio; Trim; máx. 500 (`Consultation.ReasonMaxLength`) |
+| `Diagnosis?` | `string` | Trim, en blanco → `null`; máx. 1000 (`Consultation.DiagnosisMaxLength`); obligatorio al cerrar |
+| `Notes?` | `string` | Trim, en blanco → `null`; máx. 4000 (`Consultation.NotesMaxLength`) |
+| `Status` | `ConsultationStatus` | `Open` al iniciar, `Closed` (final) |
+| `StartedAtUtc` / `ClosedAtUtc?` | `DateTime` (UTC) | `ClosedAtUtc` solo en `Closed` |
 
-Métodos: `Start(...)`, `Update(reason, diagnosis, notes)` (solo si está `Open`), `Close(diagnosis, notes, closedAtUtc)`, que exige `Diagnosis` no vacío.
-Eventos: `ConsultationClosedDomainEvent(ConsultationId, AppointmentId?)`.
+Métodos (fila 15): `Start(patientId, doctorId, appointmentId?, reason, startedAtUtc)`, `Update(reason, diagnosis, notes)` y `Close(diagnosis, notes, closedAtUtc)`. Las fechas las pasa el handler con `TimeProvider` (regla 8).
+
+```
+Start ──► Open ──Update──► Open
+            │
+            └──Close──► Closed   (final)
+```
+
+Reglas (`DomainException`), en este orden dentro de cada método:
+- `Start`: motivo en blanco → `Reason is required.`; de más de 500 → `Reason must be at most 500 characters.`.
+- `Update`: estado `Closed` → `Only open consultations can be updated.`; motivo como en `Start`; diagnóstico de más de 1000 → `Diagnosis must be at most 1000 characters.`; notas de más de 4000 → `Notes must be at most 4000 characters.`.
+- `Close`: estado `Closed` → `Consultation is already closed.`; diagnóstico en blanco → `Diagnosis is required to close a consultation.`; diagnóstico y notas largos como en `Update`; `closedAtUtc < StartedAtUtc` → `Consultation cannot be closed before it started.`.
+- `Update` reemplaza los tres textos (un opcional `null` o en blanco borra el valor). `Close` reemplaza `Diagnosis` y `Notes`, fija `ClosedAtUtc` y deja la consulta `Closed`. Si una regla falla, la consulta no cambia.
+- Las reglas que dependen de **otros** aggregates (doctor y paciente activos; cita del doctor y del paciente, pendiente, de hoy y sin otra consulta) se validan en el handler (ver APPLICATION.md).
+
+Eventos: ninguno en la fila 15. `ConsultationClosedDomainEvent(ConsultationId, AppointmentId?)` llega con la fila 16, junto con `Appointment.Complete` y el handler que completa la cita.
 
 ## 5. Estructura de carpetas (ejemplo)
 ```
@@ -208,4 +223,5 @@ Dispensario.Domain/
     Events/UserCreatedDomainEvent.cs
   Patients/ Patient.cs PatientId.cs Gender.cs BloodType.cs
   Appointments/ Appointment.cs AppointmentId.cs AppointmentStatus.cs
+  Consultations/ Consultation.cs ConsultationId.cs ConsultationStatus.cs
 ```

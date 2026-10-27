@@ -53,6 +53,11 @@ Los errores responden con `application/problem+json` (ProblemDetails). Las rutas
 | `POST` | `/api/appointments/{id}/no-show` | Autenticado (el doctor, solo las suyas) | Marca una cita como no asistida |
 | `PUT` | `/api/appointments/{id}/schedule` | `Reception` | Reprograma una cita a otra hora |
 | `GET` | `/api/doctors/{id}/available-slots?date=` | Autenticado | Slots libres de un doctor en una fecha local |
+| `POST` | `/api/consultations` | `Clinical` | El doctor inicia una consulta, con o sin cita |
+| `PUT` | `/api/consultations/{id}` | `Clinical` (el doctor, solo las suyas) | Edita motivo, diagnóstico y notas de una consulta abierta |
+| `POST` | `/api/consultations/{id}/close` | `Clinical` (el doctor, solo las suyas) | Cierra una consulta con su diagnóstico |
+| `GET` | `/api/consultations/{id}` | `AdminOrDoctor` | Detalle de una consulta |
+| `GET` | `/api/patients/{id}/consultations` | `AdminOrDoctor` | Historia clínica paginada de un paciente |
 | `GET` | `/health` | Anónimo | Estado de la Api y de la base de datos |
 | `GET` | `/scalar`, `/openapi/v1.json` | Solo Development | Referencia interactiva y documento OpenAPI |
 
@@ -62,7 +67,7 @@ Políticas de autorización:
 |---|---|
 | `AdminOnly` | `Admin` |
 | `Reception` | `Admin`, `Receptionist` |
-| `Clinical` | `Admin`, `Doctor` |
+| `Clinical` | `Doctor` |
 | `AdminOrDoctor` | `Admin`, `Doctor` (el handler comprueba que el doctor actúe sobre su propia ficha) |
 
 ### Auth
@@ -621,7 +626,7 @@ Todas las rutas con `{id}` esperan un GUID. Agendar, confirmar y reprogramar usa
 ```
 
 - Las horas locales son las del dispensario (`Clinic:TimeZone`, por defecto `America/Guayaquil`, UTC−5) y viajan **sin offset**; las UTC llevan `Z`.
-- `status`: `Scheduled`, `Confirmed`, `Completed`, `Cancelled` o `NoShow`. Las citas se crean `Scheduled`; `Completed` llegará al cerrar la consulta.
+- `status`: `Scheduled`, `Confirmed`, `Completed`, `Cancelled` o `NoShow`. Las citas se crean `Scheduled`; `Completed` llegará al cerrar la consulta (feature 16: hoy cerrar una consulta no cambia la cita).
 - `cancellationReason` solo tiene valor en las citas `Cancelled`.
 
 Ciclo de vida de una cita:
@@ -802,3 +807,148 @@ Las citas del **paciente** no se miran: si el paciente ya tiene otra cita a esa 
 | 400 | `date` ausente o ilegible, fecha anterior a hoy (fecha local del dispensario) o doctor inactivo. Sin `ValidationErrors`. La fecha pasada se comprueba antes de buscar el doctor |
 | 401 | Sin token |
 | 404 | No existe un doctor con ese ID |
+
+### Consultations
+Todas las rutas con `{id}` esperan un GUID. Una consulta registra la atención clínica de un paciente: motivo, diagnóstico y notas, con o sin cita previa.
+
+- **Escriben** (iniciar, editar y cerrar) solo los `Doctor` (política `Clinical`), y cada uno solo sus propias consultas. El doctor de la consulta es siempre el del token: no viaja en el cuerpo.
+- **Leen** (detalle e historia del paciente) el Admin y cualquier `Doctor` (política `AdminOrDoctor`), también las consultas de otros doctores, para dar continuidad clínica.
+- La recepción no ve datos clínicos: un `Receptionist` recibe **403** en todas las rutas. El Admin recibe **403** al escribir.
+- Un `Doctor` necesita estar vinculado a su ficha (`POST /api/users/{id}/link-doctor`) y haber iniciado sesión después del vínculo; sin vínculo recibe **403** en todas las rutas.
+
+Las respuestas de consulta tienen esta forma:
+
+```json
+{
+  "id": "0193f2e0-…",
+  "patientId": "0193f1c2-…",
+  "patientFullName": "Ana Pérez",
+  "doctorId": "0193f1b8-…",
+  "doctorFullName": "Luis Andrade",
+  "appointmentId": "0193f1d0-…",
+  "reason": "Dolor de cabeza desde hace tres días",
+  "diagnosis": "Cefalea tensional",
+  "notes": "Control en dos semanas.",
+  "status": "Closed",
+  "startedAtUtc": "2026-11-03T14:32:10Z",
+  "closedAtUtc": "2026-11-03T14:55:40Z",
+  "startedAtLocal": "2026-11-03T09:32:10",
+  "closedAtLocal": "2026-11-03T09:55:40",
+  "createdAtUtc": "2026-11-03T14:32:10Z"
+}
+```
+
+- `appointmentId` es `null` en una consulta sin cita. `diagnosis` y `notes` son `null` mientras no tengan valor; `closedAtUtc` y `closedAtLocal`, mientras la consulta esté abierta.
+- Las horas locales son las del dispensario y viajan **sin offset**; las UTC llevan `Z`.
+- `status`: `Open` o `Closed`. La consulta se inicia `Open`, se edita mientras está abierta y `Closed` es final (no se reabre ni se edita).
+- Máximos: `reason` 500 caracteres, `diagnosis` 1000 y `notes` 4000. Los textos se guardan sin espacios alrededor.
+
+```
+POST /api/consultations ──► Open ──PUT──► Open
+                              │
+                              └──close──► Closed   (final)
+```
+
+Cerrar una consulta **aún no completa la cita**: la cita sigue `Scheduled` o `Confirmed` hasta la feature 16.
+
+#### `POST /api/consultations` — `Clinical`
+Inicia una consulta del doctor del token. `patientId` y `reason` son obligatorios; `appointmentId` es opcional (sin él, la consulta es de un paciente sin cita).
+
+```json
+// Petición
+{
+  "patientId": "0193f1c2-…",
+  "appointmentId": "0193f1d0-…",
+  "reason": "Dolor de cabeza desde hace tres días"
+}
+
+// 201 Created  (Location: /api/consultations/0193f2e0-…)
+{ "id": "0193f2e0-…" }
+```
+
+Reglas, en este orden:
+1. El doctor del token está vinculado, existe y está activo.
+2. El paciente existe y está activo.
+3. Si se envía `appointmentId`, la cita existe, es del doctor del token y del paciente, está `Scheduled` o `Confirmed`, es de **hoy** (fecha local del dispensario; vale aunque el paciente llegue antes o después de la hora) y todavía no tiene ninguna consulta, abierta o cerrada.
+
+Iniciar la consulta no cambia el estado de la cita.
+
+| Código | Cuándo |
+|---|---|
+| 201 | Consulta iniciada |
+| 400 | Datos inválidos (`ValidationErrors`): `patientId` o `appointmentId` vacíos, `reason` vacío o de más de 500 caracteres. También sin `ValidationErrors`: paciente o doctor inactivo; la cita es de otro paciente, no está `Scheduled` ni `Confirmed`, o no es de hoy |
+| 401 | Sin token |
+| 403 | El usuario no es `Doctor` (Admin, recepción), es un `Doctor` sin vincular, o la cita es de otro doctor |
+| 404 | No existe el paciente o la cita |
+| 409 | La cita ya tiene una consulta |
+
+#### `PUT /api/consultations/{id}` — `Clinical`
+Edita una consulta abierta del doctor del token. Reemplaza los tres textos: `reason` es obligatorio y un `diagnosis` o `notes` `null` (u omitido) borra el valor actual.
+
+```json
+// Petición
+{
+  "reason": "Dolor de cabeza desde hace tres días",
+  "diagnosis": "Cefalea tensional",
+  "notes": "Sin signos de alarma."
+}
+
+// 204 No Content
+```
+
+| Código | Cuándo |
+|---|---|
+| 204 | Consulta actualizada |
+| 400 | `reason` vacío o largo, `diagnosis` de más de 1000 o `notes` de más de 4000 caracteres (`ValidationErrors`). También sin `ValidationErrors`: la consulta está cerrada |
+| 401 | Sin token |
+| 403 | El usuario no es `Doctor`, es un `Doctor` sin vincular, o la consulta es de otro doctor |
+| 404 | No existe una consulta con ese ID |
+
+#### `POST /api/consultations/{id}/close` — `Clinical`
+Cierra una consulta abierta del doctor del token. `diagnosis` es obligatorio; `notes` reemplaza las notas (un `null` las borra). Fija `closedAtUtc` con la hora actual.
+
+```json
+// Petición
+{ "diagnosis": "Cefalea tensional", "notes": "Control en dos semanas." }
+
+// 204 No Content
+```
+
+| Código | Cuándo |
+|---|---|
+| 204 | Consulta cerrada |
+| 400 | `diagnosis` vacío o de más de 1000 caracteres, o `notes` de más de 4000 (`ValidationErrors`). También sin `ValidationErrors`: la consulta ya está cerrada |
+| 401 | Sin token |
+| 403 | El usuario no es `Doctor`, es un `Doctor` sin vincular, o la consulta es de otro doctor |
+| 404 | No existe una consulta con ese ID |
+
+#### `GET /api/consultations/{id}` — `AdminOrDoctor`
+Devuelve una consulta con la forma de arriba, sea del doctor que sea.
+
+| Código | Cuándo |
+|---|---|
+| 200 | Consulta encontrada |
+| 401 | Sin token |
+| 403 | El usuario es de recepción, o un `Doctor` sin vincular |
+| 404 | No existe una consulta con ese ID |
+
+#### `GET /api/patients/{id}/consultations` — `AdminOrDoctor`
+Historia clínica del paciente: todas sus consultas, abiertas y cerradas, de cualquier doctor, de la más reciente a la más antigua. También funciona con un paciente inactivo. La ruta cuelga de `/api/patients`, pero pertenece al módulo Consultations (tag `Consultations` en OpenAPI).
+
+| Parámetro | Descripción |
+|---|---|
+| `pageIndex` | Página, desde 0 (por defecto 0) |
+| `pageSize` | Tamaño de página, de 1 a 100 (por defecto 10) |
+
+```json
+// GET /api/patients/0193f1c2-…/consultations?pageSize=10 → 200 OK
+{ "pageIndex": 0, "pageSize": 10, "count": 2, "data": [ { "id": "0193f2e0-…", "status": "Open", "…": "…" }, { "id": "0193f2a1-…", "status": "Closed", "…": "…" } ] }
+```
+
+| Código | Cuándo |
+|---|---|
+| 200 | Página de consultas (puede estar vacía) |
+| 400 | `pageIndex` negativo o `pageSize` fuera de 1–100 |
+| 401 | Sin token |
+| 403 | El usuario es de recepción, o un `Doctor` sin vincular |
+| 404 | No existe un paciente con ese ID |

@@ -1,5 +1,6 @@
 using Dispensario.Application.Abstractions;
 using Dispensario.Domain.Appointments;
+using Dispensario.Domain.Consultations;
 using Dispensario.Domain.Common;
 using Dispensario.Domain.Doctors;
 using Dispensario.Domain.Patients;
@@ -19,6 +20,7 @@ public sealed class DispensarioDbContext(DbContextOptions<DispensarioDbContext> 
     public DbSet<Doctor> Doctors => Set<Doctor>();
     public DbSet<Patient> Patients => Set<Patient>();
     public DbSet<Appointment> Appointments => Set<Appointment>();
+    public DbSet<Consultation> Consultations => Set<Consultation>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
         => modelBuilder.ApplyConfigurationsFromAssembly(typeof(DispensarioDbContext).Assembly);

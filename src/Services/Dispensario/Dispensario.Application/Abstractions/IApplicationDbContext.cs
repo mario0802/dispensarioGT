@@ -1,4 +1,5 @@
 using Dispensario.Domain.Appointments;
+using Dispensario.Domain.Consultations;
 using Dispensario.Domain.Doctors;
 using Dispensario.Domain.Patients;
 using Dispensario.Domain.Users;
@@ -16,6 +17,7 @@ public interface IApplicationDbContext
     DbSet<Doctor> Doctors { get; }
     DbSet<Patient> Patients { get; }
     DbSet<Appointment> Appointments { get; }
+    DbSet<Consultation> Consultations { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

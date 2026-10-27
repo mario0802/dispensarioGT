@@ -52,6 +52,7 @@ Los errores responden con `application/problem+json` (ProblemDetails). Las rutas
 | `POST` | `/api/appointments/{id}/cancel` | Autenticado (el doctor, solo las suyas) | Cancela una cita con un motivo |
 | `POST` | `/api/appointments/{id}/no-show` | Autenticado (el doctor, solo las suyas) | Marca una cita como no asistida |
 | `PUT` | `/api/appointments/{id}/schedule` | `Reception` | Reprograma una cita a otra hora |
+| `GET` | `/api/doctors/{id}/available-slots?date=` | Autenticado | Slots libres de un doctor en una fecha local |
 | `GET` | `/health` | Anónimo | Estado de la Api y de la base de datos |
 | `GET` | `/scalar`, `/openapi/v1.json` | Solo Development | Referencia interactiva y documento OpenAPI |
 
@@ -463,6 +464,8 @@ Devuelve el horario del doctor, también si está inactivo. Los bloques salen de
 | 401 | Sin token |
 | 404 | No existe un doctor con ese ID |
 
+Los slots libres de un doctor para un día se consultan con [`GET /api/doctors/{id}/available-slots`](#get-apidoctorsidavailable-slotsdate--autenticado), documentado en **Appointments**.
+
 ### Patients
 Todas las rutas con `{id}` esperan un GUID. Las de escritura usan la política `Reception` (**401** sin token, **403** con un token de `Doctor`); las lecturas aceptan cualquier usuario autenticado. Las respuestas de paciente tienen esta forma:
 
@@ -762,3 +765,40 @@ Reprograma una cita `Scheduled` o `Confirmed` a otra hora, con el mismo doctor y
 | 401 / 403 | Sin token / el usuario es `Doctor` |
 | 404 | No existe una cita con ese ID |
 | 409 | El doctor o el paciente ya tienen otra cita que se cruza con la nueva hora |
+
+#### `GET /api/doctors/{id}/available-slots?date=` — Autenticado
+Devuelve los slots **libres** de un doctor en una fecha local del dispensario, es decir, las horas que se pueden ofrecer al agendar. La ruta cuelga de `/api/doctors`, pero pertenece al módulo Appointments (tag `Appointments` en OpenAPI). Cualquier usuario autenticado puede consultar a cualquier doctor; la respuesta no lleva datos de pacientes.
+
+| Parámetro | Descripción |
+|---|---|
+| `date` | Obligatorio. Fecha **local** del dispensario (`"yyyy-MM-dd"`), de hoy en adelante |
+
+Un slot es libre si:
+1. Sale del horario del doctor para ese día de la semana, contado desde el inicio de cada bloque en pasos de la duración de la cita (la misma alineación que exige el alta). El sobrante final de un bloque que no llega a la duración se descarta: con un bloque `09:00–12:10` y 30 minutos, el último slot es `11:30–12:00`.
+2. Es futuro: para hoy solo salen los slots que empiezan después de la hora actual.
+3. No se cruza con ninguna cita `Scheduled` o `Confirmed` del doctor (una cita contigua no cuenta). Las citas `Cancelled`, `NoShow` y `Completed` no ocupan su slot.
+
+Las citas del **paciente** no se miran: si el paciente ya tiene otra cita a esa hora, el alta responde **409**. Entre la consulta y el alta otra persona puede ocupar el slot, y el alta también responde **409**.
+
+```json
+// GET /api/doctors/0193f1b8-…/available-slots?date=2026-11-03 → 200 OK
+{
+  "doctorId": "0193f1b8-…",
+  "date": "2026-11-03",
+  "durationMinutes": 30,
+  "slots": [
+    { "startLocal": "2026-11-03T09:00:00", "endLocal": "2026-11-03T09:30:00" },
+    { "startLocal": "2026-11-03T10:00:00", "endLocal": "2026-11-03T10:30:00" }
+  ]
+}
+```
+
+- `durationMinutes` es la duración actual de la cita del doctor; los slots salen ordenados por inicio y en hora local **sin offset**.
+- Un día sin bloques en el horario (o con todos los slots ocupados o pasados) devuelve `slots: []`.
+
+| Código | Cuándo |
+|---|---|
+| 200 | Slots libres (puede ser una lista vacía) |
+| 400 | `date` ausente o ilegible, fecha anterior a hoy (fecha local del dispensario) o doctor inactivo. Sin `ValidationErrors`. La fecha pasada se comprueba antes de buscar el doctor |
+| 401 | Sin token |
+| 404 | No existe un doctor con ese ID |

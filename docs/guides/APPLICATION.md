@@ -124,10 +124,12 @@ Agendan, confirman y reprograman la recepción (política `Reception`); leen, ca
 | `CancelAppointmentCommand(AppointmentId, Reason)` | `Appointments/Commands/CancelAppointment/` | Fila 13. Recibe `ICurrentUser` y `TimeProvider`. `Doctor` sin `DoctorId` → `ForbiddenException`; inexistente → `NotFoundException`; cita de otro doctor → `ForbiddenException("You can only manage your own appointments.")`; `appointment.Cancel(reason, nowUtc)`. Validador: ID no vacío, `Reason` no vacío y máx. 500 |
 | `MarkAppointmentNoShowCommand(AppointmentId)` | `Appointments/Commands/MarkAppointmentNoShow/` | Fila 13. Como `CancelAppointment`, con `appointment.MarkNoShow(nowUtc)`. Sin validador |
 | `RescheduleAppointmentCommand(AppointmentId, StartLocal)` | `Appointments/Commands/RescheduleAppointment/` | Fila 13. Recibe `IClinicTimeZone` y `TimeProvider`. Mismo doctor y paciente; orden de comprobaciones en §6. Validador: ID no vacío y `StartLocal` como en el alta |
+| `GetAvailableSlotsQuery(DoctorId, Date)` → `AvailableSlotsDto` | `Appointments/Queries/GetAvailableSlots/` | Fila 14. Recibe `IClinicTimeZone` y `TimeProvider`. Lee `Doctors` y `Appointments`; la ruta cuelga de `/api/doctors`. Sin comprobación de dueño. Orden en §6 |
 
 - `ScheduleAppointmentCommandValidator`: IDs no vacíos; `StartLocal` no vacío y con `Kind == Unspecified` (`Start time must be a local time without offset.`), porque System.Text.Json solo deja `Unspecified` cuando el texto no trae `Z` ni offset; `Reason` no vacío y máx. 500.
-- `AppointmentSlotRules` (`Appointments/Common/`, fila 13): clase estática con las reglas de agenda que comparten el alta y la reprogramación. `EnsureFitsSchedule(doctor, localStart, localEnd)` comprueba horario y alineación; `EnsureNoOverlapsAsync(db, doctorId, patientId, startUtc, endUtc, excludedAppointmentId, ct)` comprueba los cruces, primero del doctor y luego del paciente, ignorando `excludedAppointmentId` (la propia cita al reprogramar).
+- `AppointmentSlotRules` (`Appointments/Common/`, fila 13): clase estática con las reglas de agenda que comparten el alta y la reprogramación. `EnsureFitsSchedule(doctor, localStart, localEnd)` comprueba horario y alineación; `EnsureNoOverlapsAsync(db, doctorId, patientId, startUtc, endUtc, excludedAppointmentId, ct)` comprueba los cruces, primero del doctor y luego del paciente, ignorando `excludedAppointmentId` (la propia cita al reprogramar). `GetScheduleSlots(doctor, date)` (fila 14) genera los slots del horario para una fecha local, desde el inicio de cada bloque en pasos de la duración y descartando el sobrante final; solo mira el horario (ni `IsActive`, ni el pasado, ni las citas) y todo slot que genera pasa `EnsureFitsSchedule`.
 - `AppointmentDto` lleva `PatientFullName` y `DoctorFullName` (subconsultas sobre `Patients` y `Doctors` en `AppointmentProjections.ToDto`, sin Mapster), las horas UTC y las locales, y `CancellationReason` (fila 13). `TimeZoneInfo` no se traduce a SQL: `ToDto` deja `StartLocal`/`EndLocal` vacías y `WithLocalTimes(clinicTimeZone)` las rellena en memoria tras leer la página (máximo 100 filas).
+- `AvailableSlotsDto(DoctorId, Date, DurationMinutes, Slots)` con `AvailableSlotDto(StartLocal, EndLocal)` en hora local sin offset (fila 14). `DurationMinutes` es la duración vigente del doctor.
 
 ## 3. Plantilla de un command
 ```csharp
@@ -228,6 +230,14 @@ public sealed class GetPatientsHandler(IApplicationDbContext db)
 5. `AppointmentSlotRules.EnsureFitsSchedule` (horario y alineación).
 6. `AppointmentSlotRules.EnsureNoOverlapsAsync` excluyendo la propia cita.
 7. Un único `SaveChangesAsync`; si falla el paso 5 o el 6, el cambio en memoria no se guarda.
+
+**GetAvailableSlots** (fila 14), en este orden:
+1. `Date < IClinicTimeZone.Today` → `BadRequestException("Date cannot be in the past.")`, antes de leer la BD (las queries no pasan por `ValidationBehavior`).
+2. El doctor existe (`NotFoundException`) y está activo (`BadRequestException("Doctor is inactive.")`).
+3. `AppointmentSlotRules.GetScheduleSlots(doctor, Date)`; sin slots, devuelve `Slots` vacío sin más consultas.
+4. Se descartan los slots con `ToUtc(inicio) <= nowUtc` (como `Appointment.Create`).
+5. Se leen con `AsNoTracking` las citas `Scheduled` o `Confirmed` del doctor que se cruzan con el día local (`[ToUtc(Date 00:00), ToUtc(Date + 1 día 00:00))`), solo `StartUtc` y `EndUtc`.
+6. En memoria se descartan los slots que se cruzan con alguna (una contigua no cuenta). Las citas del paciente no se miran: ese cruce lo detecta el alta (409).
 
 **StartConsultation**: el usuario actual es `Doctor` y `ICurrentUser.DoctorId` es el doctor de la consulta. Si se envía `AppointmentId`, la cita debe ser de ese doctor y paciente y estar `Scheduled` o `Confirmed`. Solo puede haber una consulta `Open` por cita.
 

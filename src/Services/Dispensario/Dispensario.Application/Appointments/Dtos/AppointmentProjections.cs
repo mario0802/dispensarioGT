@@ -34,6 +34,7 @@ public static class AppointmentProjections
             default,
             a.Reason,
             a.Status,
+            a.CancellationReason,
             a.CreatedAtUtc));
 
     public static AppointmentDto WithLocalTimes(this AppointmentDto dto, IClinicTimeZone clinicTimeZone) =>

@@ -1,6 +1,6 @@
 # SPEC 12 — Appointments: agendar
 
-> **Status:** Approved
+> **Status:** Implemented
 > **Depends on:** SPEC 07, SPEC 09, SPEC 10, SPEC 11
 > **Date:** 2026-10-27
 > **Objective:** Crear el aggregate `Appointment` y exponer el agendamiento de citas en hora local del dispensario, validando horario, alineación a slots y cruces, junto con su listado filtrado y su detalle.

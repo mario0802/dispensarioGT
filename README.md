@@ -48,6 +48,10 @@ Los errores responden con `application/problem+json` (ProblemDetails). Las rutas
 | `POST` | `/api/appointments` | `Reception` | Agenda una cita en el horario del doctor |
 | `GET` | `/api/appointments` | Autenticado (el doctor, solo las suyas) | Lista paginada de citas con filtros |
 | `GET` | `/api/appointments/{id}` | Autenticado (el doctor, solo las suyas) | Detalle de una cita |
+| `POST` | `/api/appointments/{id}/confirm` | `Reception` | Confirma una cita agendada |
+| `POST` | `/api/appointments/{id}/cancel` | Autenticado (el doctor, solo las suyas) | Cancela una cita con un motivo |
+| `POST` | `/api/appointments/{id}/no-show` | Autenticado (el doctor, solo las suyas) | Marca una cita como no asistida |
+| `PUT` | `/api/appointments/{id}/schedule` | `Reception` | Reprograma una cita a otra hora |
 | `GET` | `/health` | Anónimo | Estado de la Api y de la base de datos |
 | `GET` | `/scalar`, `/openapi/v1.json` | Solo Development | Referencia interactiva y documento OpenAPI |
 
@@ -593,7 +597,7 @@ Vuelve a activar un paciente desactivado. Sin cuerpo.
 | 404 | No existe un paciente con ese ID |
 
 ### Appointments
-Todas las rutas con `{id}` esperan un GUID. Agendar usa la política `Reception` (**401** sin token, **403** con un token de `Doctor`). Las lecturas aceptan cualquier usuario autenticado, pero un `Doctor` solo ve las citas de su propia ficha: necesita estar vinculado (`POST /api/users/{id}/link-doctor`) y haber iniciado sesión después del vínculo. Las respuestas de cita tienen esta forma:
+Todas las rutas con `{id}` esperan un GUID. Agendar, confirmar y reprogramar usan la política `Reception` (**401** sin token, **403** con un token de `Doctor`). Las lecturas, la cancelación y la no asistencia aceptan cualquier usuario autenticado, pero un `Doctor` solo actúa sobre las citas de su propia ficha: necesita estar vinculado (`POST /api/users/{id}/link-doctor`) y haber iniciado sesión después del vínculo. Las respuestas de cita tienen esta forma:
 
 ```json
 {
@@ -608,12 +612,33 @@ Todas las rutas con `{id}` esperan un GUID. Agendar usa la política `Reception`
   "endLocal": "2026-11-03T10:00:00",
   "reason": "Control de presión arterial",
   "status": "Scheduled",
+  "cancellationReason": null,
   "createdAtUtc": "2026-10-27T15:02:11Z"
 }
 ```
 
 - Las horas locales son las del dispensario (`Clinic:TimeZone`, por defecto `America/Guayaquil`, UTC−5) y viajan **sin offset**; las UTC llevan `Z`.
-- `status`: `Scheduled`, `Confirmed`, `Completed`, `Cancelled` o `NoShow`. Por ahora todas las citas se crean `Scheduled`; las transiciones llegan con el ciclo de vida de la cita.
+- `status`: `Scheduled`, `Confirmed`, `Completed`, `Cancelled` o `NoShow`. Las citas se crean `Scheduled`; `Completed` llegará al cerrar la consulta.
+- `cancellationReason` solo tiene valor en las citas `Cancelled`.
+
+Ciclo de vida de una cita:
+
+```
+Scheduled ──confirm──► Confirmed
+    │                      │
+    ├──cancel──────────────┼──► Cancelled
+    ├──no-show─────────────┴──► NoShow
+    └──schedule (reprogramar: Scheduled|Confirmed → Scheduled, con nuevas horas)
+```
+
+| Acción | Estado de origen | Cuándo |
+|---|---|---|
+| `confirm` | `Scheduled` | Antes de la hora de inicio |
+| `cancel` | `Scheduled`, `Confirmed` | Antes de la hora de inicio |
+| `no-show` | `Scheduled`, `Confirmed` | Desde la hora de inicio |
+| `schedule` (reprogramar) | `Scheduled`, `Confirmed` | Antes de la hora de inicio actual; la nueva hora también debe ser futura |
+
+`Cancelled` y `NoShow` son finales: cualquier acción sobre ellas responde **400**. Una acción fuera de su estado o de su momento también responde **400**.
 - La duración de la cita es la del doctor (`appointmentDurationMinutes`): `endUtc = startUtc + duración`.
 
 #### `POST /api/appointments` — `Reception`
@@ -680,3 +705,60 @@ Devuelve una cita con la forma de arriba.
 | 401 | Sin token |
 | 403 | El usuario es un `Doctor` sin vincular, o la cita es de otro doctor |
 | 404 | No existe una cita con ese ID |
+
+#### `POST /api/appointments/{id}/confirm` — `Reception`
+Confirma una cita `Scheduled` antes de su inicio. Sin cuerpo.
+
+| Código | Cuándo |
+|---|---|
+| 204 | Cita confirmada |
+| 400 | La cita no está `Scheduled` o ya empezó |
+| 401 / 403 | Sin token / el usuario es `Doctor` |
+| 404 | No existe una cita con ese ID |
+
+#### `POST /api/appointments/{id}/cancel` — Autenticado
+Cancela una cita `Scheduled` o `Confirmed` antes de su inicio. `reason` es obligatorio, admite hasta 500 caracteres y se guarda sin espacios alrededor. La cita cancelada deja libre su horario. El Admin y la recepción cancelan cualquier cita; un `Doctor`, solo las suyas.
+
+```json
+// Petición
+{ "reason": "El paciente pidió cancelar por viaje" }
+
+// 204 No Content
+```
+
+| Código | Cuándo |
+|---|---|
+| 204 | Cita cancelada |
+| 400 | `reason` vacío o de más de 500 caracteres (`ValidationErrors`). También sin `ValidationErrors`: la cita no está `Scheduled` ni `Confirmed`, o ya empezó |
+| 401 | Sin token |
+| 403 | El usuario es un `Doctor` sin vincular, o la cita es de otro doctor |
+| 404 | No existe una cita con ese ID |
+
+#### `POST /api/appointments/{id}/no-show` — Autenticado
+Marca como no asistida una cita `Scheduled` o `Confirmed` cuya hora de inicio ya llegó. Sin cuerpo. El Admin y la recepción marcan cualquier cita; un `Doctor`, solo las suyas.
+
+| Código | Cuándo |
+|---|---|
+| 204 | Cita marcada como no asistida |
+| 400 | La cita no está `Scheduled` ni `Confirmed`, o aún no empezó |
+| 401 | Sin token |
+| 403 | El usuario es un `Doctor` sin vincular, o la cita es de otro doctor |
+| 404 | No existe una cita con ese ID |
+
+#### `PUT /api/appointments/{id}/schedule` — `Reception`
+Reprograma una cita `Scheduled` o `Confirmed` a otra hora, con el mismo doctor y paciente. `startLocal` es la nueva hora local del dispensario **sin offset**. Se aplican las mismas reglas que al agendar (paciente y doctor activos, cita futura, horario, alineación y cruces), con la duración **actual** del doctor. La propia cita no cuenta como cruce. La cita vuelve a `Scheduled` aunque estuviera confirmada.
+
+```json
+// Petición
+{ "startLocal": "2026-11-04T10:00" }
+
+// 204 No Content
+```
+
+| Código | Cuándo |
+|---|---|
+| 204 | Cita reprogramada |
+| 400 | `startLocal` vacío o con `Z` u offset (`ValidationErrors`). También sin `ValidationErrors`: `startLocal` ilegible, la misma hora que ya tiene, en el pasado, fuera del horario o desalineada; la cita no está `Scheduled` ni `Confirmed` o ya empezó; paciente o doctor inactivo |
+| 401 / 403 | Sin token / el usuario es `Doctor` |
+| 404 | No existe una cita con ese ID |
+| 409 | El doctor o el paciente ya tienen otra cita que se cruza con la nueva hora |

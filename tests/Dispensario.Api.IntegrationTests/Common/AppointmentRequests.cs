@@ -1,5 +1,10 @@
 using System.Globalization;
 using System.Net.Http.Json;
+using Dispensario.Domain.Appointments;
+using Dispensario.Domain.Doctors;
+using Dispensario.Domain.Patients;
+using Dispensario.Infrastructure.Data;
+using Microsoft.Extensions.DependencyInjection;
 using static Dispensario.Api.IntegrationTests.Common.DoctorRequests;
 using static Dispensario.Api.IntegrationTests.Common.PatientRequests;
 using static Dispensario.Api.IntegrationTests.Common.UserRequests;
@@ -62,5 +67,26 @@ public static class AppointmentRequests
         response.EnsureSuccessStatusCode();
         using var json = await ReadJsonAsync(response);
         return json.RootElement.GetProperty("id").GetGuid();
+    }
+
+    // Inserta en la BD una cita que empezó hace una hora: la Api no deja agendar en el pasado.
+    // Se crea con Appointment.Create y un nowUtc anterior a su inicio, así respeta las invariantes del aggregate
+    public static async Task<Guid> SeedStartedAppointmentAsync(DispensarioApiFactory factory, Guid patientId, Guid doctorId)
+    {
+        var startUtc = DateTime.UtcNow.AddHours(-1);
+        var appointment = Appointment.Create(
+            new PatientId(patientId),
+            new DoctorId(doctorId),
+            startUtc,
+            startUtc.AddMinutes(30),
+            "Control",
+            startUtc.AddDays(-1));
+
+        using var scope = factory.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<DispensarioDbContext>();
+        dbContext.Appointments.Add(appointment);
+        await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        return appointment.Id.Value;
     }
 }

@@ -148,13 +148,13 @@ Eventos: ninguno en v1 (no hay consumidores).
 | `StartUtc` / `EndUtc` | `DateTime` (UTC) | `StartUtc < EndUtc`; el fin lo calcula el handler con la duración del doctor |
 | `Reason` | `string` | obligatorio; Trim; máx. 500 (`Appointment.ReasonMaxLength`) |
 | `Status` | `AppointmentStatus` | `Scheduled`, `Confirmed`, `Completed`, `Cancelled`, `NoShow`; `Scheduled` al crear |
-| `CancellationReason?` | `string` | llega con el ciclo de vida (fila 13) |
+| `CancellationReason?` | `string` | fila 13: solo en `Cancelled`; Trim; máx. 500 (`Appointment.CancellationReasonMaxLength`) |
 
 Métodos (fila 12): `Create(patientId, doctorId, startUtc, endUtc, reason, nowUtc)`. `nowUtc` lo pasa el handler con `TimeProvider` (regla 8).
 Reglas de `Create`, en orden: `startUtc >= endUtc` → `Appointment start must be before its end.`; `startUtc <= nowUtc` → `Appointment cannot be scheduled in the past.`; motivo en blanco → `Reason is required.`; motivo de más de 500 caracteres → `Reason must be at most 500 characters.`.
-El enum `AppointmentStatus` está completo desde la fila 12, pero hasta la fila 13 solo se crean citas `Scheduled`.
+El enum `AppointmentStatus` está completo desde la fila 12; las citas se crean `Scheduled`.
 
-Máquina de estados (fila 13):
+Máquina de estados (fila 13; `Complete` llega con la fila 16):
 ```
 Scheduled ──Confirm──► Confirmed ──Complete──► Completed
     │                      │
@@ -162,11 +162,27 @@ Scheduled ──Confirm──► Confirmed ──Complete──► Completed
     ├──MarkNoShow──────────┴──► NoShow
     └──Reschedule (Scheduled|Confirmed → Scheduled, con nuevas fechas)
 ```
-- `Cancel`, `MarkNoShow` y `Reschedule` no se permiten sobre `Completed`, `Cancelled` ni `NoShow`.
-- `Complete` se permite desde `Scheduled` o `Confirmed`.
+
+Métodos (fila 13): `Confirm(nowUtc)`, `Cancel(reason, nowUtc)`, `MarkNoShow(nowUtc)` y `Reschedule(startUtc, endUtc, nowUtc)`. `nowUtc` lo pasa el handler (regla 8).
+
+| Método | Estado de origen | Momento | Estado final |
+|---|---|---|---|
+| `Confirm` | `Scheduled` | antes del inicio (`StartUtc > nowUtc`) | `Confirmed` |
+| `Cancel` | `Scheduled`, `Confirmed` | antes del inicio | `Cancelled` |
+| `MarkNoShow` | `Scheduled`, `Confirmed` | desde el inicio (`StartUtc <= nowUtc`) | `NoShow` |
+| `Reschedule` | `Scheduled`, `Confirmed` | antes del inicio actual; el nuevo inicio también futuro | `Scheduled` |
+
+Reglas (`DomainException`), en este orden dentro de cada método:
+- `Confirm`: estado distinto de `Scheduled` → `Only scheduled appointments can be confirmed.`; ya empezada → `Appointment has already started.`.
+- `Cancel`: estado distinto de `Scheduled`/`Confirmed` → `Only scheduled or confirmed appointments can be cancelled.`; ya empezada → `Appointment has already started.`; motivo en blanco → `Cancellation reason is required.`; motivo de más de 500 → `Cancellation reason must be at most 500 characters.`.
+- `MarkNoShow`: estado distinto de `Scheduled`/`Confirmed` → `Only scheduled or confirmed appointments can be marked as no-show.`; antes del inicio → `Appointment has not started yet.`.
+- `Reschedule`: estado distinto de `Scheduled`/`Confirmed` → `Only scheduled or confirmed appointments can be rescheduled.`; ya empezada → `Appointment has already started.`; mismo inicio → `New start must be different from the current one.`; inicio ≥ fin → `Appointment start must be before its end.`; nuevo inicio pasado → `Appointment cannot be scheduled in the past.`.
+- `Completed`, `Cancelled` y `NoShow` son finales. Si una regla falla, la cita no cambia.
+- `Cancel` guarda el motivo recortado en `CancellationReason`; `Reschedule` cambia `StartUtc`/`EndUtc` y vuelve a `Scheduled` aunque estuviera `Confirmed`.
+- `Complete` se permitirá desde `Scheduled` o `Confirmed` (fila 16).
 - Las reglas que dependen de **otros** aggregates (horario del doctor, cruces) se validan en el handler (ver APPLICATION.md).
 
-Eventos: ninguno en la fila 12 (no hay consumidores, regla 7). `AppointmentScheduledDomainEvent`, `AppointmentCancelledDomainEvent` y `AppointmentRescheduledDomainEvent` se añadirán cuando algún módulo reaccione a ellos.
+Eventos: ninguno en las filas 12 y 13 (no hay consumidores, regla 7). `AppointmentScheduledDomainEvent`, `AppointmentCancelledDomainEvent` y `AppointmentRescheduledDomainEvent` se añadirán cuando algún módulo reaccione a ellos.
 
 ### Consultations
 | Miembro | Tipo |

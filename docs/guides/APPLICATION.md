@@ -114,15 +114,20 @@ Usan los métodos de `Patient` (`Create`, `Update`, `Deactivate`, `Activate`). E
 - `PatientsMappingConfig` (Mapster): `Patient` → `PatientDto`, con `Address` → `AddressDto` o `null` y `BloodType` → notación clínica. `BloodTypeNotation.ToNotation` no se traduce a SQL: EF lo evalúa en cliente en la proyección final.
 
 ### Módulo Appointments
-Agenda la recepción (política `Reception`); leen todos los autenticados, pero un `Doctor` solo ve sus citas. Las horas de la Api son locales del dispensario y la BD guarda UTC:
+Agendan, confirman y reprograman la recepción (política `Reception`); leen, cancelan y marcan no asistidas todos los autenticados, pero un `Doctor` solo actúa sobre sus citas. Las horas de la Api son locales del dispensario y la BD guarda UTC:
 | Caso de uso | Ubicación | Reglas |
 |---|---|---|
 | `ScheduleAppointmentCommand(PatientId, DoctorId, StartLocal, Reason)` → `ScheduleAppointmentResult(Id)` | `Appointments/Commands/ScheduleAppointment/` | Recibe `IClinicTimeZone` y `TimeProvider`. Lee `Patients` y `Doctors` y solo escribe en `Appointments`. Orden de comprobaciones en §6 |
 | `GetAppointmentsQuery(Pagination, DoctorId?, PatientId?, Status?, From?, To?)` → `PaginatedResult<AppointmentDto>` | `Appointments/Queries/GetAppointments/` | Recibe `ICurrentUser`. Un `Doctor` sin `DoctorId` → `ForbiddenException("Your user is not linked to a doctor.")`; con un `DoctorId` ajeno en el filtro → `ForbiddenException("You can only view your own appointments.")`; sin filtro se filtra por el suyo. Todo antes de leer la BD. Paginación validada como en `GetUsers`; `From > To` → `BadRequestException`. `From`/`To` son fechas locales inclusive: se convierten a límites UTC `[From 00:00, To + 1 día 00:00)`. Orden por `StartUtc` e ID |
 | `GetAppointmentByIdQuery` → `AppointmentDto` | `Appointments/Queries/GetAppointmentById/` | `Doctor` sin `DoctorId` → `ForbiddenException`. Inexistente → `NotFoundException`. Cita de otro doctor → `ForbiddenException` (el 404 va antes: hay que leer la cita para saber de quién es) |
+| `ConfirmAppointmentCommand(AppointmentId)` | `Appointments/Commands/ConfirmAppointment/` | Fila 13. Recibe `TimeProvider`. Inexistente → `NotFoundException`; `appointment.Confirm(nowUtc)` (estado o momento inválidos → `DomainException`). Sin validador |
+| `CancelAppointmentCommand(AppointmentId, Reason)` | `Appointments/Commands/CancelAppointment/` | Fila 13. Recibe `ICurrentUser` y `TimeProvider`. `Doctor` sin `DoctorId` → `ForbiddenException`; inexistente → `NotFoundException`; cita de otro doctor → `ForbiddenException("You can only manage your own appointments.")`; `appointment.Cancel(reason, nowUtc)`. Validador: ID no vacío, `Reason` no vacío y máx. 500 |
+| `MarkAppointmentNoShowCommand(AppointmentId)` | `Appointments/Commands/MarkAppointmentNoShow/` | Fila 13. Como `CancelAppointment`, con `appointment.MarkNoShow(nowUtc)`. Sin validador |
+| `RescheduleAppointmentCommand(AppointmentId, StartLocal)` | `Appointments/Commands/RescheduleAppointment/` | Fila 13. Recibe `IClinicTimeZone` y `TimeProvider`. Mismo doctor y paciente; orden de comprobaciones en §6. Validador: ID no vacío y `StartLocal` como en el alta |
 
 - `ScheduleAppointmentCommandValidator`: IDs no vacíos; `StartLocal` no vacío y con `Kind == Unspecified` (`Start time must be a local time without offset.`), porque System.Text.Json solo deja `Unspecified` cuando el texto no trae `Z` ni offset; `Reason` no vacío y máx. 500.
-- `AppointmentDto` lleva `PatientFullName` y `DoctorFullName` (subconsultas sobre `Patients` y `Doctors` en `AppointmentProjections.ToDto`, sin Mapster), las horas UTC y las locales. `TimeZoneInfo` no se traduce a SQL: `ToDto` deja `StartLocal`/`EndLocal` vacías y `WithLocalTimes(clinicTimeZone)` las rellena en memoria tras leer la página (máximo 100 filas).
+- `AppointmentSlotRules` (`Appointments/Common/`, fila 13): clase estática con las reglas de agenda que comparten el alta y la reprogramación. `EnsureFitsSchedule(doctor, localStart, localEnd)` comprueba horario y alineación; `EnsureNoOverlapsAsync(db, doctorId, patientId, startUtc, endUtc, excludedAppointmentId, ct)` comprueba los cruces, primero del doctor y luego del paciente, ignorando `excludedAppointmentId` (la propia cita al reprogramar).
+- `AppointmentDto` lleva `PatientFullName` y `DoctorFullName` (subconsultas sobre `Patients` y `Doctors` en `AppointmentProjections.ToDto`, sin Mapster), las horas UTC y las locales, y `CancellationReason` (fila 13). `TimeZoneInfo` no se traduce a SQL: `ToDto` deja `StartLocal`/`EndLocal` vacías y `WithLocalTimes(clinicTimeZone)` las rellena en memoria tras leer la página (máximo 100 filas).
 
 ## 3. Plantilla de un command
 ```csharp
@@ -205,15 +210,24 @@ public sealed class GetPatientsHandler(IApplicationDbContext db)
 | Mapeo | Mapster: `TypeAdapterConfig` por módulo en `<Module>/Dtos/<Module>MappingConfig.cs` (`IRegister`) |
 
 ## 6. Reglas de negocio con varios aggregates
-**ScheduleAppointment** (fila 12; Reschedule reutilizará las mismas reglas), en este orden:
+**ScheduleAppointment** (fila 12), en este orden:
 1. El paciente existe (`NotFoundException`) y está activo (`BadRequestException("Patient is inactive.")`).
 2. El doctor existe (`NotFoundException`) y está activo (`BadRequestException("Doctor is inactive.")`).
 3. `StartUtc = IClinicTimeZone.ToUtc(StartLocal)`, `EndUtc = StartUtc + doctor.AppointmentDurationMinutes` y `localEnd = StartLocal + duración`.
 4. `Appointment.Create(..., nowUtc)`: cita en el pasado o motivo inválido → `DomainException`.
-5. `doctor.IsAvailableAt(StartLocal, localEnd)` (el rango local cabe entero en un `ScheduleBlock`); si no → `BadRequestException("The doctor is not available at that time.")`.
+5. `AppointmentSlotRules.EnsureFitsSchedule`: `doctor.IsAvailableAt(StartLocal, localEnd)` (el rango local cabe entero en un `ScheduleBlock`); si no → `BadRequestException("The doctor is not available at that time.")`.
 6. Alineación **desde el inicio del bloque** que contiene la cita: `(inicio local − bloque.StartTime)` es múltiplo de la duración; si no → `BadRequestException("Start time must align with the doctor's appointment slots.")`. Con un bloque `09:10–12:10` y 30 minutos valen `09:10`, `09:40`…
-7. No hay cruce (`StartUtc < endUtc && startUtc < EndUtc`) con citas `Scheduled` o `Confirmed` del doctor (`ConflictException("The doctor already has an appointment at that time.")`) ni, después, del paciente (`ConflictException("The patient already has an appointment at that time.")`). Una cita contigua no es cruce.
+7. `AppointmentSlotRules.EnsureNoOverlapsAsync`: no hay cruce (`StartUtc < endUtc && startUtc < EndUtc`) con citas `Scheduled` o `Confirmed` del doctor (`ConflictException("The doctor already has an appointment at that time.")`) ni, después, del paciente (`ConflictException("The patient already has an appointment at that time.")`). Una cita contigua no es cruce.
 8. Un único `SaveChangesAsync`. Dos altas simultáneas podrían pasar los dos la comprobación de cruces: aceptado en v1.
+
+**RescheduleAppointment** (fila 13), en este orden:
+1. La cita existe (`NotFoundException`); se lee con seguimiento.
+2. Su paciente existe y está activo, y su doctor existe y está activo (mismos mensajes que el alta). Va antes del estado de la cita porque hace falta la duración del doctor.
+3. `StartUtc = ToUtc(StartLocal)` y `EndUtc = StartUtc +` la duración **vigente** del doctor.
+4. `appointment.Reschedule(startUtc, endUtc, nowUtc)`: estado, cita ya empezada, misma hora, inicio ≥ fin o en el pasado → `DomainException`. Deja la cita `Scheduled`.
+5. `AppointmentSlotRules.EnsureFitsSchedule` (horario y alineación).
+6. `AppointmentSlotRules.EnsureNoOverlapsAsync` excluyendo la propia cita.
+7. Un único `SaveChangesAsync`; si falla el paso 5 o el 6, el cambio en memoria no se guarda.
 
 **StartConsultation**: el usuario actual es `Doctor` y `ICurrentUser.DoctorId` es el doctor de la consulta. Si se envía `AppointmentId`, la cita debe ser de ese doctor y paciente y estar `Scheduled` o `Confirmed`. Solo puede haber una consulta `Open` por cita.
 

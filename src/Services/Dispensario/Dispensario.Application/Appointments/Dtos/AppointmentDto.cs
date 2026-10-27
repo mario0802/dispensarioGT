@@ -15,4 +15,5 @@ public sealed record AppointmentDto(
     DateTime EndLocal,
     string Reason,
     AppointmentStatus Status,
+    string? CancellationReason,
     DateTime CreatedAtUtc);

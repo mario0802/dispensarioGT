@@ -633,7 +633,7 @@ Todas las rutas con `{id}` esperan un GUID. Agendar, confirmar y reprogramar usa
 ```
 
 - Las horas locales son las del dispensario (`Clinic:TimeZone`, por defecto `America/Guayaquil`, UTC−5) y viajan **sin offset**; las UTC llevan `Z`.
-- `status`: `Scheduled`, `Confirmed`, `Completed`, `Cancelled` o `NoShow`. Las citas se crean `Scheduled`; `Completed` existe en el dominio (`Appointment.Complete`, feature 16), pero aún ninguna operación lo usa: hoy cerrar una consulta no cambia la cita.
+- `status`: `Scheduled`, `Confirmed`, `Completed`, `Cancelled` o `NoShow`. Las citas se crean `Scheduled`; una cita pasa a `Completed` al cerrar su consulta (`POST /api/consultations/{id}/close`); no hay endpoint para completarla a mano.
 - `cancellationReason` solo tiene valor en las citas `Cancelled`.
 
 Ciclo de vida de una cita:
@@ -641,6 +641,7 @@ Ciclo de vida de una cita:
 ```
 Scheduled ──confirm──► Confirmed
     │                      │
+    ├──consulta cerrada────┼──► Completed
     ├──cancel──────────────┼──► Cancelled
     ├──no-show─────────────┴──► NoShow
     └──schedule (reprogramar: Scheduled|Confirmed → Scheduled, con nuevas horas)
@@ -652,8 +653,9 @@ Scheduled ──confirm──► Confirmed
 | `cancel` | `Scheduled`, `Confirmed` | Antes de la hora de inicio |
 | `no-show` | `Scheduled`, `Confirmed` | Desde la hora de inicio |
 | `schedule` (reprogramar) | `Scheduled`, `Confirmed` | Antes de la hora de inicio actual; la nueva hora también debe ser futura |
+| Cerrar su consulta (`POST /api/consultations/{id}/close`) | `Scheduled`, `Confirmed` | Sin restricción de hora: la cita pasa a `Completed` |
 
-`Cancelled` y `NoShow` son finales: cualquier acción sobre ellas responde **400**. Una acción fuera de su estado o de su momento también responde **400**.
+`Completed`, `Cancelled` y `NoShow` son finales: cualquier acción sobre ellas responde **400**. Una acción fuera de su estado o de su momento también responde **400**.
 - La duración de la cita es la del doctor (`appointmentDurationMinutes`): `endUtc = startUtc + duración`.
 
 #### `POST /api/appointments` — `Reception`
@@ -856,7 +858,7 @@ POST /api/consultations ──► Open ──PUT──► Open
                               └──close──► Closed   (final)
 ```
 
-Cerrar una consulta **aún no completa la cita**: la cita sigue `Scheduled` o `Confirmed` hasta la feature 16.
+Cerrar una consulta con cita **completa la cita**: si está `Scheduled` o `Confirmed`, pasa a `Completed`. Si ya está `Cancelled`, `NoShow` o `Completed`, no cambia y la consulta se cierra igual.
 
 #### `POST /api/consultations` — `Clinical`
 Inicia una consulta del doctor del token. `patientId` y `reason` son obligatorios; `appointmentId` es opcional (sin él, la consulta es de un paciente sin cita).
@@ -913,6 +915,7 @@ Edita una consulta abierta del doctor del token. Reemplaza los tres textos: `rea
 
 #### `POST /api/consultations/{id}/close` — `Clinical`
 Cierra una consulta abierta del doctor del token. `diagnosis` es obligatorio; `notes` reemplaza las notas (un `null` las borra). Fija `closedAtUtc` con la hora actual.
+Si la consulta tiene cita `Scheduled` o `Confirmed`, la cita pasa a `Completed`; si está en otro estado, no cambia y el cierre responde 204 igualmente. La cita se completa justo después de guardar la consulta, en un segundo guardado.
 
 ```json
 // Petición

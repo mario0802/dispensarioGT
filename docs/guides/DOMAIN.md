@@ -165,7 +165,7 @@ Scheduled ──Confirm──► Confirmed
 ```
 
 Métodos (fila 13): `Confirm(nowUtc)`, `Cancel(reason, nowUtc)`, `MarkNoShow(nowUtc)` y `Reschedule(startUtc, endUtc, nowUtc)`. `nowUtc` lo pasa el handler (regla 8).
-Método (fila 16): `Complete()`, sin `nowUtc`: la consulta puede empezar antes de la hora de la cita. Hoy no lo llama ningún handler ni endpoint.
+Método (fila 16): `Complete()`, sin `nowUtc`: la consulta puede empezar antes de la hora de la cita. Solo lo llama `ConsultationClosedHandler` (`Appointments/EventHandlers`, spec 18) al recibir `ConsultationClosedDomainEvent`; no hay endpoint para completar una cita.
 
 | Método | Estado de origen | Momento | Estado final |
 |---|---|---|---|
@@ -214,7 +214,7 @@ Reglas (`DomainException`), en este orden dentro de cada método:
 - `Update` reemplaza los tres textos (un opcional `null` o en blanco borra el valor). `Close` reemplaza `Diagnosis` y `Notes`, fija `ClosedAtUtc` y deja la consulta `Closed`. Si una regla falla, la consulta no cambia.
 - Las reglas que dependen de **otros** aggregates (doctor y paciente activos; cita del doctor y del paciente, pendiente, de hoy y sin otra consulta) se validan en el handler (ver APPLICATION.md).
 
-Eventos: `ConsultationClosedDomainEvent(ConsultationId, AppointmentId?)` (`Consultations/Events/`) está definido desde la fila 16, pero **no se emite** ni tiene consumidores: `Close` no llama a `Raise` y cerrar una consulta no cambia la cita. Emitirlo y el handler en `Appointments/EventHandlers` que llama a `Appointment.Complete` quedan para un spec posterior.
+Eventos: `ConsultationClosedDomainEvent(ConsultationId, AppointmentId?)` (`Consultations/Events/`). `Close` lo emite **siempre** al pasar a `Closed` (spec 18), con `AppointmentId` `null` en una consulta sin cita; un `Close` que falla no emite nada y, como `Closed` es final, sale como mucho una vez. `Start` y `Update` no emiten eventos. Su único consumidor es `ConsultationClosedHandler` (`Appointments/EventHandlers`), que completa la cita enlazada si sigue `Scheduled`/`Confirmed` y, si no, la deja como está y registra un `Warning`. Se despacha tras el commit de la consulta, así que consulta y cita se guardan en dos `SaveChangesAsync`.
 
 ## 5. Estructura de carpetas (ejemplo)
 ```

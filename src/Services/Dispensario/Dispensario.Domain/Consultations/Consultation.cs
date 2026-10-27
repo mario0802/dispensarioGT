@@ -1,5 +1,6 @@
 using BuildingBlocks.Domain;
 using Dispensario.Domain.Appointments;
+using Dispensario.Domain.Consultations.Events;
 using Dispensario.Domain.Doctors;
 using Dispensario.Domain.Patients;
 
@@ -76,7 +77,7 @@ public sealed class Consultation : AggregateRoot<ConsultationId>
         Notes = normalizedNotes;
     }
 
-    // Cerrar exige diagnóstico; Closed es final
+    // Cerrar exige diagnóstico; Closed es final, así que el evento se emite como mucho una vez
     public void Close(string diagnosis, string? notes, DateTime closedAtUtc)
     {
         if (Status == ConsultationStatus.Closed)
@@ -93,6 +94,9 @@ public sealed class Consultation : AggregateRoot<ConsultationId>
         Notes = normalizedNotes;
         ClosedAtUtc = closedAtUtc;
         Status = ConsultationStatus.Closed;
+
+        // Se emite siempre: Appointments completa la cita enlazada, si la hay
+        Raise(new ConsultationClosedDomainEvent(Id, AppointmentId));
     }
 
     private static string NormalizeReason(string reason)

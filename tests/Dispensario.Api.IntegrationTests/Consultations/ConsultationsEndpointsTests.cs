@@ -163,6 +163,41 @@ public sealed class ConsultationsEndpointsTests(DispensarioApiFactory factory) :
     }
 
     [Fact]
+    public async Task CloseConsultation_WithAppointment_CompletesAppointment()
+    {
+        var (admin, doctorClient, doctorId, patientId) = await LinkedDoctorAsync();
+        var appointmentId = await SeedAppointmentStartingNowAsync(factory, patientId, doctorId);
+        var id = await StartConsultationAsync(doctorClient, patientId, appointmentId);
+
+        var response = await CloseConsultationAsync(doctorClient, id, "Cefalea tensional");
+
+        response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
+        using var appointment = await ReadJsonAsync(
+            await admin.GetAsync($"{AppointmentsRoute}/{appointmentId}", TestContext.Current.CancellationToken));
+        appointment.RootElement.GetProperty("status").GetString().ShouldBe("Completed");
+    }
+
+    [Fact]
+    public async Task CloseConsultation_WithNoShowAppointment_ClosesConsultationAndKeepsNoShow()
+    {
+        var (admin, doctorClient, doctorId, patientId) = await LinkedDoctorAsync();
+        var appointmentId = await SeedAppointmentStartingNowAsync(factory, patientId, doctorId);
+        var id = await StartConsultationAsync(doctorClient, patientId, appointmentId);
+        (await doctorClient.PostAsync(
+            $"{AppointmentsRoute}/{appointmentId}/no-show", null, TestContext.Current.CancellationToken))
+            .EnsureSuccessStatusCode();
+
+        var response = await CloseConsultationAsync(doctorClient, id, "Cefalea tensional");
+
+        response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
+        using var consultation = await ReadJsonAsync(await GetConsultationAsync(doctorClient, id));
+        consultation.RootElement.GetProperty("status").GetString().ShouldBe("Closed");
+        using var appointment = await ReadJsonAsync(
+            await admin.GetAsync($"{AppointmentsRoute}/{appointmentId}", TestContext.Current.CancellationToken));
+        appointment.RootElement.GetProperty("status").GetString().ShouldBe("NoShow");
+    }
+
+    [Fact]
     public async Task CloseConsultation_WithoutDiagnosis_ReturnsValidationProblem()
     {
         var (_, doctorClient, _, patientId) = await LinkedDoctorAsync();

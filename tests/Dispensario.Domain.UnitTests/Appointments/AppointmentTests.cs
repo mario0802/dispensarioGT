@@ -317,6 +317,121 @@ public sealed class AppointmentTests
         appointment.StartUtc.ShouldBe(StartUtc);
     }
 
+    [Fact]
+    public void Complete_WhenScheduled_SetsCompleted()
+    {
+        var appointment = CreateAppointment();
+
+        appointment.Complete();
+
+        appointment.Status.ShouldBe(AppointmentStatus.Completed);
+        appointment.DomainEvents.ShouldBeEmpty();
+    }
+
+    [Fact]
+    public void Complete_WhenConfirmed_SetsCompleted()
+    {
+        var appointment = CreateAppointmentIn(AppointmentStatus.Confirmed);
+
+        appointment.Complete();
+
+        appointment.Status.ShouldBe(AppointmentStatus.Completed);
+    }
+
+    [Fact]
+    public void Complete_WhenCancelled_ThrowsDomainException() =>
+        AssertCompleteThrows(AppointmentStatus.Cancelled);
+
+    [Fact]
+    public void Complete_WhenNoShow_ThrowsDomainException() =>
+        AssertCompleteThrows(AppointmentStatus.NoShow);
+
+    [Fact]
+    public void Complete_WhenCompleted_ThrowsDomainException() =>
+        AssertCompleteThrows(AppointmentStatus.Completed);
+
+    // CreateAppointment deja la cita en el futuro respecto a NowUtc: Complete no mira la hora
+    [Fact]
+    public void Complete_BeforeStart_SetsCompleted()
+    {
+        var appointment = CreateAppointment();
+        appointment.StartUtc.ShouldBeGreaterThan(NowUtc);
+
+        appointment.Complete();
+
+        appointment.Status.ShouldBe(AppointmentStatus.Completed);
+    }
+
+    [Fact]
+    public void Complete_DoesNotChangeTimesOrReason()
+    {
+        var appointment = CreateAppointment();
+
+        appointment.Complete();
+
+        appointment.StartUtc.ShouldBe(StartUtc);
+        appointment.EndUtc.ShouldBe(EndUtc);
+        appointment.Reason.ShouldBe("Control");
+        appointment.CancellationReason.ShouldBeNull();
+    }
+
+    [Fact]
+    public void Confirm_WhenCompleted_ThrowsDomainException()
+    {
+        var appointment = CreateAppointmentIn(AppointmentStatus.Completed);
+
+        var act = () => appointment.Confirm(NowUtc);
+
+        act.ShouldThrow<DomainException>().Message.ShouldBe("Only scheduled appointments can be confirmed.");
+        appointment.Status.ShouldBe(AppointmentStatus.Completed);
+    }
+
+    [Fact]
+    public void Cancel_WhenCompleted_ThrowsDomainException()
+    {
+        var appointment = CreateAppointmentIn(AppointmentStatus.Completed);
+
+        var act = () => appointment.Cancel("Viaje", NowUtc);
+
+        act.ShouldThrow<DomainException>().Message.ShouldBe("Only scheduled or confirmed appointments can be cancelled.");
+        appointment.Status.ShouldBe(AppointmentStatus.Completed);
+        appointment.CancellationReason.ShouldBeNull();
+    }
+
+    [Fact]
+    public void MarkNoShow_WhenCompleted_ThrowsDomainException()
+    {
+        var appointment = CreateAppointmentIn(AppointmentStatus.Completed);
+
+        var act = () => appointment.MarkNoShow(StartUtc.AddMinutes(10));
+
+        act.ShouldThrow<DomainException>().Message.ShouldBe("Only scheduled or confirmed appointments can be marked as no-show.");
+        appointment.Status.ShouldBe(AppointmentStatus.Completed);
+    }
+
+    [Fact]
+    public void Reschedule_WhenCompleted_ThrowsDomainException()
+    {
+        var appointment = CreateAppointmentIn(AppointmentStatus.Completed);
+        var newStart = StartUtc.AddDays(1);
+
+        var act = () => appointment.Reschedule(newStart, newStart.AddMinutes(30), NowUtc);
+
+        act.ShouldThrow<DomainException>().Message.ShouldBe("Only scheduled or confirmed appointments can be rescheduled.");
+        appointment.Status.ShouldBe(AppointmentStatus.Completed);
+        appointment.StartUtc.ShouldBe(StartUtc);
+    }
+
+    private static void AssertCompleteThrows(AppointmentStatus status)
+    {
+        var appointment = CreateAppointmentIn(status);
+
+        var act = appointment.Complete;
+
+        act.ShouldThrow<DomainException>().Message.ShouldBe("Only scheduled or confirmed appointments can be completed.");
+        appointment.Status.ShouldBe(status);
+    }
+
     // Lleva la cita al estado pedido con las transiciones del dominio
     private static Appointment CreateAppointmentIn(AppointmentStatus status)
     {
@@ -332,6 +447,9 @@ public sealed class AppointmentTests
                 break;
             case AppointmentStatus.NoShow:
                 appointment.MarkNoShow(StartUtc);
+                break;
+            case AppointmentStatus.Completed:
+                appointment.Complete();
                 break;
         }
 

@@ -1,6 +1,6 @@
 # SPEC 15 — Consultations
 
-> **Status:** Approved
+> **Status:** Implemented
 > **Depends on:** SPEC 07, SPEC 08, SPEC 09, SPEC 11, SPEC 12, SPEC 13
 > **Date:** 2026-10-27
 > **Objective:** Crear el aggregate `Consultation` con sus casos de uso Start, Update y Close para el doctor dueño, y las lecturas por ID e historia del paciente para doctores y Admin.

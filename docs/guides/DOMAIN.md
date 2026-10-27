@@ -154,16 +154,18 @@ Métodos (fila 12): `Create(patientId, doctorId, startUtc, endUtc, reason, nowUt
 Reglas de `Create`, en orden: `startUtc >= endUtc` → `Appointment start must be before its end.`; `startUtc <= nowUtc` → `Appointment cannot be scheduled in the past.`; motivo en blanco → `Reason is required.`; motivo de más de 500 caracteres → `Reason must be at most 500 characters.`.
 El enum `AppointmentStatus` está completo desde la fila 12; las citas se crean `Scheduled`.
 
-Máquina de estados (fila 13; `Complete` llega con la fila 16):
+Máquina de estados (filas 13 y 16):
 ```
-Scheduled ──Confirm──► Confirmed ──Complete──► Completed
+Scheduled ──Confirm──► Confirmed
     │                      │
-    ├──Cancel──────────────┼──► Cancelled
-    ├──MarkNoShow──────────┴──► NoShow
+    ├──Complete────────────┼──► Completed   (final)
+    ├──Cancel──────────────┼──► Cancelled   (final)
+    ├──MarkNoShow──────────┴──► NoShow      (final)
     └──Reschedule (Scheduled|Confirmed → Scheduled, con nuevas fechas)
 ```
 
 Métodos (fila 13): `Confirm(nowUtc)`, `Cancel(reason, nowUtc)`, `MarkNoShow(nowUtc)` y `Reschedule(startUtc, endUtc, nowUtc)`. `nowUtc` lo pasa el handler (regla 8).
+Método (fila 16): `Complete()`, sin `nowUtc`: la consulta puede empezar antes de la hora de la cita. Hoy no lo llama ningún handler ni endpoint.
 
 | Método | Estado de origen | Momento | Estado final |
 |---|---|---|---|
@@ -171,6 +173,7 @@ Métodos (fila 13): `Confirm(nowUtc)`, `Cancel(reason, nowUtc)`, `MarkNoShow(now
 | `Cancel` | `Scheduled`, `Confirmed` | antes del inicio | `Cancelled` |
 | `MarkNoShow` | `Scheduled`, `Confirmed` | desde el inicio (`StartUtc <= nowUtc`) | `NoShow` |
 | `Reschedule` | `Scheduled`, `Confirmed` | antes del inicio actual; el nuevo inicio también futuro | `Scheduled` |
+| `Complete` | `Scheduled`, `Confirmed` | sin restricción | `Completed` |
 
 Reglas (`DomainException`), en este orden dentro de cada método:
 - `Confirm`: estado distinto de `Scheduled` → `Only scheduled appointments can be confirmed.`; ya empezada → `Appointment has already started.`.
@@ -179,7 +182,7 @@ Reglas (`DomainException`), en este orden dentro de cada método:
 - `Reschedule`: estado distinto de `Scheduled`/`Confirmed` → `Only scheduled or confirmed appointments can be rescheduled.`; ya empezada → `Appointment has already started.`; mismo inicio → `New start must be different from the current one.`; inicio ≥ fin → `Appointment start must be before its end.`; nuevo inicio pasado → `Appointment cannot be scheduled in the past.`.
 - `Completed`, `Cancelled` y `NoShow` son finales. Si una regla falla, la cita no cambia.
 - `Cancel` guarda el motivo recortado en `CancellationReason`; `Reschedule` cambia `StartUtc`/`EndUtc` y vuelve a `Scheduled` aunque estuviera `Confirmed`.
-- `Complete` se permitirá desde `Scheduled` o `Confirmed` (fila 16).
+- `Complete`: estado distinto de `Scheduled`/`Confirmed` → `Only scheduled or confirmed appointments can be completed.`. Solo cambia `Status` (sin `CompletedAtUtc`).
 - Las reglas que dependen de **otros** aggregates (horario del doctor, cruces) se validan en el handler (ver APPLICATION.md).
 
 Eventos: ninguno en las filas 12 y 13 (no hay consumidores, regla 7). `AppointmentScheduledDomainEvent`, `AppointmentCancelledDomainEvent` y `AppointmentRescheduledDomainEvent` se añadirán cuando algún módulo reaccione a ellos.
@@ -211,7 +214,7 @@ Reglas (`DomainException`), en este orden dentro de cada método:
 - `Update` reemplaza los tres textos (un opcional `null` o en blanco borra el valor). `Close` reemplaza `Diagnosis` y `Notes`, fija `ClosedAtUtc` y deja la consulta `Closed`. Si una regla falla, la consulta no cambia.
 - Las reglas que dependen de **otros** aggregates (doctor y paciente activos; cita del doctor y del paciente, pendiente, de hoy y sin otra consulta) se validan en el handler (ver APPLICATION.md).
 
-Eventos: ninguno en la fila 15. `ConsultationClosedDomainEvent(ConsultationId, AppointmentId?)` llega con la fila 16, junto con `Appointment.Complete` y el handler que completa la cita.
+Eventos: `ConsultationClosedDomainEvent(ConsultationId, AppointmentId?)` (`Consultations/Events/`) está definido desde la fila 16, pero **no se emite** ni tiene consumidores: `Close` no llama a `Raise` y cerrar una consulta no cambia la cita. Emitirlo y el handler en `Appointments/EventHandlers` que llama a `Appointment.Complete` quedan para un spec posterior.
 
 ## 5. Estructura de carpetas (ejemplo)
 ```
@@ -223,5 +226,7 @@ Dispensario.Domain/
     Events/UserCreatedDomainEvent.cs
   Patients/ Patient.cs PatientId.cs Gender.cs BloodType.cs
   Appointments/ Appointment.cs AppointmentId.cs AppointmentStatus.cs
-  Consultations/ Consultation.cs ConsultationId.cs ConsultationStatus.cs
+  Consultations/
+    Consultation.cs ConsultationId.cs ConsultationStatus.cs
+    Events/ConsultationClosedDomainEvent.cs
 ```

@@ -626,7 +626,7 @@ Todas las rutas con `{id}` esperan un GUID. Agendar, confirmar y reprogramar usa
 ```
 
 - Las horas locales son las del dispensario (`Clinic:TimeZone`, por defecto `America/Guayaquil`, UTC−5) y viajan **sin offset**; las UTC llevan `Z`.
-- `status`: `Scheduled`, `Confirmed`, `Completed`, `Cancelled` o `NoShow`. Las citas se crean `Scheduled`; `Completed` llegará al cerrar la consulta (feature 16: hoy cerrar una consulta no cambia la cita).
+- `status`: `Scheduled`, `Confirmed`, `Completed`, `Cancelled` o `NoShow`. Las citas se crean `Scheduled`; `Completed` existe en el dominio (`Appointment.Complete`, feature 16), pero aún ninguna operación lo usa: hoy cerrar una consulta no cambia la cita.
 - `cancellationReason` solo tiene valor en las citas `Cancelled`.
 
 Ciclo de vida de una cita:

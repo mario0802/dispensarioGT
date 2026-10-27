@@ -35,18 +35,22 @@ public sealed class SqliteTestDb : IDisposable
         _connection.Open();
         var options = new DbContextOptionsBuilder<DispensarioDbContext>().UseSqlite(_connection).Options;
         Context = new DispensarioDbContext(options);
-        Context.Database.EnsureCreated();
+        Context.Database.Migrate();
     }
 
     public void Dispose() { Context.Dispose(); _connection.Dispose(); }
 }
 ```
+- La versión real es `DispensarioTestDb` (`Persistence/Fakes/`): crea el esquema con `Migrate()`, así que los tests de esquema (`Migrate_*`) verifican la migración y no el modelo. `TestDb`, el contexto genérico de los tests de BuildingBlocks, sigue con `EnsureCreated` porque no tiene migraciones.
+- `MigrationsTests` falla si el modelo cambia sin migración (`HasPendingModelChanges`) y comprueba que la base vacía queda con `InitialCreate` aplicada.
+- `ListLogger<T>` (`Persistence/Fakes/`) guarda los mensajes del log para los tests de los seeders.
 
 ## Integración
 - `DispensarioApiFactory : WebApplicationFactory<Program>` (en `tests/Dispensario.Api.IntegrationTests/Common/`) corre en Development y reemplaza la configuración del `DbContext` por SQLite en memoria con una conexión compartida, abierta mientras vive la factory. En EF Core 10 hay que quitar `DbContextOptions<DispensarioDbContext>` **y** `IDbContextOptionsConfiguration<DispensarioDbContext>` antes de volver a llamar a `AddDbContext`, y añadir de nuevo los interceptores. Fija `ConnectionStrings:Database` y `MediatR:LicenseKey` con `UseSetting`.
 - Cada clase de tests la usa con `IClassFixture<DispensarioApiFactory>`.
 - Fija también los secretos con `UseSetting`: `Jwt:Issuer`, `Jwt:Audience`, `Jwt:Key` (clave de test de 32+ caracteres) y `Seed:Admin:Email`/`Seed:Admin:Password`. Las constantes `JwtIssuer`, `JwtAudience`, `JwtKey`, `AdminEmail` y `AdminPassword` de la factory sirven para los tests.
-- Como corre en Development, `InitialiseDatabaseAsync` crea el esquema (`EnsureCreated`) y siembra el Admin sobre la conexión en memoria: no hace falta preparar la base en cada test.
+- Como corre en Development, `InitialiseDatabaseAsync` aplica las migraciones (`MigrateAsync`) y siembra el Admin sobre la conexión en memoria: no hace falta preparar la base en cada test.
+- La factory apaga los datos de ejemplo (`Seed:SampleData:Enabled=false`): cada test crea sus propios datos.
 - Helper `AuthenticateAsAsync(Role)`: inserta un usuario activo del rol pedido (email y documento únicos por llamada, hash con el `IPasswordHasher` real), hace `POST /api/auth/login` y devuelve un `HttpClient` con `Authorization: Bearer <token>`. Cada llamada cuesta un hash bcrypt (~250 ms).
 - Los tests de handlers usan `IPasswordHasher` e `IJwtTokenGenerator` de NSubstitute; solo los tests del hasher, del seed y de integración pagan el coste de bcrypt.
 - Las queries que mapean con Mapster registran su `IRegister` en el test (`TypeAdapterConfig.GlobalSettings.Apply(new UsersMappingConfig())`), porque `AddApplication` no se ejecuta en los tests unitarios.

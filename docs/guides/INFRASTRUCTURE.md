@@ -18,9 +18,10 @@ Data/
   Extensions/ModelConfigurationBuilderExtensions.cs   # convenciones de IDs tipados y DateTime UTC
   Interceptors/AuditableEntityInterceptor.cs
   Interceptors/DispatchDomainEventsInterceptor.cs
-  Migrations/
+  Migrations/                              # InitialCreate (fila 17) y el snapshot del modelo
   Seed/AdminSeedOptions.cs  Seed/DatabaseSeeder.cs
-  Extensions/DatabaseExtensions.cs        # InitialiseDatabaseAsync (EnsureCreated + seed; MigrateAsync desde la fila 17)
+  Seed/SampleDataSeedOptions.cs  Seed/SampleDataSeeder.cs   # datos de ejemplo en Development
+  Extensions/DatabaseExtensions.cs        # InitialiseDatabaseAsync (MigrateAsync + seed del Admin y de los datos de ejemplo)
 Authentication/
   JwtOptions.cs  JwtTokenGenerator.cs  BcryptPasswordHasher.cs  CurrentUser.cs
 DependencyInjection.cs
@@ -126,8 +127,15 @@ public sealed class JwtOptions
   - Si `Seed:Admin:Password` está vacío, registra el warning `Admin seed skipped: 'Seed:Admin:Password' is empty.` y no crea nada.
   - Los VOs validan la configuración: un email o un documento inválidos lanzan `DomainException` al arrancar.
   - Si otro usuario ya tiene el mismo documento con otro email, el guardado falla por el índice único: se cambia `Seed:Admin:DocumentNumber`.
-- `app.InitialiseDatabaseAsync()` (solo en Development, y por tanto también en los tests de integración) ejecuta `Database.EnsureCreatedAsync()` y luego el seed.
-  > Hasta la fila 17 no hay migraciones: `EnsureCreated` no actualiza una base ya creada. Si el modelo cambia, hay que borrar `dispensario.db` en local. La fila 17 sustituye `EnsureCreatedAsync` por `MigrateAsync` (y habrá que borrar la base una vez).
+- `SampleDataSeedOptions` (sección `Seed:SampleData`): `Enabled` (`true` por defecto) y `Password`. No usa `ValidateOnStart`.
+- `SampleDataSeeder.SeedAsync` siembra datos de ejemplo con los factories del dominio (no con `HasData`, que los metería en la migración):
+  - Con `Enabled = false` no hace nada. Los tests de integración lo apagan.
+  - Solo siembra si no hay **ningún** doctor ni paciente; si no, no crea nada.
+  - Crea 3 doctores con horario (`MG-0001` Medicina General, `PED-0002` Pediatría y `CAR-0003` Cardiología) y 5 pacientes con `NationalId`.
+  - Con `Seed:SampleData:Password`, crea `recepcion@dispensario.local` (`Receptionist`) y `doctor@dispensario.local` (`Doctor`, vinculado a `MG-0001`); un usuario cuyo email ya existe se omite. Vacía, registra el warning `Sample users skipped: 'Seed:SampleData:Password' is empty.` y no crea usuarios.
+  - Guarda todo con un único `SaveChangesAsync` y registra `Sample data seeded: {Doctors} doctors, {Patients} patients, {Users} users.`.
+- `app.InitialiseDatabaseAsync()` (solo en Development, y por tanto también en los tests de integración) ejecuta `Database.MigrateAsync()`, el seed del Admin y el de los datos de ejemplo, en ese orden.
+  > Desde la fila 17 el esquema sale de las migraciones. Una `dispensario.db` creada antes con `EnsureCreated` no tiene `__EFMigrationsHistory` y `MigrateAsync` falla con `table "..." already exists`: hay que borrarla **una vez**. Fuera de Development no se migra al arrancar (ver §9).
 
 ## 8. Registro en DI
 > **Estado:** registro real desde la fila 07. Falla al registrarse si no existe `ConnectionStrings:Database`. `IPublisher` lo registra MediatR en `AddApplication`, y el logging que necesita `DatabaseSeeder`, el host.
@@ -166,5 +174,8 @@ public static IServiceCollection AddInfrastructure(this IServiceCollection servi
 dotnet tool install --global dotnet-ef --version 10.*
 dotnet ef migrations add <Name> -p src/Services/Dispensario/Dispensario.Infrastructure -s src/Services/Dispensario/Dispensario.Api -o Data/Migrations
 ```
+- `dotnet ef` usa la Api como proyecto de arranque (`-s`), que referencia `Microsoft.EntityFrameworkCore.Design` con `PrivateAssets="all"`, y resuelve el `DbContext` con el host real (`Program.cs`) y su `ConnectionStrings:Database`. No hay `IDesignTimeDbContextFactory`.
+- La primera migración es `InitialCreate` (fila 17), con todo el modelo de v1. Cada cambio del modelo añade una migración nueva: `MigrationsTests.Model_HasNoPendingChanges` falla si se olvida.
 - Nombres en PascalCase y en inglés, que describan el cambio: `AddDoctorSchedules`.
 - Revisar siempre la migración generada antes de aplicarla. No editar migraciones ya aplicadas.
+- En Development se aplican al arrancar (`InitialiseDatabaseAsync`). En otros entornos no: se aplican con `dotnet ef database update` o con un script SQL (`dotnet ef migrations script`).

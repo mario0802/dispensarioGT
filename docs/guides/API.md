@@ -119,7 +119,7 @@ if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();                  // /openapi/v1.json
     app.MapScalarApiReference();       // /scalar
-    await app.InitialiseDatabaseAsync();   // EnsureCreated + seed del Admin; MigrateAsync desde la fila 17
+    await app.InitialiseDatabaseAsync();   // MigrateAsync + seed del Admin y de los datos de ejemplo
 }
 
 app.MapCarter();

@@ -100,7 +100,7 @@ public sealed class PatientPersistenceTests : IDisposable
     }
 
     [Fact]
-    public async Task EnsureCreated_PatientsTable_HasExpectedColumns()
+    public async Task Migrate_PatientsTable_HasExpectedColumns()
     {
         var columns = new List<string>();
         await using var command = _db.Connection.CreateCommand();

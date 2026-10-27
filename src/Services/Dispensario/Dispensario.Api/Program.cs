@@ -25,7 +25,7 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();               // /openapi/v1.json
     app.MapScalarApiReference();    // /scalar
 
-    // EnsureCreated + seed del Admin; la fila 17 lo cambia a MigrateAsync
+    // Migraciones + seed del Admin y de los datos de ejemplo
     await app.InitialiseDatabaseAsync();
 }
 

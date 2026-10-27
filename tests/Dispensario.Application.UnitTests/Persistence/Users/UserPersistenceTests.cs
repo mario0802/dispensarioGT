@@ -114,7 +114,7 @@ public sealed class UserPersistenceTests : IDisposable
     }
 
     [Fact]
-    public async Task EnsureCreated_UsersTable_HasExpectedColumns()
+    public async Task Migrate_UsersTable_HasExpectedColumns()
     {
         var columns = new List<string>();
         await using var command = _db.Connection.CreateCommand();

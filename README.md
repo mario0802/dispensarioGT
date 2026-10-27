@@ -7,9 +7,16 @@ Arquitectura, plan y convenciones en [`docs/`](docs/) y [`CLAUDE.md`](CLAUDE.md)
 ```bash
 dotnet user-secrets set "Jwt:Key" "<min-32-chars>" --project src/Services/Dispensario/Dispensario.Api
 dotnet user-secrets set "Seed:Admin:Password" "<password>" --project src/Services/Dispensario/Dispensario.Api
+dotnet user-secrets set "Seed:SampleData:Password" "<password>" --project src/Services/Dispensario/Dispensario.Api   # opcional
 dotnet run --project src/Services/Dispensario/Dispensario.Api
 ```
-En Development se crea `dispensario.db` con el usuario Admin (`admin@dispensario.local`) y se abre Scalar en `/scalar`.
+En Development se aplican las migraciones sobre `dispensario.db` (en la carpeta del proyecto Api), se crea el usuario Admin (`admin@dispensario.local`) y se abre Scalar en `/scalar`.
+
+Si la base está vacía (sin doctores ni pacientes), también se siembran datos de ejemplo: 3 doctores con horario (`MG-0001` Medicina General, `PED-0002` Pediatría y `CAR-0003` Cardiología) y 5 pacientes. Con `Seed:SampleData:Password` se crean además `recepcion@dispensario.local` (`Receptionist`) y `doctor@dispensario.local` (`Doctor`, vinculado a `MG-0001`), los dos con esa contraseña. Para no sembrarlos: `Seed:SampleData:Enabled=false`.
+
+> **Bases creadas antes de las migraciones:** una `dispensario.db` creada con `EnsureCreated` (antes de la feature 17) hace fallar el arranque con `table "..." already exists`. Hay que borrarla **una vez** (`dispensario.db`, `dispensario.db-shm` y `dispensario.db-wal`).
+>
+> Fuera de Development no se migra al arrancar: se aplica con `dotnet ef database update -p src/Services/Dispensario/Dispensario.Infrastructure -s src/Services/Dispensario/Dispensario.Api`.
 
 ## Endpoints
 Todas las rutas usan JSON; los enums viajan como texto (`"Admin"`, `"NationalId"`).

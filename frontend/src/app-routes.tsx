@@ -9,6 +9,7 @@ import { LoginPage } from '@/features/auth/login-page'
 import { RegisterPage } from '@/features/auth/register-page'
 import { useAuth } from '@/features/auth/use-auth'
 import { HomePage } from '@/features/home/home-page'
+import { AppLayout } from '@/features/layout/app-layout'
 
 // Rutas de la app. Mientras se resuelve la sesión del arranque no se renderiza ninguna,
 // así las redirecciones solo dependen de authenticated / anonymous
@@ -26,14 +27,16 @@ export function AppRoutes() {
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
+      {/* Rutas protegidas dentro del layout: las páginas de cada menú se añaden como hijas */}
       <Route
-        path="/"
         element={
           <RequireAuth>
-            <HomePage />
+            <AppLayout />
           </RequireAuth>
         }
-      />
+      >
+        <Route index element={<HomePage />} />
+      </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )

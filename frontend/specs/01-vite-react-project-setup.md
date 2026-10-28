@@ -1,6 +1,6 @@
 # SPEC 01 — Inicialización del proyecto frontend con Vite y React
 
-> **Status:** Approved
+> **Status:** Implemented
 > **Depends on:** —
 > **Date:** 2026-10-27
 > **Objective:** Crear en `frontend/` el proyecto Vite + React + TypeScript con Tailwind, shadcn/ui (slate y modo oscuro), ESLint, Prettier y Vitest, mostrando una página estática que todavía no llama a la API.

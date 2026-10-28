@@ -6,7 +6,7 @@ Guía para Claude Code al trabajar en `frontend/`. **Este archivo es la única g
 
 Una SPA para el personal del dispensario médico que consume la API del backend: login, gestión de usuarios, doctores (y su horario), pacientes, agenda de citas y consultas. Cada rol ve solo lo que la API le permite (`Admin`, `Doctor`, `Receptionist`).
 
-> **Estado actual:** proyecto Vite inicializado (spec 01): React + TypeScript, Tailwind, shadcn/ui (`slate`, con `button`, `dropdown-menu`, `card`, `input`, `label`, `alert`, `field`, `select` y `separator`), modo oscuro (`ThemeProvider` + `ModeToggle`), `VITE_API_BASE_URL` tipada en `src/lib/config.ts`, ESLint, Prettier y Vitest. Cliente HTTP propio sobre `fetch` (`api`, `ApiError`, proveedor de token y manejador del 401 en `src/lib/api/`) y hook `useApi` en `src/hooks/` (spec 02). Login y sesión (spec 03): React Router con `/login`, `/` protegida (inicio provisional con nombre, rol y **Cerrar sesión**) y comodín a `/`; token en `localStorage` y usuario de `GET /api/auth/me` en `AuthProvider`/`useAuth`; un 401 con token cierra la sesión. Registro (spec 04): `/register` pública da de alta un recepcionista con `POST /api/auth/register` y lleva a `/login` con el aviso de cuenta creada y el email precargado (en el `state` del router).
+> **Estado actual:** proyecto Vite inicializado (spec 01): React + TypeScript, Tailwind, shadcn/ui (`slate`, con `button`, `dropdown-menu`, `card`, `input`, `label`, `alert`, `field`, `select`, `separator`, `sidebar`, `sheet`, `tooltip`, `skeleton` y `avatar`), modo oscuro (`ThemeProvider`), `VITE_API_BASE_URL` tipada en `src/lib/config.ts`, ESLint, Prettier y Vitest. Cliente HTTP propio sobre `fetch` (`api`, `ApiError`, proveedor de token y manejador del 401 en `src/lib/api/`) y hook `useApi` en `src/hooks/` (spec 02). Login y sesión (spec 03): React Router con `/login`, `/` protegida y comodín a `/`; token en `localStorage` y usuario de `GET /api/auth/me` en `AuthProvider`/`useAuth`; un 401 con token cierra la sesión. Registro (spec 04): `/register` pública da de alta un recepcionista con `POST /api/auth/register` y lleva a `/login` con el aviso de cuenta creada y el email precargado (en el `state` del router). Layout de la app (spec 05): las rutas protegidas cuelgan de `AppLayout` (`features/layout/`), con sidebar a la izquierda (plegable a iconos, `Sheet` en móvil, estado en la cookie `sidebar_state`), menús por rol (de momento solo **Inicio**), barra superior con el título del menú activo y, al pie, el avatar con las iniciales y un menú con el tema y **Cerrar sesión**; el inicio (`/`) muestra la bienvenida.
 
 ## Reglas de trabajo (obligatorias)
 
@@ -49,16 +49,19 @@ frontend/
    │  └─ components/         # componentes propios de la feature (p. ej. login-form.tsx)
    ├─ features/auth/      # auth-types, auth-api, role-labels, document-type-labels, token-storage, auth-provider, use-auth, login-page, register-page
    │  └─ components/      # login-form, register-form, require-auth (guard), session-screens (carga y error del arranque)
-   ├─ features/home/      # home-page: inicio provisional (lo sustituirá el layout por rol)
-   ├─ components/         # componentes compartidos entre features (theme-provider, mode-toggle)
+   ├─ features/home/      # home-page: bienvenida (ruta index de AppLayout)
+   ├─ features/layout/    # app-layout (ruta layout con Outlet), nav-items (menús por rol), initials, sidebar-cookie
+   │  └─ components/      # app-sidebar, nav-main, nav-user (avatar y su menú: tema y cerrar sesión), user-avatar
+   ├─ components/         # componentes compartidos entre features (theme-provider)
    │  └─ ui/              # generados por shadcn/ui
-   ├─ hooks/              # hooks compartidos entre features (use-api)
+   ├─ hooks/              # hooks compartidos entre features (use-api; use-mobile, de shadcn, lo usa sidebar)
    ├─ lib/                # utils (cn), config
    │  └─ api/             # cliente HTTP: api-client, api-error, access-token, unauthorized-handler (sin barrel)
    └─ test/               # setup de Vitest (con hasPointerCapture/scrollIntoView simulados para el Select de Radix) y utilidades de test (matchMedia simulado, api-responses)
 ```
 - Alias `@/` → `src/`. Archivos en kebab-case (como los de shadcn); componentes en PascalCase.
 - **Organización de cada feature**: en la raíz de `features/<módulo>/` van solo las páginas (y, cuando existan, los archivos propios del módulo como su cliente de API o sus tipos); todos los componentes que solo usa esa feature van en `features/<módulo>/components/`, para que la carpeta no se llene de ruido. Ejemplo: `features/auth/login-page.tsx` y `features/auth/components/login-form.tsx`. Si un componente lo usan dos o más features, se mueve a `src/components/`.
+- **Añadir un menú**: su `NavItem` (`title`, `url`, icono de `lucide-react`) en `roleNavItems` del rol (`features/layout/nav-items.ts`) y su página como ruta hija de `AppLayout` en `app-routes.tsx`. El título de la barra superior sale del `NavItem` activo (`/` solo exacta; los demás, con su ruta o sus hijas).
 - **Sesión**: las demás features la leen con `useAuth()` (`@/features/auth/use-auth`): `status` (`loading` | `error` | `authenticated` | `anonymous`), `user` (`CurrentUserDto`), `login`, `logout` y `retry`. Las rutas protegidas se envuelven en `RequireAuth`.
 - Los tests van junto al código (`*.test.ts(x)`), importan `describe`/`it`/`expect` de `vitest` (sin globals) y simulan `matchMedia` con `@/test/match-media`. Las respuestas simuladas de la API (`jsonResponse`, `problemResponse`, `testUser`, `storeValidToken`…) están en `@/test/api-responses`. Los tests que montan `AuthProvider` limpian en `afterEach` `localStorage`, `setAccessTokenProvider(null)` y `setUnauthorizedHandler(null)`.
 
@@ -98,6 +101,7 @@ pnpm test           # test:watch en modo watch
 
 - **shadcn/ui**: añadir componentes con `pnpm dlx shadcn@latest add <componente>`. El CLI actual (4.x) ya no ofrece `slate` en `init`: `components.json` (estilo `new-york`, `baseColor: slate`) y las variables de `index.css` se escribieron a mano desde `colors/slate.json`, así que **no ejecutar `shadcn init`** (sobrescribiría ambos). En Windows el CLI genera `import { cn } from "cn"`: tras cada `add`, corregirlo a `@/lib/utils`.
 - Vitest corre en modo `test` y no carga `.env.development`: `VITE_API_BASE_URL` para los tests está en el bloque `test.env` de `vite.config.ts`.
+- `sidebar.tsx` y `use-mobile.ts` se retocaron tras generarlos para las reglas de `react-hooks` (`purity` y `set-state-in-effect`): al volver a añadirlos con el CLI, repetir el ajuste. El `SidebarTrigger` y el `SidebarRail` reciben `aria-label` en español (el texto `sr-only` de shadcn está en inglés).
 - Prettier no formatea los `.md` ni `src/components/ui` (ver `.prettierignore`).
 - pnpm 11 no instala versiones publicadas hace menos de un día (`minimumReleaseAge`): si lo intenta, añade una excepción en un `pnpm-workspace.yaml` nuevo. Mejor elegir la versión anterior que crear ese archivo.
 
@@ -109,8 +113,9 @@ pnpm test           # test:watch en modo watch
 | 02  | Cliente HTTP (`api`, `ApiError`, proveedor de token) y hook `useApi`                          | `specs/02-api-client-and-use-api-hook.md` |
 | 03  | Página de login y sesión (React Router, token en `localStorage`, `/api/auth/me`, 401 global)  | `specs/03-login-and-session.md` |
 | 04  | Página de registro (`/register`, `POST /api/auth/register`, aviso y email precargado en el login) | `specs/04-register-page.md` |
+| 05  | Layout con sidebar (menús por rol, solo **Inicio**) y avatar con iniciales, tema y cerrar sesión | `specs/05-app-layout-and-sidebar.md` |
 
-Las siguientes filas se añaden al planificar (layout por rol, y luego un módulo por fila).
+Las siguientes filas se añaden al planificar (un menú o módulo por fila, empezando por los de recepción).
 
 ## Preguntas abiertas
 

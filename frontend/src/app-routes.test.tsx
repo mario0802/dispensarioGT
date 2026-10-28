@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, useLocation } from 'react-router'
 import {
@@ -15,6 +15,7 @@ import { AppRoutes } from '@/app-routes'
 import { ThemeProvider } from '@/components/theme-provider'
 import { AuthProvider } from '@/features/auth/auth-provider'
 import { TOKEN_STORAGE_KEY } from '@/features/auth/token-storage'
+import { SIDEBAR_COOKIE_NAME } from '@/features/layout/sidebar-cookie'
 import { setAccessTokenProvider } from '@/lib/api/access-token'
 import { setUnauthorizedHandler } from '@/lib/api/unauthorized-handler'
 import {
@@ -38,6 +39,7 @@ afterEach(() => {
   localStorage.clear()
   setAccessTokenProvider(null)
   setUnauthorizedHandler(null)
+  document.cookie = `${SIDEBAR_COOKIE_NAME}=; path=/; max-age=0`
 })
 
 // Muestra la ruta actual para comprobar las redirecciones
@@ -121,7 +123,10 @@ describe('AppRoutes', () => {
     await logIn(user)
 
     expect(await screen.findByText('Hola, Ana Torres')).toBeInTheDocument()
-    expect(screen.getByText('Recepcionista')).toBeInTheDocument()
+    // El rol sale también en el sidebar: se comprueba el del área principal
+    expect(
+      within(screen.getByRole('main')).getByText('Recepcionista'),
+    ).toBeInTheDocument()
     expect(currentLocation()).toBe('/')
   })
 
@@ -150,11 +155,77 @@ describe('AppRoutes', () => {
     const user = renderRoutes('/')
     await screen.findByText('Hola, Ana Torres')
 
-    await user.click(screen.getByRole('button', { name: 'Cerrar sesión' }))
+    await user.click(screen.getByRole('button', { name: 'Menú de usuario' }))
+    await user.click(
+      await screen.findByRole('menuitem', { name: 'Cerrar sesión' }),
+    )
 
     expect(currentLocation()).toBe('/login')
     expect(loginButton()).toBeInTheDocument()
     expect(localStorage.getItem(TOKEN_STORAGE_KEY)).toBeNull()
+  })
+
+  describe('layout', () => {
+    const sidebar = () => document.querySelector('[data-slot="sidebar"]')
+    const toggleButton = () =>
+      within(screen.getByRole('main')).getByRole('button', {
+        name: 'Mostrar u ocultar menú',
+      })
+
+    async function renderWithSession() {
+      storeValidToken()
+      fetchMock.mockResolvedValue(jsonResponse(testUser))
+      const user = renderRoutes('/')
+      await screen.findByText('Hola, Ana Torres')
+      return user
+    }
+
+    it('shows the sidebar, the Inicio title and the welcome on /', async () => {
+      await renderWithSession()
+
+      expect(screen.getByText('Dispensario Médico')).toBeInTheDocument()
+      expect(screen.getByRole('link', { name: 'Inicio' })).toHaveAttribute(
+        'aria-current',
+        'page',
+      )
+      expect(
+        screen.getByRole('button', { name: 'Menú de usuario' }),
+      ).toBeInTheDocument()
+      expect(
+        within(screen.getByRole('main')).getByRole('heading', {
+          level: 1,
+          name: 'Inicio',
+        }),
+      ).toBeInTheDocument()
+    })
+
+    it('collapses the sidebar and remembers it in the cookie', async () => {
+      const user = await renderWithSession()
+      expect(sidebar()).toHaveAttribute('data-state', 'expanded')
+
+      await user.click(toggleButton())
+
+      expect(sidebar()).toHaveAttribute('data-state', 'collapsed')
+      expect(document.cookie).toContain(`${SIDEBAR_COOKIE_NAME}=false`)
+    })
+
+    it('starts collapsed with the cookie set to false', async () => {
+      document.cookie = `${SIDEBAR_COOKIE_NAME}=false; path=/`
+
+      await renderWithSession()
+
+      expect(sidebar()).toHaveAttribute('data-state', 'collapsed')
+    })
+
+    it.each(['/login', '/register'])(
+      'does not show the sidebar on %s',
+      (route) => {
+        renderRoutes(route)
+
+        expect(currentLocation()).toBe(route)
+        expect(sidebar()).not.toBeInTheDocument()
+      },
+    )
   })
 
   describe('register', () => {

@@ -1,0 +1,6 @@
+dist
+pnpm-lock.yaml
+# Generados por shadcn/ui: se regeneran con su CLI
+src/components/ui
+# Documentación (CLAUDE.md, specs): se mantiene a mano
+*.md

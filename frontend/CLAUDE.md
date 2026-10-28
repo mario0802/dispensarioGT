@@ -6,7 +6,7 @@ Guía para Claude Code al trabajar en `frontend/`. **Este archivo es la única g
 
 Una SPA para el personal del dispensario médico que consume la API del backend: login, gestión de usuarios, doctores (y su horario), pacientes, agenda de citas y consultas. Cada rol ve solo lo que la API le permite (`Admin`, `Doctor`, `Receptionist`).
 
-> **Estado actual:** proyecto Vite inicializado (spec 01): React + TypeScript, Tailwind, shadcn/ui (`slate`, con `button`, `dropdown-menu`, `card`, `input`, `label`, `alert`, `field` y `separator`), modo oscuro (`ThemeProvider` + `ModeToggle`), `VITE_API_BASE_URL` tipada en `src/lib/config.ts`, ESLint, Prettier y Vitest. Cliente HTTP propio sobre `fetch` (`api`, `ApiError`, proveedor de token y manejador del 401 en `src/lib/api/`) y hook `useApi` en `src/hooks/` (spec 02). Login y sesión (spec 03): React Router con `/login`, `/` protegida (inicio provisional con nombre, rol y **Cerrar sesión**) y comodín a `/`; token en `localStorage` y usuario de `GET /api/auth/me` en `AuthProvider`/`useAuth`; un 401 con token cierra la sesión.
+> **Estado actual:** proyecto Vite inicializado (spec 01): React + TypeScript, Tailwind, shadcn/ui (`slate`, con `button`, `dropdown-menu`, `card`, `input`, `label`, `alert`, `field`, `select` y `separator`), modo oscuro (`ThemeProvider` + `ModeToggle`), `VITE_API_BASE_URL` tipada en `src/lib/config.ts`, ESLint, Prettier y Vitest. Cliente HTTP propio sobre `fetch` (`api`, `ApiError`, proveedor de token y manejador del 401 en `src/lib/api/`) y hook `useApi` en `src/hooks/` (spec 02). Login y sesión (spec 03): React Router con `/login`, `/` protegida (inicio provisional con nombre, rol y **Cerrar sesión**) y comodín a `/`; token en `localStorage` y usuario de `GET /api/auth/me` en `AuthProvider`/`useAuth`; un 401 con token cierra la sesión. Registro (spec 04): `/register` pública da de alta un recepcionista con `POST /api/auth/register` y lleva a `/login` con el aviso de cuenta creada y el email precargado (en el `state` del router).
 
 ## Reglas de trabajo (obligatorias)
 
@@ -47,15 +47,15 @@ frontend/
    ├─ features/<módulo>/  # auth, home, users, doctors, patients, appointments, consultations (se crean en su spec)
    │  ├─ <pagina>-page.tsx   # las páginas de la feature, en la raíz de su carpeta (p. ej. login-page.tsx)
    │  └─ components/         # componentes propios de la feature (p. ej. login-form.tsx)
-   ├─ features/auth/      # auth-types, auth-api, role-labels, token-storage, auth-provider, use-auth, login-page
-   │  └─ components/      # login-form, require-auth (guard), session-screens (carga y error del arranque)
+   ├─ features/auth/      # auth-types, auth-api, role-labels, document-type-labels, token-storage, auth-provider, use-auth, login-page, register-page
+   │  └─ components/      # login-form, register-form, require-auth (guard), session-screens (carga y error del arranque)
    ├─ features/home/      # home-page: inicio provisional (lo sustituirá el layout por rol)
    ├─ components/         # componentes compartidos entre features (theme-provider, mode-toggle)
    │  └─ ui/              # generados por shadcn/ui
    ├─ hooks/              # hooks compartidos entre features (use-api)
    ├─ lib/                # utils (cn), config
    │  └─ api/             # cliente HTTP: api-client, api-error, access-token, unauthorized-handler (sin barrel)
-   └─ test/               # setup de Vitest y utilidades de test (matchMedia simulado, api-responses)
+   └─ test/               # setup de Vitest (con hasPointerCapture/scrollIntoView simulados para el Select de Radix) y utilidades de test (matchMedia simulado, api-responses)
 ```
 - Alias `@/` → `src/`. Archivos en kebab-case (como los de shadcn); componentes en PascalCase.
 - **Organización de cada feature**: en la raíz de `features/<módulo>/` van solo las páginas (y, cuando existan, los archivos propios del módulo como su cliente de API o sus tipos); todos los componentes que solo usa esa feature van en `features/<módulo>/components/`, para que la carpeta no se llene de ruido. Ejemplo: `features/auth/login-page.tsx` y `features/auth/components/login-form.tsx`. Si un componente lo usan dos o más features, se mueve a `src/components/`.
@@ -108,6 +108,7 @@ pnpm test           # test:watch en modo watch
 | 01  | Andamiaje: proyecto Vite + React + TS, Tailwind, shadcn/ui, conexión con la API en desarrollo | `specs/01-vite-react-project-setup.md` |
 | 02  | Cliente HTTP (`api`, `ApiError`, proveedor de token) y hook `useApi`                          | `specs/02-api-client-and-use-api-hook.md` |
 | 03  | Página de login y sesión (React Router, token en `localStorage`, `/api/auth/me`, 401 global)  | `specs/03-login-and-session.md` |
+| 04  | Página de registro (`/register`, `POST /api/auth/register`, aviso y email precargado en el login) | `specs/04-register-page.md` |
 
 Las siguientes filas se añaden al planificar (layout por rol, y luego un módulo por fila).
 

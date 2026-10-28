@@ -1,9 +1,12 @@
-import { Navigate, useLocation } from 'react-router'
+import { CheckCircle2 } from 'lucide-react'
+import { Link, Navigate, useLocation } from 'react-router'
 
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
 } from '@/components/ui/card'
 import { LoginForm } from '@/features/auth/components/login-form'
@@ -26,6 +29,12 @@ function getRedirectTarget(state: unknown): string {
   )
 }
 
+// Email de la cuenta recién creada, que deja el registro en el state del router
+function getRegisteredEmail(state: unknown): string | null {
+  const email = (state as { registeredEmail?: unknown } | null)?.registeredEmail
+  return typeof email === 'string' && email !== '' ? email : null
+}
+
 export function LoginPage() {
   const { status } = useAuth()
   const location = useLocation()
@@ -33,6 +42,8 @@ export function LoginPage() {
   if (status === 'authenticated') {
     return <Navigate to={getRedirectTarget(location.state)} replace />
   }
+
+  const registeredEmail = getRegisteredEmail(location.state)
 
   return (
     <main className="flex min-h-svh items-center justify-center p-4">
@@ -43,9 +54,28 @@ export function LoginPage() {
           </h1>
           <CardDescription>Inicia sesión para continuar.</CardDescription>
         </CardHeader>
-        <CardContent>
-          <LoginForm />
+        <CardContent className="flex flex-col gap-5">
+          {registeredEmail && (
+            <Alert role="status">
+              <CheckCircle2 />
+              <AlertDescription>
+                Cuenta creada. Inicia sesión para continuar.
+              </AlertDescription>
+            </Alert>
+          )}
+          <LoginForm defaultEmail={registeredEmail ?? ''} />
         </CardContent>
+        <CardFooter className="justify-center text-sm text-muted-foreground">
+          <p>
+            ¿No tienes cuenta?{' '}
+            <Link
+              to="/register"
+              className="font-medium text-foreground underline underline-offset-4"
+            >
+              Regístrate
+            </Link>
+          </p>
+        </CardFooter>
       </Card>
     </main>
   )

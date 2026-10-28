@@ -28,3 +28,20 @@ export interface CurrentUserDto {
 
 // loading y error solo ocurren al arrancar con un token guardado (mientras responde /me)
 export type AuthStatus = 'loading' | 'error' | 'authenticated' | 'anonymous'
+
+export type DocumentType = 'NationalId' | 'Passport'
+
+// POST /api/auth/register: sin rol, la API siempre crea un Receptionist
+export interface RegisterRequest {
+  email: string
+  password: string
+  firstName: string
+  lastName: string
+  documentType: DocumentType
+  documentNumber: string
+  phone: string | null
+}
+
+export interface RegisterResponse {
+  id: string
+}

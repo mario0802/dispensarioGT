@@ -42,8 +42,13 @@ function getLoginErrorMessage(error: ApiError): string {
   return 'Ocurrió un error inesperado. Inténtalo de nuevo.'
 }
 
+interface LoginFormProps {
+  // Email precargado, p. ej. el de la cuenta recién registrada
+  defaultEmail?: string
+}
+
 // No navega: al quedar la sesión autenticada, la ruta /login redirige sola
-export function LoginForm() {
+export function LoginForm({ defaultEmail = '' }: LoginFormProps) {
   const { login } = useAuth()
   const { error, isLoading, execute } = useApi(login)
   const [showPassword, setShowPassword] = useState(false)
@@ -56,7 +61,7 @@ export function LoginForm() {
     formState: { errors },
   } = useForm<LoginFormInput, unknown, LoginFormValues>({
     resolver: zodResolver(loginSchema),
-    defaultValues: { email: '', password: '' },
+    defaultValues: { email: defaultEmail, password: '' },
   })
 
   const onSubmit = handleSubmit(async (values) => {

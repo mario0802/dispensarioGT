@@ -1,6 +1,6 @@
 # SPEC 03 — Página de login y sesión
 
-> **Status:** Approved
+> **Status:** Implemented
 > **Depends on:** SPEC 01, SPEC 02
 > **Date:** 2026-10-28
 > **Objective:** Crear la página de login que autentica con `POST /api/auth/login`, guarda la sesión (token en `localStorage` y usuario de `GET /api/auth/me`) y protege las rutas de la app con React Router.

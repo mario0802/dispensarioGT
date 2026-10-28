@@ -1,6 +1,6 @@
 # SPEC 04 — Página de registro
 
-> **Status:** Approved
+> **Status:** Implemented
 > **Depends on:** SPEC 01, SPEC 02, SPEC 03
 > **Date:** 2026-10-28
 > **Objective:** Crear la página pública `/register` que da de alta un recepcionista con `POST /api/auth/register` y, tras crearlo, lleva al login con un aviso y el email ya rellenado.

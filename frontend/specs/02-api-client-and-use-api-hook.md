@@ -1,6 +1,6 @@
 # SPEC 02 — Cliente HTTP y hook `useApi`
 
-> **Status:** Approved
+> **Status:** Implemented
 > **Depends on:** SPEC 01
 > **Date:** 2026-10-28
 > **Objective:** Crear un cliente HTTP propio sobre `fetch` (`api`, `ApiError` y un proveedor de token) y el hook `useApi`, que expone `data`, `error`, `status`, `isLoading`, `execute`, `reset` y `setData`, para que todas las llamadas a la API se hagan de la misma manera.

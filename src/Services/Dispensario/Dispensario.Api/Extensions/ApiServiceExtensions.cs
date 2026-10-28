@@ -18,7 +18,7 @@ namespace Dispensario.Api.Extensions;
 public static class ApiServiceExtensions
 {
     /// <summary>
-    /// Registra los servicios propios del host HTTP: Carter, OpenAPI, ProblemDetails, manejo de excepciones,
+    /// Registra los servicios propios del host HTTP: Carter, OpenAPI, ProblemDetails, manejo de excepciones, CORS,
     /// autenticación JWT, políticas de autorización y health checks.
     /// </summary>
     public static IServiceCollection AddApiServices(this IServiceCollection services, IConfiguration configuration)
@@ -32,6 +32,12 @@ public static class ApiServiceExtensions
 
         services.AddProblemDetails();
         services.AddExceptionHandler<CustomExceptionHandler>();
+
+        // Orígenes del navegador que pueden llamar a la Api (el frontend); sin orígenes configurados no se admite ninguno.
+        // El token viaja en la cabecera Authorization, así que no hacen falta credenciales (cookies)
+        var allowedOrigins = configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
+        services.AddCors(options => options.AddDefaultPolicy(policy =>
+            policy.WithOrigins(allowedOrigins).AllowAnyHeader().AllowAnyMethod()));
 
         services.AddJwtAuthentication();
         services.AddAuthorizationBuilder()

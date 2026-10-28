@@ -25,6 +25,7 @@ public sealed class DispensarioApiFactory : WebApplicationFactory<Program>
     public const string JwtKey = "integration-tests-signing-key-with-32+-chars";
     public const string AdminEmail = "admin@dispensario.local";
     public const string AdminPassword = "Admin-Integration-Tests-1";
+    public const string AllowedOrigin = "http://frontend.tests";
 
     private readonly SqliteConnection _connection = new(InMemoryConnectionString);
 
@@ -44,6 +45,7 @@ public sealed class DispensarioApiFactory : WebApplicationFactory<Program>
         builder.UseSetting("Seed:Admin:Password", AdminPassword);
         // Sin datos de ejemplo: los tests crean sus propios datos
         builder.UseSetting("Seed:SampleData:Enabled", "false");
+        builder.UseSetting("Cors:AllowedOrigins:0", AllowedOrigin);
 
         builder.ConfigureTestServices(services =>
         {

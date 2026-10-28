@@ -6,11 +6,12 @@ Guía para Claude Code al trabajar en `frontend/`. **Este archivo es la única g
 
 Una SPA para el personal del dispensario médico que consume la API del backend: login, gestión de usuarios, doctores (y su horario), pacientes, agenda de citas y consultas. Cada rol ve solo lo que la API le permite (`Admin`, `Doctor`, `Receptionist`).
 
-> **Estado actual:** proyecto Vite inicializado (spec 01): React + TypeScript, Tailwind, shadcn/ui (`slate`, con `button` y `dropdown-menu`), modo oscuro (`ThemeProvider` + `ModeToggle`), `VITE_API_BASE_URL` tipada en `src/lib/config.ts`, ESLint, Prettier y Vitest. La página inicial es estática: todavía no hay llamadas a la API, router ni login.
+> **Estado actual:** proyecto Vite inicializado (spec 01): React + TypeScript, Tailwind, shadcn/ui (`slate`, con `button` y `dropdown-menu`), modo oscuro (`ThemeProvider` + `ModeToggle`), `VITE_API_BASE_URL` tipada en `src/lib/config.ts`, ESLint, Prettier y Vitest. Cliente HTTP propio sobre `fetch` (`api`, `ApiError` y proveedor de token en `src/lib/api/`) y hook `useApi` en `src/hooks/` (spec 02). La página inicial es estática: todavía ninguna pantalla llama a la API, ni hay router ni login.
 
 ## Reglas de trabajo (obligatorias)
 
 1. **SDD también en el frontend**: no se escribe código sin un spec `Approved`. Los specs se crean con `/spec` y se implementan con `/spec-impl`. Nada de andamiaje, refactors ni features "de paso".
+   - **Excepción, requerimientos sencillos:** si el usuario pide **explícitamente** un cambio pequeño y acotado (corregir un bug, ajustar un texto, un estilo o una validación, renombrar, retocar un test o la documentación), se puede modificar el código sin spec. Solo vale si el cambio no añade páginas, rutas ni features, no añade ni cambia dependencias, no cambia la forma de consumir la API y no altera la estructura del proyecto. Igual se respetan las reglas de este archivo, y hay que compilar (`build`) y pasar lint y tests. Si hay dudas sobre si es "sencillo", preguntar o proponer un spec. La excepción nunca permite modificar el backend.
 2. **Los specs del frontend viven en `frontend/specs/NN-slug.md`**, con numeración propia desde `01`, independiente de la del backend. La sesión se abre en la raíz del repositorio (así se puede consultar el backend) y el usuario indica si el trabajo es de frontend. En ese caso, `/spec` y `/spec-impl` sustituyen `specs/` por `frontend/specs/` en todo (listado, numeración, lectura de specs previos, guardado y búsqueda del spec), usan este archivo como memoria del proyecto en lugar del `CLAUDE.md` de la raíz y nombran la rama `spec-fe-NN-slug`. La configuración de ramas sigue en `specs/.spec-config.yml`.
    - El código del backend (`src/`, `tests/`, `README.md`) se puede **leer** para entender el contrato, pero un spec del frontend nunca lo modifica.
 3. Si algo es ambiguo, preguntar en vez de suponer.
@@ -25,8 +26,9 @@ Una SPA para el personal del dispensario médico que consume la API del backend:
 - **Tailwind CSS 4** (`@tailwindcss/vite`) + **shadcn/ui** (componentes copiados al proyecto, no como dependencia; primitivas de `radix-ui`, iconos `lucide-react`)
 - **ESLint** (flat config: `typescript-eslint`, `react-hooks`, `react-refresh`, y `eslint-config-prettier` al final) · **Prettier** con `prettier-plugin-tailwindcss` (sin punto y coma, comillas simples)
 - **Vitest** + **Testing Library** + **jsdom** (configuración en el bloque `test` de `vite.config.ts`)
+- Estado de servidor con **`fetch` propio** + el hook `useApi` (spec 02), sin TanStack Query
 
-Pendiente de decidir (ver **Preguntas abiertas**): router, gestión del estado de servidor, formularios y validación, y tests E2E.
+Pendiente de decidir (ver **Preguntas abiertas**): router, formularios y validación, y tests E2E.
 
 ## Estructura
 
@@ -44,7 +46,9 @@ frontend/
    │  └─ components/         # componentes propios de la feature (p. ej. login-form.tsx)
    ├─ components/         # componentes compartidos entre features (theme-provider, mode-toggle)
    │  └─ ui/              # generados por shadcn/ui
+   ├─ hooks/              # hooks compartidos entre features (use-api)
    ├─ lib/                # utils (cn), config
+   │  └─ api/             # cliente HTTP: api-client, api-error, access-token (sin barrel: se importa cada archivo)
    └─ test/               # setup de Vitest y utilidades de test (matchMedia simulado)
 ```
 - Alias `@/` → `src/`. Archivos en kebab-case (como los de shadcn); componentes en PascalCase.
@@ -54,9 +58,19 @@ frontend/
 ## Contrato con la API
 
 - **Fuente de verdad**: la sección **Endpoints** del `README.md` de la raíz (rutas, acceso por rol, peticiones, respuestas y códigos de error). Scalar en `/scalar` con el backend corriendo. El frontend no modifica el backend: si necesita un cambio en la API, es un spec del backend.
-- **Backend local**: `dotnet run --project src/Services/Dispensario/Dispensario.Api` desde la raíz, en `http://localhost:5168` (`https://localhost:7247` con el perfil https). El backend **no tiene CORS configurado**.
+- **Backend local**: `dotnet run --project src/Services/Dispensario/Dispensario.Api` desde la raíz, en `http://localhost:5168` (`https://localhost:7247` con el perfil https). El backend admite CORS desde `http://localhost:5173` en Development (`Cors:AllowedOrigins`).
 - **Autenticación**: `POST /api/auth/login` devuelve un JWT (HS256) que se envía como `Authorization: Bearer <token>`. `GET /api/auth/me` devuelve el usuario actual. Un token sigue valiendo hasta que caduca aunque el usuario se desactive. El claim `doctor_id` solo aparece en los tokens emitidos después de vincular el usuario con su doctor (hace falta un nuevo login).
 - **Errores**: siempre `application/problem+json` (ProblemDetails). Los de validación (400) traen la extensión `ValidationErrors`; 401 = sin sesión o credenciales inválidas (el login responde siempre `Invalid credentials.`), 403 = rol sin permiso, 404, 409 = conflicto (duplicados, cruces de citas).
+- **Cómo se llama a la API** (spec 02): cada módulo declara sus funciones con el objeto `api` (`@/lib/api/api-client`) y los componentes las usan con `useApi` (`@/hooks/use-api`). Nadie llama a `fetch` directamente.
+  ```ts
+  // features/patients/patients-api.ts
+  export const getPatient = (id: string) => api.get<PatientDto>(`/api/patients/${id}`)
+  // En un componente
+  const { data, error, status, isLoading, execute, reset, setData } = useApi(getPatient)
+  ```
+  - `api.get(path, query)`, `api.post(path, body)`, `api.put(path, body)` y `api.delete(path)` usan `config.apiBaseUrl`, envían JSON y añaden `Authorization: Bearer` si hay proveedor de token (`setAccessTokenProvider`, lo registrará el login). En la `query`, los valores `null`/`undefined` se omiten. Un 204 resuelve `undefined`; una respuesta que no es JSON resuelve el texto.
+  - Todo fallo es un `ApiError` (`@/lib/api/api-error`): `kind` (`http` | `network` | `unknown`), `status` (0 sin respuesta), `title`, `detail`, `validationErrors` (`{ propertyName, errorMessage }[]`, de la extensión `ValidationErrors`) y `traceId`. El 401 todavía no tiene trato especial.
+  - `execute(...args)` **nunca rechaza**: resuelve `{ data, error: null }` o `{ data: null, error }`, y el error queda también en el estado. Solo cuenta la última llamada (las respuestas viejas, las de antes de `reset` y las de después de desmontar se ignoran), `data` se conserva mientras carga y tras un error, y `execute`, `reset` y `setData` son estables (se pueden usar en dependencias de `useEffect`). No hay `AbortController`, ejecución al montar ni caché.
 - **Listados paginados**: `{ pageIndex, pageSize, count, data }`.
 - **Enums** como texto (`"Scheduled"`, `"Receptionist"`…); `bloodType` con notación `"A+"`, `"AB-"`…
 - **Horas de las citas**: locales del dispensario y **sin offset** (`"2026-11-03T09:30"`); enviar una con `Z` u offset da 400. Las horas del horario semanal van como `"HH:mm"`.
@@ -82,16 +96,17 @@ pnpm test           # test:watch en modo watch
 | #   | Feature                                                                                       | Spec |
 | --- | --------------------------------------------------------------------------------------------- | ---- |
 | 01  | Andamiaje: proyecto Vite + React + TS, Tailwind, shadcn/ui, conexión con la API en desarrollo | `specs/01-vite-react-project-setup.md` |
+| 02  | Cliente HTTP (`api`, `ApiError`, proveedor de token) y hook `useApi`                          | `specs/02-api-client-and-use-api-hook.md` |
 
 Las siguientes filas se añaden al planificar (login y sesión, layout por rol, y luego un módulo por fila).
 
 ## Preguntas abiertas
 
 - **Router**: React Router o TanStack Router.
-- **Estado de servidor**: TanStack Query o `fetch` a mano.
 - **Formularios y validación**: React Hook Form + Zod u otra opción.
 - **Tests E2E**: ¿Playwright? (los unitarios ya usan Vitest + Testing Library, spec 01).
 - ~~**Gestor de paquetes**~~: cerrada en el spec 01 (pnpm).
-- ~~**Conexión en desarrollo**~~: cerrada en el spec 01: URL directa con `VITE_API_BASE_URL`. **Pendiente** un spec del backend que añada CORS para `http://localhost:5173` antes de la primera llamada a la API.
+- ~~**Estado de servidor**~~: cerrada en el spec 02: `fetch` propio + `useApi`, sin TanStack Query.
+- ~~**Conexión en desarrollo**~~: cerrada en el spec 01: URL directa con `VITE_API_BASE_URL`; el backend ya admite CORS para `http://localhost:5173` en Development.
 - **Guardado del token**: memoria, `sessionStorage` o `localStorage`.
 - **Idioma de la interfaz**: ¿solo español?

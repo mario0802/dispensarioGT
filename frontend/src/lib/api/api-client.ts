@@ -1,5 +1,6 @@
 import { getAccessToken } from '@/lib/api/access-token'
 import { ApiError, createHttpError } from '@/lib/api/api-error'
+import { notifyUnauthorized } from '@/lib/api/unauthorized-handler'
 import { config } from '@/lib/config'
 
 export type QueryValue = string | number | boolean | null | undefined
@@ -41,6 +42,10 @@ export async function apiRequest<T>(
   }
 
   if (!response.ok) {
+    // Un 401 con token significa que la sesión ya no vale: se avisa antes de lanzar el error
+    if (response.status === 401 && token) {
+      notifyUnauthorized()
+    }
     throw await createHttpError(response)
   }
 

@@ -6,7 +6,7 @@ Guía para Claude Code al trabajar en `frontend/`. **Este archivo es la única g
 
 Una SPA para el personal del dispensario médico que consume la API del backend: login, gestión de usuarios, doctores (y su horario), pacientes, agenda de citas y consultas. Cada rol ve solo lo que la API le permite (`Admin`, `Doctor`, `Receptionist`).
 
-> **Estado actual:** proyecto Vite inicializado (spec 01): React + TypeScript, Tailwind, shadcn/ui (`slate`, con `button` y `dropdown-menu`), modo oscuro (`ThemeProvider` + `ModeToggle`), `VITE_API_BASE_URL` tipada en `src/lib/config.ts`, ESLint, Prettier y Vitest. Cliente HTTP propio sobre `fetch` (`api`, `ApiError` y proveedor de token en `src/lib/api/`) y hook `useApi` en `src/hooks/` (spec 02). La página inicial es estática: todavía ninguna pantalla llama a la API, ni hay router ni login.
+> **Estado actual:** proyecto Vite inicializado (spec 01): React + TypeScript, Tailwind, shadcn/ui (`slate`, con `button`, `dropdown-menu`, `card`, `input`, `label`, `alert`, `field` y `separator`), modo oscuro (`ThemeProvider` + `ModeToggle`), `VITE_API_BASE_URL` tipada en `src/lib/config.ts`, ESLint, Prettier y Vitest. Cliente HTTP propio sobre `fetch` (`api`, `ApiError`, proveedor de token y manejador del 401 en `src/lib/api/`) y hook `useApi` en `src/hooks/` (spec 02). Login y sesión (spec 03): React Router con `/login`, `/` protegida (inicio provisional con nombre, rol y **Cerrar sesión**) y comodín a `/`; token en `localStorage` y usuario de `GET /api/auth/me` en `AuthProvider`/`useAuth`; un 401 con token cierra la sesión.
 
 ## Reglas de trabajo (obligatorias)
 
@@ -27,8 +27,10 @@ Una SPA para el personal del dispensario médico que consume la API del backend:
 - **ESLint** (flat config: `typescript-eslint`, `react-hooks`, `react-refresh`, y `eslint-config-prettier` al final) · **Prettier** con `prettier-plugin-tailwindcss` (sin punto y coma, comillas simples)
 - **Vitest** + **Testing Library** + **jsdom** (configuración en el bloque `test` de `vite.config.ts`)
 - Estado de servidor con **`fetch` propio** + el hook `useApi` (spec 02), sin TanStack Query
+- **React Router 7** en modo declarativo (`BrowserRouter`, `Routes`, `Navigate`, importados de `react-router`; spec 03)
+- Formularios con **React Hook Form** + **Zod 4** (`zodResolver` de `@hookform/resolvers`) y los componentes `field` de shadcn (`Field`, `FieldLabel`, `FieldError`). En Zod 4, `z.string().email()` está obsoleto: se usa `z.email()` (con `.pipe` si va tras `trim`/`min`/`max`)
 
-Pendiente de decidir (ver **Preguntas abiertas**): router, formularios y validación, y tests E2E.
+Pendiente de decidir (ver **Preguntas abiertas**): tests E2E.
 
 ## Estructura
 
@@ -40,20 +42,25 @@ frontend/
 ├─ vite.config.ts          # plugins, alias @, puerto 5173 fijo y bloque test de Vitest
 └─ src/
    ├─ main.tsx  App.tsx  index.css   # index.css: Tailwind + variables de shadcn (slate, claro y oscuro)
+   ├─ app-routes.tsx      # rutas de la app (App: BrowserRouter > AuthProvider > AppRoutes)
    ├─ vite-env.d.ts       # tipos estrictos de import.meta.env
-   ├─ features/<módulo>/  # auth, users, doctors, patients, appointments, consultations (se crean en su spec)
+   ├─ features/<módulo>/  # auth, home, users, doctors, patients, appointments, consultations (se crean en su spec)
    │  ├─ <pagina>-page.tsx   # las páginas de la feature, en la raíz de su carpeta (p. ej. login-page.tsx)
    │  └─ components/         # componentes propios de la feature (p. ej. login-form.tsx)
+   ├─ features/auth/      # auth-types, auth-api, role-labels, token-storage, auth-provider, use-auth, login-page
+   │  └─ components/      # login-form, require-auth (guard), session-screens (carga y error del arranque)
+   ├─ features/home/      # home-page: inicio provisional (lo sustituirá el layout por rol)
    ├─ components/         # componentes compartidos entre features (theme-provider, mode-toggle)
    │  └─ ui/              # generados por shadcn/ui
    ├─ hooks/              # hooks compartidos entre features (use-api)
    ├─ lib/                # utils (cn), config
-   │  └─ api/             # cliente HTTP: api-client, api-error, access-token (sin barrel: se importa cada archivo)
-   └─ test/               # setup de Vitest y utilidades de test (matchMedia simulado)
+   │  └─ api/             # cliente HTTP: api-client, api-error, access-token, unauthorized-handler (sin barrel)
+   └─ test/               # setup de Vitest y utilidades de test (matchMedia simulado, api-responses)
 ```
 - Alias `@/` → `src/`. Archivos en kebab-case (como los de shadcn); componentes en PascalCase.
 - **Organización de cada feature**: en la raíz de `features/<módulo>/` van solo las páginas (y, cuando existan, los archivos propios del módulo como su cliente de API o sus tipos); todos los componentes que solo usa esa feature van en `features/<módulo>/components/`, para que la carpeta no se llene de ruido. Ejemplo: `features/auth/login-page.tsx` y `features/auth/components/login-form.tsx`. Si un componente lo usan dos o más features, se mueve a `src/components/`.
-- Los tests van junto al código (`*.test.ts(x)`), importan `describe`/`it`/`expect` de `vitest` (sin globals) y simulan `matchMedia` con `@/test/match-media`.
+- **Sesión**: las demás features la leen con `useAuth()` (`@/features/auth/use-auth`): `status` (`loading` | `error` | `authenticated` | `anonymous`), `user` (`CurrentUserDto`), `login`, `logout` y `retry`. Las rutas protegidas se envuelven en `RequireAuth`.
+- Los tests van junto al código (`*.test.ts(x)`), importan `describe`/`it`/`expect` de `vitest` (sin globals) y simulan `matchMedia` con `@/test/match-media`. Las respuestas simuladas de la API (`jsonResponse`, `problemResponse`, `testUser`, `storeValidToken`…) están en `@/test/api-responses`. Los tests que montan `AuthProvider` limpian en `afterEach` `localStorage`, `setAccessTokenProvider(null)` y `setUnauthorizedHandler(null)`.
 
 ## Contrato con la API
 
@@ -68,8 +75,10 @@ frontend/
   // En un componente
   const { data, error, status, isLoading, execute, reset, setData } = useApi(getPatient)
   ```
-  - `api.get(path, query)`, `api.post(path, body)`, `api.put(path, body)` y `api.delete(path)` usan `config.apiBaseUrl`, envían JSON y añaden `Authorization: Bearer` si hay proveedor de token (`setAccessTokenProvider`, lo registrará el login). En la `query`, los valores `null`/`undefined` se omiten. Un 204 resuelve `undefined`; una respuesta que no es JSON resuelve el texto.
-  - Todo fallo es un `ApiError` (`@/lib/api/api-error`): `kind` (`http` | `network` | `unknown`), `status` (0 sin respuesta), `title`, `detail`, `validationErrors` (`{ propertyName, errorMessage }[]`, de la extensión `ValidationErrors`) y `traceId`. El 401 todavía no tiene trato especial.
+  - `api.get(path, query)`, `api.post(path, body)`, `api.put(path, body)` y `api.delete(path)` usan `config.apiBaseUrl`, envían JSON y añaden `Authorization: Bearer` si hay proveedor de token (`setAccessTokenProvider`, lo registra el `AuthProvider`). En la `query`, los valores `null`/`undefined` se omiten. Un 204 resuelve `undefined`; una respuesta que no es JSON resuelve el texto.
+  - Todo fallo es un `ApiError` (`@/lib/api/api-error`): `kind` (`http` | `network` | `unknown`), `status` (0 sin respuesta), `title`, `detail`, `validationErrors` (`{ propertyName, errorMessage }[]`, de la extensión `ValidationErrors`) y `traceId`.
+  - **401**: si la petición llevaba token, el cliente avisa al manejador global (`setUnauthorizedHandler`, lo registra el `AuthProvider`), que cierra la sesión y lleva a `/login`; después lanza el `ApiError` igual. El 401 del login (sin token) no lo dispara, y el 403 no tiene trato especial: cada pantalla lo muestra.
+  - **Sesión**: el token se guarda en `localStorage` (`dispensario-auth`, `{ accessToken, expiresAtUtc }`). Al arrancar, uno caducado se descarta sin llamar a la API; uno vigente se valida con `GET /api/auth/me` (401/404 → cierre de sesión; error de red → pantalla con **Reintentar**, conservando el token). No hay temporizador de caducidad: durante el uso, la caducidad llega como 401.
   - `execute(...args)` **nunca rechaza**: resuelve `{ data, error: null }` o `{ data: null, error }`, y el error queda también en el estado. Solo cuenta la última llamada (las respuestas viejas, las de antes de `reset` y las de después de desmontar se ignoran), `data` se conserva mientras carga y tras un error, y `execute`, `reset` y `setData` son estables (se pueden usar en dependencias de `useEffect`). No hay `AbortController`, ejecución al montar ni caché.
 - **Listados paginados**: `{ pageIndex, pageSize, count, data }`.
 - **Enums** como texto (`"Scheduled"`, `"Receptionist"`…); `bloodType` con notación `"A+"`, `"AB-"`…
@@ -90,6 +99,7 @@ pnpm test           # test:watch en modo watch
 - **shadcn/ui**: añadir componentes con `pnpm dlx shadcn@latest add <componente>`. El CLI actual (4.x) ya no ofrece `slate` en `init`: `components.json` (estilo `new-york`, `baseColor: slate`) y las variables de `index.css` se escribieron a mano desde `colors/slate.json`, así que **no ejecutar `shadcn init`** (sobrescribiría ambos). En Windows el CLI genera `import { cn } from "cn"`: tras cada `add`, corregirlo a `@/lib/utils`.
 - Vitest corre en modo `test` y no carga `.env.development`: `VITE_API_BASE_URL` para los tests está en el bloque `test.env` de `vite.config.ts`.
 - Prettier no formatea los `.md` ni `src/components/ui` (ver `.prettierignore`).
+- pnpm 11 no instala versiones publicadas hace menos de un día (`minimumReleaseAge`): si lo intenta, añade una excepción en un `pnpm-workspace.yaml` nuevo. Mejor elegir la versión anterior que crear ese archivo.
 
 ## Backlog
 
@@ -97,16 +107,17 @@ pnpm test           # test:watch en modo watch
 | --- | --------------------------------------------------------------------------------------------- | ---- |
 | 01  | Andamiaje: proyecto Vite + React + TS, Tailwind, shadcn/ui, conexión con la API en desarrollo | `specs/01-vite-react-project-setup.md` |
 | 02  | Cliente HTTP (`api`, `ApiError`, proveedor de token) y hook `useApi`                          | `specs/02-api-client-and-use-api-hook.md` |
+| 03  | Página de login y sesión (React Router, token en `localStorage`, `/api/auth/me`, 401 global)  | `specs/03-login-and-session.md` |
 
-Las siguientes filas se añaden al planificar (login y sesión, layout por rol, y luego un módulo por fila).
+Las siguientes filas se añaden al planificar (layout por rol, y luego un módulo por fila).
 
 ## Preguntas abiertas
 
-- **Router**: React Router o TanStack Router.
-- **Formularios y validación**: React Hook Form + Zod u otra opción.
+- ~~**Router**~~: cerrada en el spec 03: React Router 7 en modo declarativo.
+- ~~**Formularios y validación**~~: cerrada en el spec 03: React Hook Form + Zod con los componentes `field` de shadcn.
 - **Tests E2E**: ¿Playwright? (los unitarios ya usan Vitest + Testing Library, spec 01).
 - ~~**Gestor de paquetes**~~: cerrada en el spec 01 (pnpm).
 - ~~**Estado de servidor**~~: cerrada en el spec 02: `fetch` propio + `useApi`, sin TanStack Query.
 - ~~**Conexión en desarrollo**~~: cerrada en el spec 01: URL directa con `VITE_API_BASE_URL`; el backend ya admite CORS para `http://localhost:5173` en Development.
-- **Guardado del token**: memoria, `sessionStorage` o `localStorage`.
-- **Idioma de la interfaz**: ¿solo español?
+- ~~**Guardado del token**~~: cerrada en el spec 03: `localStorage`, con `expiresAtUtc`.
+- ~~**Idioma de la interfaz**~~: cerrada en el spec 03: solo español, con mensajes propios (los `title`/`detail` de la API vienen en inglés).

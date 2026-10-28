@@ -11,6 +11,7 @@ import {
 import { setAccessTokenProvider } from '@/lib/api/access-token'
 import { api, apiRequest } from '@/lib/api/api-client'
 import { ApiError } from '@/lib/api/api-error'
+import { setUnauthorizedHandler } from '@/lib/api/unauthorized-handler'
 import { config } from '@/lib/config'
 
 let fetchMock: Mock<typeof fetch>
@@ -189,5 +190,60 @@ describe('apiRequest', () => {
 
     expect(error.kind).toBe('unknown')
     expect(error.status).toBe(200)
+  })
+})
+
+describe('unauthorized handler', () => {
+  const problem = (status: number) =>
+    new Response(JSON.stringify({ title: 'Unauthorized' }), {
+      status,
+      headers: { 'Content-Type': 'application/problem+json' },
+    })
+
+  afterEach(() => {
+    setUnauthorizedHandler(null)
+  })
+
+  it('notifies a 401 of a request with a token and still throws', async () => {
+    const handler = vi.fn()
+    setUnauthorizedHandler(handler)
+    setAccessTokenProvider(() => 'abc')
+    fetchMock.mockResolvedValue(problem(401))
+
+    const error = await captureError(api.get('/api/x'))
+
+    expect(handler).toHaveBeenCalledOnce()
+    expect(error.kind).toBe('http')
+    expect(error.status).toBe(401)
+  })
+
+  it('does not notify a 401 of a request without a token', async () => {
+    const handler = vi.fn()
+    setUnauthorizedHandler(handler)
+    fetchMock.mockResolvedValue(problem(401))
+
+    await captureError(api.post('/api/auth/login', {}))
+
+    expect(handler).not.toHaveBeenCalled()
+  })
+
+  it('does not notify a 403', async () => {
+    const handler = vi.fn()
+    setUnauthorizedHandler(handler)
+    setAccessTokenProvider(() => 'abc')
+    fetchMock.mockResolvedValue(problem(403))
+
+    await captureError(api.get('/api/x'))
+
+    expect(handler).not.toHaveBeenCalled()
+  })
+
+  it('only throws on a 401 without a registered handler', async () => {
+    setAccessTokenProvider(() => 'abc')
+    fetchMock.mockResolvedValue(problem(401))
+
+    const error = await captureError(api.get('/api/x'))
+
+    expect(error.status).toBe(401)
   })
 })

@@ -156,4 +156,77 @@ describe('AppRoutes', () => {
     expect(loginButton()).toBeInTheDocument()
     expect(localStorage.getItem(TOKEN_STORAGE_KEY)).toBeNull()
   })
+
+  describe('register', () => {
+    const registeredNotice = 'Cuenta creada. Inicia sesión para continuar.'
+    const registerButton = () =>
+      screen.queryByRole('button', { name: 'Crear cuenta' })
+
+    it('shows the register page without a session', () => {
+      renderRoutes('/register')
+
+      expect(currentLocation()).toBe('/register')
+      expect(
+        screen.getByText('Crea una cuenta de recepcionista.'),
+      ).toBeInTheDocument()
+      expect(registerButton()).toBeInTheDocument()
+    })
+
+    it('links the login and the register pages', async () => {
+      const user = renderRoutes('/login')
+
+      await user.click(screen.getByRole('link', { name: 'Regístrate' }))
+      expect(currentLocation()).toBe('/register')
+      expect(registerButton()).toBeInTheDocument()
+
+      await user.click(screen.getByRole('link', { name: 'Inicia sesión' }))
+      expect(currentLocation()).toBe('/login')
+      expect(loginButton()).toBeInTheDocument()
+    })
+
+    it('redirects /register to the home with a session', async () => {
+      storeValidToken()
+      fetchMock.mockResolvedValue(jsonResponse(testUser))
+
+      renderRoutes('/register')
+
+      expect(await screen.findByText('Hola, Ana Torres')).toBeInTheDocument()
+      expect(currentLocation()).toBe('/')
+    })
+
+    it('goes to the login with the notice and the email after registering', async () => {
+      const user = renderRoutes('/register')
+      fetchMock.mockResolvedValueOnce(jsonResponse({ id: testUser.id }, 201))
+      await user.type(screen.getByLabelText('Nombre'), testUser.firstName)
+      await user.type(screen.getByLabelText('Apellido'), testUser.lastName)
+      await user.type(
+        screen.getByLabelText('Número de documento'),
+        testUser.identificationNumber,
+      )
+      await user.type(screen.getByLabelText('Email'), testUser.email)
+      await user.type(screen.getByLabelText('Contraseña'), 'Passw0rd')
+      await user.type(screen.getByLabelText('Confirmar contraseña'), 'Passw0rd')
+      await user.click(registerButton()!)
+
+      expect(await screen.findByText(registeredNotice)).toBeInTheDocument()
+      expect(currentLocation()).toBe('/login')
+      expect(screen.getByLabelText('Email')).toHaveValue(testUser.email)
+
+      fetchMock
+        .mockResolvedValueOnce(jsonResponse(loginResponse()))
+        .mockResolvedValueOnce(jsonResponse(testUser))
+      await user.type(screen.getByLabelText('Contraseña'), 'Passw0rd')
+      await user.click(loginButton()!)
+
+      expect(await screen.findByText('Hola, Ana Torres')).toBeInTheDocument()
+      expect(currentLocation()).toBe('/')
+    })
+
+    it('does not show the notice on the login without state', () => {
+      renderRoutes('/login')
+
+      expect(screen.queryByText(registeredNotice)).not.toBeInTheDocument()
+      expect(screen.getByLabelText('Email')).toHaveValue('')
+    })
+  })
 })

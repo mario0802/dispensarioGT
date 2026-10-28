@@ -17,6 +17,8 @@ var app = builder.Build();
 app.UseExceptionHandler();
 // Los 404/405 sin cuerpo también salen como ProblemDetails
 app.UseStatusCodePages();
+// Antes de la autenticación: la petición preflight (OPTIONS) no lleva token
+app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
 

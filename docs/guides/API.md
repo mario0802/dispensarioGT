@@ -22,7 +22,7 @@ Endpoints/
                                # al Doctor a sus propias consultas), GetConsultationByIdEndpoint (AdminOrDoctor)
                                # GetPatientConsultationsEndpoint: GET /api/patients/{id}/consultations (AdminOrDoctor), en esta carpeta
 Extensions/
-  ApiServiceExtensions.cs      # AddApiServices: Carter, OpenAPI, JSON, ProblemDetails, exception handler, JWT, políticas, health
+  ApiServiceExtensions.cs      # AddApiServices: Carter, OpenAPI, JSON, ProblemDetails, exception handler, CORS, JWT, políticas, health
   OpenApi/BearerSecuritySchemeTransformer.cs
 Program.cs
 appsettings.json  appsettings.Development.json
@@ -112,6 +112,7 @@ var app = builder.Build();
 
 app.UseExceptionHandler();
 app.UseStatusCodePages();              // 404/405 sin cuerpo → ProblemDetails
+app.UseCors();                         // antes de la autenticación: el preflight no lleva token
 app.UseAuthentication();
 app.UseAuthorization();
 
@@ -128,6 +129,7 @@ app.Run();
 
 public partial class Program;          // necesario para WebApplicationFactory en los tests
 ```
+- **CORS**: política por defecto con los orígenes de `Cors:AllowedOrigins` (cualquier cabecera y método, sin credenciales: el token va en `Authorization`). En `appsettings.json` la lista está vacía (no se admite ningún origen) y en `appsettings.Development.json` admite el frontend, `http://localhost:5173`. Los errores (ProblemDetails) también llevan las cabeceras CORS.
 - `/openapi/v1.json` y `/scalar` solo existen en Development; `dotnet run` abre `/scalar` (`launchUrl` en `launchSettings.json`).
 - `/health` comprueba la base de datos con `AddDbContextCheck<DispensarioDbContext>` y una consulta propia (`SELECT 1`). La prueba por defecto (`CanConnectAsync`) en SQLite solo mira si existe el archivo, y daría Unhealthy hasta que haya migraciones. Abrir la conexión crea `dispensario.db` vacío si no existe.
 

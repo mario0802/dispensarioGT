@@ -47,7 +47,7 @@ const myScheduleNavItem: NavItem = {
 // Propios de cada rol: se rellenan en el spec de cada menú (junto con su ruta hija de AppLayout)
 export const roleNavItems: Record<UserRole, NavItem[]> = {
   Admin: [doctorsNavItem, patientsNavItem, appointmentsNavItem],
-  Doctor: [myScheduleNavItem],
+  Doctor: [appointmentsNavItem, myScheduleNavItem],
   Receptionist: [doctorsNavItem, patientsNavItem, appointmentsNavItem],
 }
 

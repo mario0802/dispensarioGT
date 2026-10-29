@@ -1,4 +1,9 @@
-import { AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react'
+import {
+  AlertCircle,
+  ChevronLeft,
+  ChevronRight,
+  Stethoscope,
+} from 'lucide-react'
 
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
@@ -12,6 +17,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import {
+  canStartConsultation,
   formatLocalDate,
   formatLocalTimeRange,
 } from '@/features/appointments/appointment-labels'
@@ -21,14 +27,22 @@ import { AppointmentStatusBadge } from '@/features/appointments/components/appoi
 import type { ApiError } from '@/lib/api/api-error'
 import type { PaginatedResult } from '@/lib/api/paginated-result'
 
-const columnCount = 5
-
 interface AppointmentsTableProps {
   page: PaginatedResult<AppointmentDto> | null
   error: ApiError | null
   hasCustomFilters: boolean
   onRetry: () => void
   onPageChange: (pageIndex: number) => void
+  // Texto sin citas con los filtros por defecto
+  emptyText?: string
+  // El rol Doctor no ve la columna: siempre es él
+  showDoctorColumn?: boolean
+  // Con ella hay columna Acciones y las filas iniciables (hoy, Scheduled/Confirmed) se pueden pulsar
+  onStart?: (appointment: AppointmentDto) => void
+  // Fecha local "yyyy-MM-dd" con la que se decide qué citas son de hoy
+  today?: string
+  // Para el doctor, el 403 tiene un mensaje propio
+  isDoctor?: boolean
 }
 
 // Tabla de citas con sus estados (carga, error, vacío) y la paginación
@@ -38,14 +52,21 @@ export function AppointmentsTable({
   hasCustomFilters,
   onRetry,
   onPageChange,
+  emptyText = 'No hay citas próximas.',
+  showDoctorColumn = true,
+  onStart,
+  today = '',
+  isDoctor = false,
 }: AppointmentsTableProps) {
+  const columnCount = 4 + (showDoctorColumn ? 1 : 0) + (onStart ? 1 : 0)
+
   if (error) {
     return (
       <Alert variant="destructive">
         <AlertCircle />
         <AlertTitle>No se pudieron cargar las citas.</AlertTitle>
         <AlertDescription className="gap-3">
-          <p>{getAppointmentsLoadErrorMessage(error)}</p>
+          <p>{getAppointmentsLoadErrorMessage(error, isDoctor)}</p>
           <Button type="button" variant="outline" size="sm" onClick={onRetry}>
             Reintentar
           </Button>
@@ -66,9 +87,14 @@ export function AppointmentsTable({
             <TableRow>
               <TableHead>Fecha y hora</TableHead>
               <TableHead>Paciente</TableHead>
-              <TableHead>Doctor</TableHead>
+              {showDoctorColumn && <TableHead>Doctor</TableHead>}
               <TableHead>Motivo</TableHead>
               <TableHead>Estado</TableHead>
+              {onStart && (
+                <TableHead>
+                  <span className="sr-only">Acciones</span>
+                </TableHead>
+              )}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -90,36 +116,69 @@ export function AppointmentsTable({
                 >
                   {hasCustomFilters
                     ? 'No se encontraron citas con esos filtros.'
-                    : 'No hay citas próximas.'}
+                    : emptyText}
                 </TableCell>
               </TableRow>
             )}
 
-            {page?.data.map((appointment) => (
-              <TableRow key={appointment.id}>
-                <TableCell>
-                  <div className="font-medium">
-                    {formatLocalDate(appointment.startLocal)}
-                  </div>
-                  <div className="text-muted-foreground">
-                    {formatLocalTimeRange(
-                      appointment.startLocal,
-                      appointment.endLocal,
-                    )}
-                  </div>
-                </TableCell>
-                <TableCell>{appointment.patientFullName}</TableCell>
-                <TableCell>{appointment.doctorFullName}</TableCell>
-                <TableCell>
-                  <div className="max-w-64 truncate" title={appointment.reason}>
-                    {appointment.reason}
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <AppointmentStatusBadge status={appointment.status} />
-                </TableCell>
-              </TableRow>
-            ))}
+            {page?.data.map((appointment) => {
+              const startable =
+                onStart !== undefined &&
+                canStartConsultation(appointment, today)
+              return (
+                <TableRow
+                  key={appointment.id}
+                  className={startable ? 'cursor-pointer' : undefined}
+                  onClick={startable ? () => onStart(appointment) : undefined}
+                >
+                  <TableCell>
+                    <div className="font-medium">
+                      {formatLocalDate(appointment.startLocal)}
+                    </div>
+                    <div className="text-muted-foreground">
+                      {formatLocalTimeRange(
+                        appointment.startLocal,
+                        appointment.endLocal,
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell>{appointment.patientFullName}</TableCell>
+                  {showDoctorColumn && (
+                    <TableCell>{appointment.doctorFullName}</TableCell>
+                  )}
+                  <TableCell>
+                    <div
+                      className="max-w-64 truncate"
+                      title={appointment.reason}
+                    >
+                      {appointment.reason}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <AppointmentStatusBadge status={appointment.status} />
+                  </TableCell>
+                  {onStart && (
+                    <TableCell className="text-right">
+                      {startable && (
+                        <Button
+                          type="button"
+                          size="sm"
+                          aria-label={`Iniciar consulta de ${appointment.patientFullName}`}
+                          onClick={(event) => {
+                            // La fila también abre la confirmación: se evita abrirla dos veces
+                            event.stopPropagation()
+                            onStart(appointment)
+                          }}
+                        >
+                          <Stethoscope />
+                          Iniciar
+                        </Button>
+                      )}
+                    </TableCell>
+                  )}
+                </TableRow>
+              )
+            })}
           </TableBody>
         </Table>
       </div>

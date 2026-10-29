@@ -6,6 +6,7 @@ import {
   within,
 } from '@testing-library/react'
 import userEvent, { type UserEvent } from '@testing-library/user-event'
+import { MemoryRouter } from 'react-router'
 import {
   afterEach,
   beforeEach,
@@ -22,6 +23,7 @@ import { TooltipProvider } from '@/components/ui/tooltip'
 import { toLocalDateString } from '@/features/appointments/appointment-labels'
 import type { AppointmentDto } from '@/features/appointments/appointment-types'
 import { AppointmentsPage } from '@/features/appointments/appointments-page'
+import type { CurrentUserDto } from '@/features/auth/auth-types'
 import type { DoctorDto } from '@/features/doctors/doctor-types'
 import type { PatientDto } from '@/features/patients/patient-types'
 import type { PaginatedResult } from '@/lib/api/paginated-result'
@@ -166,16 +168,20 @@ afterEach(() => {
   localStorage.clear()
 })
 
-function renderPage() {
+function renderPage(
+  currentUser: CurrentUserDto = { ...testUser, role: 'Receptionist' },
+) {
   const user = userEvent.setup()
   render(
     <ThemeProvider>
-      <TestAuthProvider user={{ ...testUser, role: 'Receptionist' }}>
-        <TooltipProvider>
-          <AppointmentsPage />
-        </TooltipProvider>
-        <Toaster />
-      </TestAuthProvider>
+      <MemoryRouter initialEntries={['/appointments']}>
+        <TestAuthProvider user={currentUser}>
+          <TooltipProvider>
+            <AppointmentsPage />
+          </TooltipProvider>
+          <Toaster />
+        </TestAuthProvider>
+      </MemoryRouter>
     </ThemeProvider>,
   )
   return user
@@ -392,5 +398,158 @@ describe('AppointmentsPage', () => {
     })
     await waitFor(() => expect(listRequests()).toHaveLength(before + 1))
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  })
+
+  it('does not show the start action to Admin', async () => {
+    listResponse = () =>
+      jsonResponse(
+        pageOf([
+          makeAppointment(3, {
+            startLocal: `${today}T09:30:00`,
+            endLocal: `${today}T10:00:00`,
+          }),
+        ]),
+      )
+    renderPage({ ...testUser, role: 'Admin' })
+
+    await screen.findByText('09:30 – 10:00')
+
+    expect(
+      screen.queryByRole('button', { name: /Iniciar consulta/ }),
+    ).not.toBeInTheDocument()
+    expect(screen.getByRole('columnheader', { name: 'Doctor' })).toBeVisible()
+  })
+})
+
+describe('AppointmentsPage for a Doctor', () => {
+  const linkedDoctor: CurrentUserDto = {
+    ...testUser,
+    role: 'Doctor',
+    doctorId: doctor.id,
+  }
+
+  const startable = makeAppointment(10, {
+    patientFullName: 'Ana Pérez',
+    startLocal: `${today}T09:30:00`,
+    endLocal: `${today}T10:00:00`,
+    reason: 'Control de presión arterial',
+  })
+  const completed = makeAppointment(11, {
+    patientFullName: 'Pedro Mora',
+    startLocal: `${today}T10:00:00`,
+    endLocal: `${today}T10:30:00`,
+    status: 'Completed',
+  })
+  const otherDay = makeAppointment(12, {
+    patientFullName: 'Rosa Vela',
+    startLocal: '2099-01-05T09:00:00',
+    endLocal: '2099-01-05T09:30:00',
+  })
+
+  const rowOf = (patientName: string) =>
+    screen.getByText(patientName).closest('tr')!
+
+  it('shows the notice without requests when it is not linked', () => {
+    renderPage({ ...testUser, role: 'Doctor', doctorId: null })
+
+    expect(
+      screen.getByText(/Tu usuario todavía no está vinculado/),
+    ).toBeInTheDocument()
+    expect(requests).toHaveLength(0)
+  })
+
+  it('loads only today without doctorId nor the reception actions', async () => {
+    listResponse = () => jsonResponse(pageOf([]))
+    renderPage(linkedDoctor)
+
+    expect(await screen.findByText('No tienes citas hoy.')).toBeInTheDocument()
+    expect(lastListParams().toString()).toBe(
+      `pageIndex=0&pageSize=10&from=${today}&to=${today}`,
+    )
+    expect(
+      screen.queryByRole('button', { name: 'Nueva cita' }),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('combobox', { name: 'Filtrar por doctor' }),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('columnheader', { name: 'Doctor' }),
+    ).not.toBeInTheDocument()
+    expect(screen.getByLabelText('Hasta')).toHaveValue(today)
+    expect(
+      screen.getByRole('combobox', { name: 'Filtrar por paciente' }),
+    ).toBeInTheDocument()
+  })
+
+  it('offers Iniciar only on the startable appointments', async () => {
+    listResponse = () => jsonResponse(pageOf([startable, completed, otherDay]))
+    renderPage(linkedDoctor)
+    await screen.findByText('Ana Pérez')
+
+    expect(
+      within(rowOf('Ana Pérez')).getByRole('button', {
+        name: 'Iniciar consulta de Ana Pérez',
+      }),
+    ).toBeInTheDocument()
+    expect(
+      within(rowOf('Pedro Mora')).queryByRole('button'),
+    ).not.toBeInTheDocument()
+    expect(
+      within(rowOf('Rosa Vela')).queryByRole('button'),
+    ).not.toBeInTheDocument()
+  })
+
+  it('opens the confirmation from the row and from the button', async () => {
+    listResponse = () => jsonResponse(pageOf([startable, completed]))
+    const user = renderPage(linkedDoctor)
+    await screen.findByText('Ana Pérez')
+
+    await user.click(rowOf('Pedro Mora'))
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument()
+
+    await user.click(rowOf('Ana Pérez'))
+    const dialog = within(await screen.findByRole('alertdialog'))
+    expect(dialog.getByText(/Se iniciará la consulta de/)).toHaveTextContent(
+      'Control de presión arterial',
+    )
+    await user.click(dialog.getByRole('button', { name: 'Cancelar' }))
+    await waitFor(() =>
+      expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument(),
+    )
+
+    await user.click(
+      screen.getByRole('button', { name: 'Iniciar consulta de Ana Pérez' }),
+    )
+    expect(await screen.findAllByRole('alertdialog')).toHaveLength(1)
+  })
+
+  it('clears the filters back to today', async () => {
+    renderPage(linkedDoctor)
+    await screen.findByText('03/11/2026')
+    const clear = screen.getByRole('button', { name: 'Limpiar filtros' })
+    expect(clear).toBeDisabled()
+
+    fireEvent.change(screen.getByLabelText('Hasta'), { target: { value: '' } })
+    await waitFor(() => expect(lastListParams().has('to')).toBe(false))
+
+    await userEvent.setup().click(clear)
+
+    await waitFor(() =>
+      expect(lastListParams().toString()).toBe(
+        `pageIndex=0&pageSize=10&from=${today}&to=${today}`,
+      ),
+    )
+    expect(clear).toBeDisabled()
+  })
+
+  it('shows its own message on a 403', async () => {
+    listResponse = () => problemResponse(403)
+    renderPage(linkedDoctor)
+
+    expect(
+      await screen.findByText(
+        'No se pudieron ver tus citas. Si acaban de vincularte a tu ficha, cierra sesión y vuelve a entrar.',
+      ),
+    ).toBeInTheDocument()
   })
 })

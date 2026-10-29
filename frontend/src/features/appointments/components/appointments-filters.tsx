@@ -38,7 +38,10 @@ interface AppointmentsFiltersProps {
   onPatientChange: (patient: SearchComboboxOption | null) => void
   canClear: boolean
   onClear: () => void
-  onCreate: () => void
+  // Sin filtro de doctor para el rol Doctor: siempre son sus citas
+  showDoctorFilter?: boolean
+  // Sin ella no hay botón Nueva cita (el rol Doctor no agenda)
+  onCreate?: () => void
 }
 
 // Filtros del listado (fechas, estado, doctor y paciente) y botón de alta
@@ -56,6 +59,7 @@ export function AppointmentsFilters({
   onPatientChange,
   canClear,
   onClear,
+  showDoctorFilter = true,
   onCreate,
 }: AppointmentsFiltersProps) {
   return (
@@ -70,10 +74,12 @@ export function AppointmentsFilters({
           <X />
           Limpiar filtros
         </Button>
-        <Button type="button" onClick={onCreate}>
-          <Plus />
-          Nueva cita
-        </Button>
+        {onCreate && (
+          <Button type="button" onClick={onCreate}>
+            <Plus />
+            Nueva cita
+          </Button>
+        )}
       </div>
 
       <div className="grid gap-3 md:grid-cols-3">
@@ -127,16 +133,18 @@ export function AppointmentsFilters({
       </div>
 
       <div className="grid gap-3 md:grid-cols-2">
-        <Field>
-          <FieldLabel htmlFor="appointments-doctor">Doctor</FieldLabel>
-          <DoctorCombobox
-            id="appointments-doctor"
-            value={doctor}
-            onChange={onDoctorChange}
-            ariaLabel="Filtrar por doctor"
-            clearable
-          />
-        </Field>
+        {showDoctorFilter && (
+          <Field>
+            <FieldLabel htmlFor="appointments-doctor">Doctor</FieldLabel>
+            <DoctorCombobox
+              id="appointments-doctor"
+              value={doctor}
+              onChange={onDoctorChange}
+              ariaLabel="Filtrar por doctor"
+              clearable
+            />
+          </Field>
+        )}
         <Field>
           <FieldLabel htmlFor="appointments-patient">Paciente</FieldLabel>
           <PatientCombobox

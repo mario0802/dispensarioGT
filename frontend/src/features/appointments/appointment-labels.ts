@@ -1,4 +1,7 @@
-import type { AppointmentStatus } from '@/features/appointments/appointment-types'
+import type {
+  AppointmentDto,
+  AppointmentStatus,
+} from '@/features/appointments/appointment-types'
 import { toLocalIsoDate } from '@/features/patients/patient-labels'
 
 // Nombres de los estados para la interfaz; la API los envía en inglés
@@ -56,4 +59,16 @@ export function toStartLocalRequest(local: string): string {
 // Fecha local del navegador como "yyyy-MM-dd" ("hoy" y el min del input date)
 export function toLocalDateString(date: Date): string {
   return toLocalIsoDate(date)
+}
+
+// Iniciable: Scheduled o Confirmed y de hoy (fecha local); el backend vuelve a validarlo
+export function canStartConsultation(
+  appointment: AppointmentDto,
+  today: string,
+): boolean {
+  return (
+    (appointment.status === 'Scheduled' ||
+      appointment.status === 'Confirmed') &&
+    appointment.startLocal.slice(0, 10) === today
+  )
 }

@@ -1,6 +1,6 @@
 # SPEC 05 — Layout de la app con sidebar y avatar del usuario
 
-> **Status:** Approved
+> **Status:** Implemented
 > **Depends on:** SPEC 01, SPEC 03
 > **Date:** 2026-10-28
 > **Objective:** Sustituir el inicio provisional por un layout con sidebar a la izquierda (menús según el rol, todavía solo **Inicio**) y, al pie, el avatar del usuario con sus iniciales y un menú con el tema y **Cerrar sesión**.

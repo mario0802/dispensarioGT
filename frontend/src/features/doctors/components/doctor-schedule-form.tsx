@@ -3,9 +3,9 @@ import { AlertCircle, Loader2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { FormProvider, useForm } from 'react-hook-form'
 
+import { DiscardChangesDialog } from '@/components/discard-changes-dialog'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
-import { DiscardChangesDialog } from '@/features/doctors/components/discard-changes-dialog'
 import { DoctorScheduleDayRow } from '@/features/doctors/components/doctor-schedule-day-row'
 import { getScheduleSaveErrorMessage } from '@/features/doctors/doctor-messages'
 import {
@@ -125,6 +125,7 @@ export function DoctorScheduleForm({
 
       <DiscardChangesDialog
         open={confirmingDiscard}
+        description="Los cambios del horario no se guardarán."
         onKeepEditing={() => setConfirmingDiscard(false)}
         onDiscard={() => {
           setConfirmingDiscard(false)

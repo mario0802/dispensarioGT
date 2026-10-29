@@ -16,7 +16,7 @@ El desarrollo sigue **SDD (Spec-Driven Development)** con las skills `/spec` y `
 2. Al redactar o implementar un spec, leer las guías de `docs/` de las capas que toca: los specs deben respetar la arquitectura y las convenciones definidas ahí. Si algo es ambiguo, preguntar en vez de suponer.
 3. Al terminar un spec: compilar, ejecutar los tests, verificar los criterios de aceptación, anotar el archivo del spec en el backlog de `docs/PLAN.md` y, si añade o cambia endpoints, actualizar la sección **Endpoints** del `README.md` (ruta, acceso, petición, respuesta y códigos de error). El cambio de estado (`Approved` / `Implemented`) lo hace el usuario.
 4. **Idioma**: todo el código (tipos, métodos, variables, rutas, tablas, mensajes de excepción) en **inglés**. Los **comentarios** y la documentación, en **español**.
-5. No hacer commits ni push salvo que el usuario lo pida.
+5. **No hacer commits ni push a menos que el usuario lo diga explícitamente** ("haz el commit", "sube los cambios"). Crear la rama del spec no es permiso para hacer commit ni push, y al terminar un paso o un spec los cambios se dejan sin confirmar para que el usuario los revise.
 
 ## Stack
 - .NET 10 / C# (última versión) · ASP.NET Core Minimal APIs + **Carter**

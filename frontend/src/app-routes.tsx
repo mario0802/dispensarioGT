@@ -1,5 +1,6 @@
 import { Navigate, Route, Routes } from 'react-router'
 
+import { AppointmentsPage } from '@/features/appointments/appointments-page'
 import { RequireAuth } from '@/features/auth/components/require-auth'
 import { RequireRole } from '@/features/auth/components/require-role'
 import {
@@ -53,6 +54,14 @@ export function AppRoutes() {
           element={
             <RequireRole allowedRoles={['Admin', 'Receptionist']}>
               <PatientsPage />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="appointments"
+          element={
+            <RequireRole allowedRoles={['Admin', 'Receptionist']}>
+              <AppointmentsPage />
             </RequireRole>
           }
         />

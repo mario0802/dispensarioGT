@@ -392,6 +392,51 @@ describe('AppRoutes', () => {
     })
   })
 
+  describe('appointments', () => {
+    // /me devuelve el usuario con el rol pedido y /api/appointments, una página vacía
+    function respondAs(role: UserRole) {
+      storeValidToken()
+      fetchMock.mockImplementation(async (input) =>
+        new URL(String(input)).pathname === '/api/auth/me'
+          ? jsonResponse({ ...testUser, role })
+          : jsonResponse({ pageIndex: 0, pageSize: 10, count: 0, data: [] }),
+      )
+    }
+
+    it.each<UserRole>(['Admin', 'Receptionist'])(
+      'shows Citas to %s and opens its page',
+      async (role) => {
+        respondAs(role)
+        const user = renderRoutes('/')
+        await screen.findByText('Hola, Ana Torres')
+
+        await user.click(screen.getByRole('link', { name: 'Citas' }))
+
+        expect(currentLocation()).toBe('/appointments')
+        expect(
+          within(screen.getByRole('main')).getByRole('heading', {
+            level: 1,
+            name: 'Citas',
+          }),
+        ).toBeInTheDocument()
+        expect(
+          await screen.findByText('No hay citas próximas.'),
+        ).toBeInTheDocument()
+      },
+    )
+
+    it('hides Citas from a Doctor and redirects /appointments to /', async () => {
+      respondAs('Doctor')
+      renderRoutes('/appointments')
+
+      expect(await screen.findByText('Hola, Ana Torres')).toBeInTheDocument()
+      expect(currentLocation()).toBe('/')
+      expect(
+        screen.queryByRole('link', { name: 'Citas' }),
+      ).not.toBeInTheDocument()
+    })
+  })
+
   describe('my schedule', () => {
     // /me devuelve el usuario con el rol pedido, sin ficha de doctor vinculada
     function respondAs(role: UserRole) {

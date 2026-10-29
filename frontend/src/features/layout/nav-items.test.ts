@@ -55,6 +55,23 @@ describe('Pacientes', () => {
   })
 })
 
+describe('Citas', () => {
+  it.each<UserRole>(['Admin', 'Receptionist'])(
+    'is in the menu of %s right after Pacientes',
+    (role) => {
+      const urls = getNavItems(role).map((item) => item.url)
+
+      expect(urls.indexOf('/appointments')).toBe(urls.indexOf('/patients') + 1)
+    },
+  )
+
+  it('is not in the menu of Doctor', () => {
+    const urls = getNavItems('Doctor').map((item) => item.url)
+
+    expect(urls).not.toContain('/appointments')
+  })
+})
+
 describe('Mi horario', () => {
   it('is in the menu of Doctor', () => {
     const urls = getNavItems('Doctor').map((item) => item.url)

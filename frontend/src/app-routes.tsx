@@ -10,6 +10,7 @@ import { LoginPage } from '@/features/auth/login-page'
 import { RegisterPage } from '@/features/auth/register-page'
 import { useAuth } from '@/features/auth/use-auth'
 import { DoctorsPage } from '@/features/doctors/doctors-page'
+import { MySchedulePage } from '@/features/doctors/my-schedule-page'
 import { HomePage } from '@/features/home/home-page'
 import { AppLayout } from '@/features/layout/app-layout'
 
@@ -43,6 +44,14 @@ export function AppRoutes() {
           element={
             <RequireRole allowedRoles={['Admin', 'Receptionist']}>
               <DoctorsPage />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="my-schedule"
+          element={
+            <RequireRole allowedRoles={['Doctor']}>
+              <MySchedulePage />
             </RequireRole>
           }
         />

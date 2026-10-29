@@ -1,4 +1,9 @@
-import { BriefcaseMedical, House, type LucideIcon } from 'lucide-react'
+import {
+  BriefcaseMedical,
+  CalendarClock,
+  House,
+  type LucideIcon,
+} from 'lucide-react'
 
 import type { UserRole } from '@/features/auth/auth-types'
 
@@ -19,10 +24,16 @@ const doctorsNavItem: NavItem = {
   icon: BriefcaseMedical,
 }
 
+const myScheduleNavItem: NavItem = {
+  title: 'Mi horario',
+  url: '/my-schedule',
+  icon: CalendarClock,
+}
+
 // Propios de cada rol: se rellenan en el spec de cada menú (junto con su ruta hija de AppLayout)
 export const roleNavItems: Record<UserRole, NavItem[]> = {
   Admin: [doctorsNavItem],
-  Doctor: [],
+  Doctor: [myScheduleNavItem],
   Receptionist: [doctorsNavItem],
 }
 

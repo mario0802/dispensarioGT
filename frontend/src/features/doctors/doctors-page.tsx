@@ -117,6 +117,7 @@ export function DoctorsPage() {
         <DoctorScheduleDialog
           doctor={scheduleTarget}
           onClose={() => setScheduleTarget(null)}
+          onNotFound={() => void refresh()}
         />
       )}
     </div>

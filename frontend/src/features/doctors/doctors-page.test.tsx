@@ -422,7 +422,16 @@ describe('DoctorsPage', () => {
     ).toBeInTheDocument()
   })
 
-  it('opens the schedule dialog without calling the API', async () => {
+  it('opens the schedule dialog and loads the schedule', async () => {
+    otherResponse = (request) =>
+      request.url.pathname === `/api/doctors/${luis.id}/schedule`
+        ? jsonResponse({
+            doctorId: luis.id,
+            blocks: [
+              { dayOfWeek: 'Monday', startTime: '08:00', endTime: '12:00' },
+            ],
+          })
+        : new Response(null, { status: 204 })
     const user = renderPage('Receptionist')
     await screen.findByText('Luis Mora')
 
@@ -433,14 +442,17 @@ describe('DoctorsPage', () => {
     const dialog = within(await screen.findByRole('dialog'))
     expect(dialog.getByText('Cronograma de Luis Mora')).toBeInTheDocument()
     expect(dialog.getByText('Pediatría')).toBeInTheDocument()
+    expect(await dialog.findByText('08:00 – 12:00')).toBeInTheDocument()
     expect(
-      dialog.getByText(
-        'El cronograma de disponibilidad estará disponible próximamente.',
+      requests.some(
+        (request) =>
+          request.method === 'GET' &&
+          request.url.pathname === `/api/doctors/${luis.id}/schedule`,
       ),
-    ).toBeInTheDocument()
-    expect(requests).toHaveLength(1)
+    ).toBe(true)
 
-    await user.click(dialog.getByRole('button', { name: 'Cerrar' }))
+    // El primero es el botón del pie; el segundo, la X del modal
+    await user.click(dialog.getAllByRole('button', { name: 'Cerrar' })[0])
     await waitFor(() =>
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument(),
     )

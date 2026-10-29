@@ -14,6 +14,7 @@ import {
 import { AppRoutes } from '@/app-routes'
 import { ThemeProvider } from '@/components/theme-provider'
 import { AuthProvider } from '@/features/auth/auth-provider'
+import type { UserRole } from '@/features/auth/auth-types'
 import { TOKEN_STORAGE_KEY } from '@/features/auth/token-storage'
 import { SIDEBAR_COOKIE_NAME } from '@/features/layout/sidebar-cookie'
 import { setAccessTokenProvider } from '@/lib/api/access-token'
@@ -298,6 +299,51 @@ describe('AppRoutes', () => {
 
       expect(screen.queryByText(registeredNotice)).not.toBeInTheDocument()
       expect(screen.getByLabelText('Email')).toHaveValue('')
+    })
+  })
+
+  describe('doctors', () => {
+    // /me devuelve el usuario con el rol pedido y /api/doctors, una página vacía
+    function respondAs(role: UserRole) {
+      storeValidToken()
+      fetchMock.mockImplementation(async (input) =>
+        new URL(String(input)).pathname === '/api/auth/me'
+          ? jsonResponse({ ...testUser, role })
+          : jsonResponse({ pageIndex: 0, pageSize: 10, count: 0, data: [] }),
+      )
+    }
+
+    it.each<UserRole>(['Admin', 'Receptionist'])(
+      'shows Doctores to %s and opens its page',
+      async (role) => {
+        respondAs(role)
+        const user = renderRoutes('/')
+        await screen.findByText('Hola, Ana Torres')
+
+        await user.click(screen.getByRole('link', { name: 'Doctores' }))
+
+        expect(currentLocation()).toBe('/doctors')
+        expect(
+          within(screen.getByRole('main')).getByRole('heading', {
+            level: 1,
+            name: 'Doctores',
+          }),
+        ).toBeInTheDocument()
+        expect(
+          await screen.findByText('Todavía no hay doctores registrados.'),
+        ).toBeInTheDocument()
+      },
+    )
+
+    it('hides Doctores from a Doctor and redirects /doctors to /', async () => {
+      respondAs('Doctor')
+      renderRoutes('/doctors')
+
+      expect(await screen.findByText('Hola, Ana Torres')).toBeInTheDocument()
+      expect(currentLocation()).toBe('/')
+      expect(
+        screen.queryByRole('link', { name: 'Doctores' }),
+      ).not.toBeInTheDocument()
     })
   })
 })

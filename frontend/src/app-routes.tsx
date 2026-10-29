@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router'
 
 import { RequireAuth } from '@/features/auth/components/require-auth'
+import { RequireRole } from '@/features/auth/components/require-role'
 import {
   SessionErrorScreen,
   SessionLoadingScreen,
@@ -8,6 +9,7 @@ import {
 import { LoginPage } from '@/features/auth/login-page'
 import { RegisterPage } from '@/features/auth/register-page'
 import { useAuth } from '@/features/auth/use-auth'
+import { DoctorsPage } from '@/features/doctors/doctors-page'
 import { HomePage } from '@/features/home/home-page'
 import { AppLayout } from '@/features/layout/app-layout'
 
@@ -36,6 +38,14 @@ export function AppRoutes() {
         }
       >
         <Route index element={<HomePage />} />
+        <Route
+          path="doctors"
+          element={
+            <RequireRole allowedRoles={['Admin', 'Receptionist']}>
+              <DoctorsPage />
+            </RequireRole>
+          }
+        />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

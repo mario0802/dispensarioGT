@@ -6,7 +6,7 @@ Guía para Claude Code al trabajar en `frontend/`. **Este archivo es la única g
 
 Una SPA para el personal del dispensario médico que consume la API del backend: login, gestión de usuarios, doctores (y su horario), pacientes, agenda de citas y consultas. Cada rol ve solo lo que la API le permite (`Admin`, `Doctor`, `Receptionist`).
 
-> **Estado actual:** proyecto Vite inicializado (spec 01): React + TypeScript, Tailwind, shadcn/ui (`slate`, con `button`, `dropdown-menu`, `card`, `input`, `label`, `alert`, `field`, `select`, `separator`, `sidebar`, `sheet`, `tooltip`, `skeleton` y `avatar`), modo oscuro (`ThemeProvider`), `VITE_API_BASE_URL` tipada en `src/lib/config.ts`, ESLint, Prettier y Vitest. Cliente HTTP propio sobre `fetch` (`api`, `ApiError`, proveedor de token y manejador del 401 en `src/lib/api/`) y hook `useApi` en `src/hooks/` (spec 02). Login y sesión (spec 03): React Router con `/login`, `/` protegida y comodín a `/`; token en `localStorage` y usuario de `GET /api/auth/me` en `AuthProvider`/`useAuth`; un 401 con token cierra la sesión. Registro (spec 04): `/register` pública da de alta un recepcionista con `POST /api/auth/register` y lleva a `/login` con el aviso de cuenta creada y el email precargado (en el `state` del router). Layout de la app (spec 05): las rutas protegidas cuelgan de `AppLayout` (`features/layout/`), con sidebar a la izquierda (plegable a iconos, `Sheet` en móvil, estado en la cookie `sidebar_state`), menús por rol (de momento solo **Inicio**), barra superior con el título del menú activo y, al pie, el avatar con las iniciales y un menú con el tema y **Cerrar sesión**; el inicio (`/`) muestra la bienvenida.
+> **Estado actual:** proyecto Vite inicializado (spec 01): React + TypeScript, Tailwind, shadcn/ui (`slate`, con `button`, `dropdown-menu`, `card`, `input`, `label`, `alert`, `field`, `select`, `separator`, `sidebar`, `sheet`, `tooltip`, `skeleton`, `avatar`, `dialog`, `alert-dialog`, `table`, `badge` y `sonner`), modo oscuro (`ThemeProvider`), `VITE_API_BASE_URL` tipada en `src/lib/config.ts`, ESLint, Prettier y Vitest. Cliente HTTP propio sobre `fetch` (`api`, `ApiError`, proveedor de token y manejador del 401 en `src/lib/api/`) y hook `useApi` en `src/hooks/` (spec 02). Login y sesión (spec 03): React Router con `/login`, `/` protegida y comodín a `/`; token en `localStorage` y usuario de `GET /api/auth/me` en `AuthProvider`/`useAuth`; un 401 con token cierra la sesión. Registro (spec 04): `/register` pública da de alta un recepcionista con `POST /api/auth/register` y lleva a `/login` con el aviso de cuenta creada y el email precargado (en el `state` del router). Layout de la app (spec 05): las rutas protegidas cuelgan de `AppLayout` (`features/layout/`), con sidebar a la izquierda (plegable a iconos, `Sheet` en móvil, estado en la cookie `sidebar_state`), menús por rol, barra superior con el título del menú activo y, al pie, el avatar con las iniciales y un menú con el tema y **Cerrar sesión**; el inicio (`/`) muestra la bienvenida. Menú **Doctores** (spec 06, `/doctors`, Admin y Recepción): tabla paginada con búsqueda y filtro de estado; el Admin da de alta, edita, activa y desactiva (modales y confirmaciones), y cada fila abre el modal del cronograma (de momento solo un aviso). Guard `RequireRole` (un rol no permitido vuelve a `/`) y toasts con `sonner` (`Toaster` en `AppLayout`).
 
 ## Reglas de trabajo (obligatorias)
 
@@ -24,6 +24,7 @@ Una SPA para el personal del dispensario médico que consume la API del backend:
 
 - **React 19** + **Vite 8** (`@vitejs/plugin-react`) + **TypeScript 6** (modo estricto, que TS 6 activa por defecto) · gestor de paquetes **pnpm** (`packageManager` en `package.json`)
 - **Tailwind CSS 4** (`@tailwindcss/vite`) + **shadcn/ui** (componentes copiados al proyecto, no como dependencia; primitivas de `radix-ui`, iconos `lucide-react`)
+- Avisos (toasts) con **sonner** (spec 06): `toast.success`/`toast.error` de `sonner`; el `Toaster` de `components/ui/sonner.tsx` usa el `useTheme` propio en lugar de `next-themes` (no instalado)
 - **ESLint** (flat config: `typescript-eslint`, `react-hooks`, `react-refresh`, y `eslint-config-prettier` al final) · **Prettier** con `prettier-plugin-tailwindcss` (sin punto y coma, comillas simples)
 - **Vitest** + **Testing Library** + **jsdom** (configuración en el bloque `test` de `vite.config.ts`)
 - Estado de servidor con **`fetch` propio** + el hook `useApi` (spec 02), sin TanStack Query
@@ -48,22 +49,24 @@ frontend/
    │  ├─ <pagina>-page.tsx   # las páginas de la feature, en la raíz de su carpeta (p. ej. login-page.tsx)
    │  └─ components/         # componentes propios de la feature (p. ej. login-form.tsx)
    ├─ features/auth/      # auth-types, auth-api, role-labels, document-type-labels, token-storage, auth-provider, use-auth, login-page, register-page
-   │  └─ components/      # login-form, register-form, require-auth (guard), session-screens (carga y error del arranque)
+   │  └─ components/      # login-form, register-form, require-auth y require-role (guards), session-screens (carga y error del arranque)
    ├─ features/home/      # home-page: bienvenida (ruta index de AppLayout)
-   ├─ features/layout/    # app-layout (ruta layout con Outlet), nav-items (menús por rol), initials, sidebar-cookie
+   ├─ features/doctors/   # doctor-types, doctors-api, doctor-messages, use-debounced-value, doctors-page (/doctors)
+   │  └─ components/      # doctors-toolbar, doctors-table, doctor-row-actions, doctor-form, doctor-form-dialog, doctor-status-dialog, doctor-schedule-dialog
+   ├─ features/layout/    # app-layout (ruta layout con Outlet y Toaster), nav-items (menús por rol), initials, sidebar-cookie
    │  └─ components/      # app-sidebar, nav-main, nav-user (avatar y su menú: tema y cerrar sesión), user-avatar
    ├─ components/         # componentes compartidos entre features (theme-provider)
    │  └─ ui/              # generados por shadcn/ui
    ├─ hooks/              # hooks compartidos entre features (use-api; use-mobile, de shadcn, lo usa sidebar)
    ├─ lib/                # utils (cn), config
    │  └─ api/             # cliente HTTP: api-client, api-error, access-token, unauthorized-handler (sin barrel)
-   └─ test/               # setup de Vitest (con hasPointerCapture/scrollIntoView simulados para el Select de Radix) y utilidades de test (matchMedia simulado, api-responses)
+   └─ test/               # setup de Vitest (con hasPointerCapture/scrollIntoView/ResizeObserver simulados para Radix) y utilidades de test (matchMedia simulado, api-responses, auth-context)
 ```
 - Alias `@/` → `src/`. Archivos en kebab-case (como los de shadcn); componentes en PascalCase.
 - **Organización de cada feature**: en la raíz de `features/<módulo>/` van solo las páginas (y, cuando existan, los archivos propios del módulo como su cliente de API o sus tipos); todos los componentes que solo usa esa feature van en `features/<módulo>/components/`, para que la carpeta no se llene de ruido. Ejemplo: `features/auth/login-page.tsx` y `features/auth/components/login-form.tsx`. Si un componente lo usan dos o más features, se mueve a `src/components/`.
-- **Añadir un menú**: su `NavItem` (`title`, `url`, icono de `lucide-react`) en `roleNavItems` del rol (`features/layout/nav-items.ts`) y su página como ruta hija de `AppLayout` en `app-routes.tsx`. El título de la barra superior sale del `NavItem` activo (`/` solo exacta; los demás, con su ruta o sus hijas).
+- **Añadir un menú**: su `NavItem` (`title`, `url`, icono de `lucide-react`) en `roleNavItems` del rol (`features/layout/nav-items.ts`) y su página como ruta hija de `AppLayout` en `app-routes.tsx`. El título de la barra superior sale del `NavItem` activo (`/` solo exacta; los demás, con su ruta o sus hijas). Si la ruta es solo de algunos roles, se envuelve la página en `RequireRole allowedRoles={[...]}` (`features/auth/components/require-role`), que lleva a `/` a los demás; las acciones de escritura se ocultan según `user.role`.
 - **Sesión**: las demás features la leen con `useAuth()` (`@/features/auth/use-auth`): `status` (`loading` | `error` | `authenticated` | `anonymous`), `user` (`CurrentUserDto`), `login`, `logout` y `retry`. Las rutas protegidas se envuelven en `RequireAuth`.
-- Los tests van junto al código (`*.test.ts(x)`), importan `describe`/`it`/`expect` de `vitest` (sin globals) y simulan `matchMedia` con `@/test/match-media`. Las respuestas simuladas de la API (`jsonResponse`, `problemResponse`, `testUser`, `storeValidToken`…) están en `@/test/api-responses`. Los tests que montan `AuthProvider` limpian en `afterEach` `localStorage`, `setAccessTokenProvider(null)` y `setUnauthorizedHandler(null)`.
+- Los tests van junto al código (`*.test.ts(x)`), importan `describe`/`it`/`expect` de `vitest` (sin globals) y simulan `matchMedia` con `@/test/match-media`. Las respuestas simuladas de la API (`jsonResponse`, `problemResponse`, `testUser`, `storeValidToken`…) están en `@/test/api-responses`. Los tests que montan `AuthProvider` limpian en `afterEach` `localStorage`, `setAccessTokenProvider(null)` y `setUnauthorizedHandler(null)`. Los que solo necesitan el usuario de `useAuth` usan `TestAuthProvider` (`@/test/auth-context`); las páginas con tooltips fuera del sidebar, un `TooltipProvider`, y las que comprueban toasts montan `<Toaster />`.
 
 ## Contrato con la API
 
@@ -103,6 +106,8 @@ pnpm test           # test:watch en modo watch
 - Vitest corre en modo `test` y no carga `.env.development`: `VITE_API_BASE_URL` para los tests está en el bloque `test.env` de `vite.config.ts`.
 - `sidebar.tsx` y `use-mobile.ts` se retocaron tras generarlos para las reglas de `react-hooks` (`purity` y `set-state-in-effect`): al volver a añadirlos con el CLI, repetir el ajuste. El `SidebarTrigger` y el `SidebarRail` reciben `aria-label` en español (el texto `sr-only` de shadcn está en inglés).
 - Prettier no formatea los `.md` ni `src/components/ui` (ver `.prettierignore`).
+- Con `core.autocrlf=true` (Windows), los archivos salen con CRLF y `pnpm format:check` los marca todos aunque solo cambie el fin de línea: para comprobar el estilo en local, `pnpm exec prettier --check . --end-of-line auto`. No ejecutar `prettier --write` sobre todo `src`: convierte a LF archivos que no se han tocado.
+- El CLI de shadcn añade `next-themes` con `sonner` y pregunta si sobrescribe `button.tsx`: responder que no y quitar `next-themes` (`pnpm remove next-themes`). El botón X de `dialog.tsx` tiene el texto `sr-only` "Cerrar".
 - pnpm 11 no instala versiones publicadas hace menos de un día (`minimumReleaseAge`): si lo intenta, añade una excepción en un `pnpm-workspace.yaml` nuevo. Mejor elegir la versión anterior que crear ese archivo.
 
 ## Backlog
@@ -114,6 +119,7 @@ pnpm test           # test:watch en modo watch
 | 03  | Página de login y sesión (React Router, token en `localStorage`, `/api/auth/me`, 401 global)  | `specs/03-login-and-session.md` |
 | 04  | Página de registro (`/register`, `POST /api/auth/register`, aviso y email precargado en el login) | `specs/04-register-page.md` |
 | 05  | Layout con sidebar (menús por rol, solo **Inicio**) y avatar con iniciales, tema y cerrar sesión | `specs/05-app-layout-and-sidebar.md` |
+| 06  | Menú **Doctores**: listado, alta, edición, activación/desactivación y modal (vacío) del cronograma | `specs/06-doctors-menu.md` |
 
 Las siguientes filas se añaden al planificar (un menú o módulo por fila, empezando por los de recepción).
 

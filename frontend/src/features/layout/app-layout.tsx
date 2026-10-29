@@ -6,6 +6,7 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from '@/components/ui/sidebar'
+import { Toaster } from '@/components/ui/sonner'
 import { useAuth } from '@/features/auth/use-auth'
 import { AppSidebar } from '@/features/layout/components/app-sidebar'
 import { getNavItems, isNavItemActive } from '@/features/layout/nav-items'
@@ -46,6 +47,8 @@ export function AppLayout() {
           <Outlet />
         </div>
       </SidebarInset>
+      {/* Avisos (toasts) del área con sesión */}
+      <Toaster richColors position="top-right" />
     </SidebarProvider>
   )
 }

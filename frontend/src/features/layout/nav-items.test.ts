@@ -21,6 +21,23 @@ describe('getNavItems', () => {
   })
 })
 
+describe('Doctores', () => {
+  it.each<UserRole>(['Admin', 'Receptionist'])(
+    'is in the menu of %s',
+    (role) => {
+      const urls = getNavItems(role).map((item) => item.url)
+
+      expect(urls).toContain('/doctors')
+    },
+  )
+
+  it('is not in the menu of Doctor', () => {
+    const urls = getNavItems('Doctor').map((item) => item.url)
+
+    expect(urls).not.toContain('/doctors')
+  })
+})
+
 describe('isNavItemActive', () => {
   const home = { title: 'Inicio', url: '/', icon: House }
   const patients = { title: 'Pacientes', url: '/patients', icon: House }

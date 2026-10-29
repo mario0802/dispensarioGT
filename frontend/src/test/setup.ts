@@ -14,6 +14,15 @@ if (!Element.prototype.scrollIntoView) {
   Element.prototype.scrollIntoView = () => {}
 }
 
+// jsdom tampoco tiene ResizeObserver, que usan los popper de Radix (Tooltip) al abrirse
+if (!('ResizeObserver' in globalThis)) {
+  globalThis.ResizeObserver = class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  }
+}
+
 // Sin globals de Vitest, Testing Library no desmonta solo: se limpia tras cada test
 afterEach(() => {
   cleanup()

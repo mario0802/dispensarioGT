@@ -1,4 +1,4 @@
-import { House, type LucideIcon } from 'lucide-react'
+import { BriefcaseMedical, House, type LucideIcon } from 'lucide-react'
 
 import type { UserRole } from '@/features/auth/auth-types'
 
@@ -13,11 +13,17 @@ export const commonNavItems: NavItem[] = [
   { title: 'Inicio', url: '/', icon: House },
 ]
 
+const doctorsNavItem: NavItem = {
+  title: 'Doctores',
+  url: '/doctors',
+  icon: BriefcaseMedical,
+}
+
 // Propios de cada rol: se rellenan en el spec de cada menú (junto con su ruta hija de AppLayout)
 export const roleNavItems: Record<UserRole, NavItem[]> = {
-  Admin: [],
+  Admin: [doctorsNavItem],
   Doctor: [],
-  Receptionist: [],
+  Receptionist: [doctorsNavItem],
 }
 
 // Menús del sidebar: los comunes seguidos de los del rol

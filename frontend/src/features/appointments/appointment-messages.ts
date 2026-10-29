@@ -45,13 +45,19 @@ export function getAvailableSlotsErrorMessage(error: ApiError): string {
   return unexpectedMessage
 }
 
-// Detalle del aviso cuando falla la carga del listado
-export function getAppointmentsLoadErrorMessage(error: ApiError): string {
+// Detalle del aviso cuando falla la carga del listado. Al doctor, un 403 suele venir de un
+// token emitido antes de vincularlo a su ficha (sin el claim doctor_id)
+export function getAppointmentsLoadErrorMessage(
+  error: ApiError,
+  isDoctor = false,
+): string {
   if (error.kind === 'network') {
     return networkMessage
   }
   if (error.status === 403) {
-    return forbiddenMessage
+    return isDoctor
+      ? 'No se pudieron ver tus citas. Si acaban de vincularte a tu ficha, cierra sesión y vuelve a entrar.'
+      : forbiddenMessage
   }
   return unexpectedMessage
 }

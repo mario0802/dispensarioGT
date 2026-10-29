@@ -1,6 +1,6 @@
 # SPEC 09 — Menú Citas: listado y agendamiento
 
-> **Status:** Approved
+> **Status:** Implemented
 > **Depends on:** SPEC 02, SPEC 03, SPEC 05, SPEC 06, SPEC 08
 > **Date:** 2026-10-29
 > **Objective:** Añadir el menú **Citas** (Admin y Recepción) con el listado paginado y filtrable de citas y un modal para agendar una nueva eligiendo paciente, doctor, fecha y uno de los slots libres del doctor.

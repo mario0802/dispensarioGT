@@ -1,6 +1,6 @@
 # SPEC 08 — Menú Pacientes: listado, alta, edición y activación
 
-> **Status:** Approved
+> **Status:** Implemented
 > **Depends on:** SPEC 02, SPEC 03, SPEC 05, SPEC 06
 > **Date:** 2026-10-28
 > **Objective:** Añadir el menú **Pacientes** (Admin y Recepción) con el listado paginado de pacientes, un botón para darlos de alta, un botón por fila que abre el modal de edición y la activación y desactivación con confirmación.

@@ -425,16 +425,51 @@ describe('AppRoutes', () => {
       },
     )
 
-    it('hides Citas from a Doctor and redirects /appointments to /', async () => {
+    it('shows Citas to a Doctor and opens its page', async () => {
       respondAs('Doctor')
-      renderRoutes('/appointments')
+      const user = renderRoutes('/')
+      await screen.findByText('Hola, Ana Torres')
 
-      expect(await screen.findByText('Hola, Ana Torres')).toBeInTheDocument()
-      expect(currentLocation()).toBe('/')
+      await user.click(screen.getByRole('link', { name: 'Citas' }))
+
+      expect(currentLocation()).toBe('/appointments')
       expect(
-        screen.queryByRole('link', { name: 'Citas' }),
-      ).not.toBeInTheDocument()
+        within(screen.getByRole('main')).getByRole('heading', {
+          level: 1,
+          name: 'Citas',
+        }),
+      ).toBeInTheDocument()
     })
+  })
+
+  describe('consultation', () => {
+    function respondAs(role: UserRole) {
+      storeValidToken()
+      fetchMock.mockImplementation(async () =>
+        jsonResponse({ ...testUser, role }),
+      )
+    }
+
+    it('opens the consultation page for a Doctor', async () => {
+      respondAs('Doctor')
+      renderRoutes('/consultations/0193f2e0')
+
+      expect(
+        await screen.findByRole('heading', { name: 'Consulta' }),
+      ).toBeInTheDocument()
+      expect(currentLocation()).toBe('/consultations/0193f2e0')
+    })
+
+    it.each<UserRole>(['Admin', 'Receptionist'])(
+      'redirects %s from the consultation page to /',
+      async (role) => {
+        respondAs(role)
+        renderRoutes('/consultations/0193f2e0')
+
+        expect(await screen.findByText('Hola, Ana Torres')).toBeInTheDocument()
+        expect(currentLocation()).toBe('/')
+      },
+    )
   })
 
   describe('my schedule', () => {

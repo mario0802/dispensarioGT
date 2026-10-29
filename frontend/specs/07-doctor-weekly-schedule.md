@@ -1,6 +1,6 @@
 # SPEC 07 — Horario semanal del doctor: ver y editar
 
-> **Status:** Approved
+> **Status:** Implemented
 > **Depends on:** SPEC 02, SPEC 03, SPEC 05, SPEC 06
 > **Date:** 2026-10-28
 > **Objective:** Sustituir el modal provisional del cronograma por el horario semanal del doctor en siete filas (lunes a domingo), visible para Admin y Recepción y editable en horas completas por el Admin y, desde un menú nuevo **Mi horario**, por el propio doctor.

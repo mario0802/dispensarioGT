@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import {
   appointmentStatuses,
+  canStartConsultation,
   formatLocalDate,
   formatLocalTime,
   formatLocalTimeRange,
@@ -9,6 +10,7 @@ import {
   toLocalDateString,
   toStartLocalRequest,
 } from '@/features/appointments/appointment-labels'
+import type { AppointmentDto } from '@/features/appointments/appointment-types'
 
 describe('statusLabels', () => {
   it('translates the five statuses in order', () => {
@@ -53,5 +55,44 @@ describe('toLocalDateString', () => {
   it('uses the local date with zero padding', () => {
     expect(toLocalDateString(new Date(2026, 0, 5, 23, 30))).toBe('2026-01-05')
     expect(toLocalDateString(new Date(2026, 10, 3, 0, 5))).toBe('2026-11-03')
+  })
+})
+
+describe('canStartConsultation', () => {
+  const today = '2026-11-03'
+  const appointment: AppointmentDto = {
+    id: '0193f1d0-0000-0000-0000-000000000001',
+    patientId: '7b2e0000-0000-0000-0000-000000000001',
+    patientFullName: 'Ana Pérez',
+    doctorId: '3c1a0000-0000-0000-0000-000000000001',
+    doctorFullName: 'Luis Andrade',
+    startUtc: '2026-11-03T14:30:00Z',
+    endUtc: '2026-11-03T15:00:00Z',
+    startLocal: '2026-11-03T09:30:00',
+    endLocal: '2026-11-03T10:00:00',
+    reason: 'Control',
+    status: 'Scheduled',
+    cancellationReason: null,
+    createdAtUtc: '2026-10-27T15:02:11Z',
+  }
+
+  it.each(['Scheduled', 'Confirmed'] as const)(
+    'allows a %s appointment of today',
+    (status) => {
+      expect(canStartConsultation({ ...appointment, status }, today)).toBe(true)
+    },
+  )
+
+  it.each(['Completed', 'Cancelled', 'NoShow'] as const)(
+    'does not allow a %s appointment of today',
+    (status) => {
+      expect(canStartConsultation({ ...appointment, status }, today)).toBe(
+        false,
+      )
+    },
+  )
+
+  it('does not allow an appointment of another day', () => {
+    expect(canStartConsultation(appointment, '2026-11-04')).toBe(false)
   })
 })

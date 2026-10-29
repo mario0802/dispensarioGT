@@ -65,10 +65,11 @@ describe('Citas', () => {
     },
   )
 
-  it('is not in the menu of Doctor', () => {
+  it('is in the menu of Doctor right before Mi horario', () => {
     const urls = getNavItems('Doctor').map((item) => item.url)
 
-    expect(urls).not.toContain('/appointments')
+    expect(urls.indexOf('/appointments')).toBe(urls.indexOf('/my-schedule') - 1)
+    expect(urls).toContain('/appointments')
   })
 })
 

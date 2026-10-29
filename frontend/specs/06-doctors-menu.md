@@ -1,6 +1,6 @@
 # SPEC 06 — Menú Doctores: listado, alta, edición y activación
 
-> **Status:** Approved
+> **Status:** Implemented
 > **Depends on:** SPEC 02, SPEC 03, SPEC 05
 > **Date:** 2026-10-28
 > **Objective:** Añadir el menú **Doctores** (Admin y Recepción) con el listado paginado de doctores, su alta, edición, activación y desactivación (solo Admin) y un botón por fila que abre el modal, todavía vacío, del cronograma de disponibilidad.

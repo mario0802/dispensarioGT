@@ -346,4 +346,47 @@ describe('AppRoutes', () => {
       ).not.toBeInTheDocument()
     })
   })
+
+  describe('my schedule', () => {
+    // /me devuelve el usuario con el rol pedido, sin ficha de doctor vinculada
+    function respondAs(role: UserRole) {
+      storeValidToken()
+      fetchMock.mockImplementation(async () =>
+        jsonResponse({ ...testUser, role, doctorId: null }),
+      )
+    }
+
+    it('shows Mi horario to a Doctor and opens its page', async () => {
+      respondAs('Doctor')
+      const user = renderRoutes('/')
+      await screen.findByText('Hola, Ana Torres')
+
+      await user.click(screen.getByRole('link', { name: 'Mi horario' }))
+
+      expect(currentLocation()).toBe('/my-schedule')
+      expect(
+        within(screen.getByRole('main')).getByRole('heading', {
+          level: 1,
+          name: 'Mi horario',
+        }),
+      ).toBeInTheDocument()
+      expect(
+        screen.getByText(/Tu usuario todavía no está vinculado/),
+      ).toBeInTheDocument()
+    })
+
+    it.each<UserRole>(['Admin', 'Receptionist'])(
+      'hides Mi horario from %s and redirects /my-schedule to /',
+      async (role) => {
+        respondAs(role)
+        renderRoutes('/my-schedule')
+
+        expect(await screen.findByText('Hola, Ana Torres')).toBeInTheDocument()
+        expect(currentLocation()).toBe('/')
+        expect(
+          screen.queryByRole('link', { name: 'Mi horario' }),
+        ).not.toBeInTheDocument()
+      },
+    )
+  })
 })

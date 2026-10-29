@@ -1,4 +1,8 @@
 import type {
+  DoctorScheduleDto,
+  SetDoctorScheduleRequest,
+} from '@/features/doctors/doctor-schedule-types'
+import type {
   CreateDoctorResponse,
   DoctorDto,
   DoctorListQuery,
@@ -25,3 +29,11 @@ export const activateDoctor = (id: string) =>
 
 export const deactivateDoctor = (id: string) =>
   api.post(`/api/doctors/${id}/deactivate`)
+
+export const getDoctorSchedule = (id: string) =>
+  api.get<DoctorScheduleDto>(`/api/doctors/${id}/schedule`)
+
+export const setDoctorSchedule = (
+  id: string,
+  request: SetDoctorScheduleRequest,
+) => api.put(`/api/doctors/${id}/schedule`, request)

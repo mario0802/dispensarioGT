@@ -46,3 +46,18 @@ export function getDoctorFullName(
 ): string {
   return `${doctor.firstName} ${doctor.lastName}`
 }
+
+// Errores al guardar el horario; el 404 lo trata quien abre el panel. En Mi horario, el 403
+// suele ser un token emitido antes de vincular el usuario con su ficha (sin el claim doctor_id)
+export function getScheduleSaveErrorMessage(
+  error: ApiError,
+  isOwnSchedule: boolean,
+): string {
+  if (error.status === 400) {
+    return 'Revisa el horario: algún bloque no cumple las reglas del dispensario.'
+  }
+  if (error.status === 403 && isOwnSchedule) {
+    return 'No puedes editar este horario. Si tu usuario se vinculó hace poco, cierra sesión y vuelve a entrar.'
+  }
+  return getDoctorActionErrorMessage(error)
+}

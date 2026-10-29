@@ -11,13 +11,16 @@ import { Button } from '@/components/ui/button'
 
 interface DiscardChangesDialogProps {
   open: boolean
+  // Qué se pierde, p. ej. "Los cambios del horario no se guardarán."
+  description: string
   onKeepEditing: () => void
   onDiscard: () => void
 }
 
-// Confirmación antes de perder los cambios del horario sin guardar
+// Confirmación antes de perder cambios sin guardar (horario, consulta)
 export function DiscardChangesDialog({
   open,
+  description,
   onKeepEditing,
   onDiscard,
 }: DiscardChangesDialogProps) {
@@ -29,9 +32,7 @@ export function DiscardChangesDialog({
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>¿Descartar los cambios?</AlertDialogTitle>
-          <AlertDialogDescription>
-            Los cambios del horario no se guardarán.
-          </AlertDialogDescription>
+          <AlertDialogDescription>{description}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Seguir editando</AlertDialogCancel>

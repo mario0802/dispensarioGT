@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
 
+import { DiscardChangesDialog } from '@/components/discard-changes-dialog'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -10,7 +11,6 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { useAuth } from '@/features/auth/use-auth'
-import { DiscardChangesDialog } from '@/features/doctors/components/discard-changes-dialog'
 import { DoctorSchedulePanel } from '@/features/doctors/components/doctor-schedule-panel'
 import {
   doctorNotFoundMessage,
@@ -79,6 +79,7 @@ export function DoctorScheduleDialog({
 
       <DiscardChangesDialog
         open={confirmingClose}
+        description="Los cambios del horario no se guardarán."
         onKeepEditing={() => setConfirmingClose(false)}
         onDiscard={() => {
           setConfirmingClose(false)

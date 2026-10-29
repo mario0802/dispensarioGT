@@ -454,8 +454,9 @@ describe('AppRoutes', () => {
       respondAs('Doctor')
       renderRoutes('/consultations/0193f2e0')
 
+      // testUser no tiene ficha vinculada: la página muestra el aviso en vez de la consulta
       expect(
-        await screen.findByRole('heading', { name: 'Consulta' }),
+        await screen.findByText(/no está vinculado a una ficha de doctor/),
       ).toBeInTheDocument()
       expect(currentLocation()).toBe('/consultations/0193f2e0')
     })

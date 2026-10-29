@@ -14,7 +14,7 @@ import {
 import { DoctorsTable } from '@/features/doctors/components/doctors-table'
 import type { DoctorDto } from '@/features/doctors/doctor-types'
 import { getDoctors } from '@/features/doctors/doctors-api'
-import { useDebouncedValue } from '@/features/doctors/use-debounced-value'
+import { useDebouncedValue } from '@/hooks/use-debounced-value'
 import { useApi } from '@/hooks/use-api'
 
 const pageSize = 10

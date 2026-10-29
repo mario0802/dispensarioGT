@@ -17,11 +17,9 @@ import {
   getDoctorFullName,
   getDoctorsLoadErrorMessage,
 } from '@/features/doctors/doctor-messages'
-import type {
-  DoctorDto,
-  PaginatedResult,
-} from '@/features/doctors/doctor-types'
+import type { DoctorDto } from '@/features/doctors/doctor-types'
 import type { ApiError } from '@/lib/api/api-error'
+import type { PaginatedResult } from '@/lib/api/paginated-result'
 
 const columnCount = 7
 

@@ -38,6 +38,23 @@ describe('Doctores', () => {
   })
 })
 
+describe('Pacientes', () => {
+  it.each<UserRole>(['Admin', 'Receptionist'])(
+    'is in the menu of %s',
+    (role) => {
+      const urls = getNavItems(role).map((item) => item.url)
+
+      expect(urls).toContain('/patients')
+    },
+  )
+
+  it('is not in the menu of Doctor', () => {
+    const urls = getNavItems('Doctor').map((item) => item.url)
+
+    expect(urls).not.toContain('/patients')
+  })
+})
+
 describe('Mi horario', () => {
   it('is in the menu of Doctor', () => {
     const urls = getNavItems('Doctor').map((item) => item.url)

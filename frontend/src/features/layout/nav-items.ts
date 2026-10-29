@@ -2,6 +2,7 @@ import {
   BriefcaseMedical,
   CalendarClock,
   House,
+  Users,
   type LucideIcon,
 } from 'lucide-react'
 
@@ -24,6 +25,12 @@ const doctorsNavItem: NavItem = {
   icon: BriefcaseMedical,
 }
 
+const patientsNavItem: NavItem = {
+  title: 'Pacientes',
+  url: '/patients',
+  icon: Users,
+}
+
 const myScheduleNavItem: NavItem = {
   title: 'Mi horario',
   url: '/my-schedule',
@@ -32,9 +39,9 @@ const myScheduleNavItem: NavItem = {
 
 // Propios de cada rol: se rellenan en el spec de cada menú (junto con su ruta hija de AppLayout)
 export const roleNavItems: Record<UserRole, NavItem[]> = {
-  Admin: [doctorsNavItem],
+  Admin: [doctorsNavItem, patientsNavItem],
   Doctor: [myScheduleNavItem],
-  Receptionist: [doctorsNavItem],
+  Receptionist: [doctorsNavItem, patientsNavItem],
 }
 
 // Menús del sidebar: los comunes seguidos de los del rol

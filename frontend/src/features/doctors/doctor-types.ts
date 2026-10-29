@@ -35,11 +35,3 @@ export interface DoctorListQuery {
   search?: string
   isActive?: boolean
 }
-
-// Vive aquí hasta que otra feature lo use; entonces pasa a src/lib/api/
-export interface PaginatedResult<T> {
-  pageIndex: number
-  pageSize: number
-  count: number
-  data: T[]
-}

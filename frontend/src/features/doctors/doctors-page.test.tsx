@@ -14,11 +14,9 @@ import { ThemeProvider } from '@/components/theme-provider'
 import { Toaster } from '@/components/ui/sonner'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import type { UserRole } from '@/features/auth/auth-types'
-import type {
-  DoctorDto,
-  PaginatedResult,
-} from '@/features/doctors/doctor-types'
+import type { DoctorDto } from '@/features/doctors/doctor-types'
 import { DoctorsPage } from '@/features/doctors/doctors-page'
+import type { PaginatedResult } from '@/lib/api/paginated-result'
 import { jsonResponse, problemResponse, testUser } from '@/test/api-responses'
 import { TestAuthProvider } from '@/test/auth-context'
 import { mockPrefersDark } from '@/test/match-media'

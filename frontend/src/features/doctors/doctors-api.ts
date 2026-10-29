@@ -7,9 +7,9 @@ import type {
   DoctorDto,
   DoctorListQuery,
   DoctorRequest,
-  PaginatedResult,
 } from '@/features/doctors/doctor-types'
 import { api } from '@/lib/api/api-client'
+import type { PaginatedResult } from '@/lib/api/paginated-result'
 
 // Se copia la query a un objeto literal: una interfaz no encaja en Record<string, QueryValue>
 export const getDoctors = (query: DoctorListQuery) =>

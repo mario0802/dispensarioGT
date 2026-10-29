@@ -13,6 +13,7 @@ import { DoctorsPage } from '@/features/doctors/doctors-page'
 import { MySchedulePage } from '@/features/doctors/my-schedule-page'
 import { HomePage } from '@/features/home/home-page'
 import { AppLayout } from '@/features/layout/app-layout'
+import { PatientsPage } from '@/features/patients/patients-page'
 
 // Rutas de la app. Mientras se resuelve la sesión del arranque no se renderiza ninguna,
 // así las redirecciones solo dependen de authenticated / anonymous
@@ -44,6 +45,14 @@ export function AppRoutes() {
           element={
             <RequireRole allowedRoles={['Admin', 'Receptionist']}>
               <DoctorsPage />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="patients"
+          element={
+            <RequireRole allowedRoles={['Admin', 'Receptionist']}>
+              <PatientsPage />
             </RequireRole>
           }
         />

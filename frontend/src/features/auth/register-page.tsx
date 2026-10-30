@@ -7,6 +7,7 @@ import {
   CardFooter,
   CardHeader,
 } from '@/components/ui/card'
+import { AuthPageLayout } from '@/features/auth/components/auth-page-layout'
 import { RegisterForm } from '@/features/auth/components/register-form'
 import { useAuth } from '@/features/auth/use-auth'
 
@@ -19,8 +20,8 @@ export function RegisterPage() {
   }
 
   return (
-    <main className="flex min-h-svh items-center justify-center p-4">
-      <Card className="w-full max-w-md">
+    <AuthPageLayout>
+      <Card className="w-full max-w-md bg-card/90 shadow-2xl backdrop-blur-sm">
         <CardHeader>
           <h1 className="text-xl leading-none font-semibold">
             Dispensario Médico
@@ -42,6 +43,6 @@ export function RegisterPage() {
           </p>
         </CardFooter>
       </Card>
-    </main>
+    </AuthPageLayout>
   )
 }

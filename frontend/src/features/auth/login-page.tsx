@@ -9,6 +9,7 @@ import {
   CardFooter,
   CardHeader,
 } from '@/components/ui/card'
+import { AuthPageLayout } from '@/features/auth/components/auth-page-layout'
 import { LoginForm } from '@/features/auth/components/login-form'
 import { useAuth } from '@/features/auth/use-auth'
 
@@ -46,8 +47,8 @@ export function LoginPage() {
   const registeredEmail = getRegisteredEmail(location.state)
 
   return (
-    <main className="flex min-h-svh items-center justify-center p-4">
-      <Card className="w-full max-w-sm">
+    <AuthPageLayout>
+      <Card className="w-full max-w-sm bg-card/90 shadow-2xl backdrop-blur-sm">
         <CardHeader>
           <h1 className="text-xl leading-none font-semibold">
             Dispensario Médico
@@ -77,6 +78,6 @@ export function LoginPage() {
           </p>
         </CardFooter>
       </Card>
-    </main>
+    </AuthPageLayout>
   )
 }

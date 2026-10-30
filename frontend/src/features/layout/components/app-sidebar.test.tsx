@@ -1,6 +1,6 @@
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { MemoryRouter } from 'react-router'
+import { MemoryRouter, Route, Routes } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { ThemeProvider } from '@/components/theme-provider'
@@ -28,6 +28,10 @@ function renderSidebar(user: CurrentUserDto = testUser, onLogout = vi.fn()) {
         <SidebarProvider>
           <AppSidebar user={user} onLogout={onLogout} />
         </SidebarProvider>
+        <Routes>
+          <Route path="/" element={null} />
+          <Route path="/profile" element={<p>Página del perfil</p>} />
+        </Routes>
       </MemoryRouter>
     </ThemeProvider>,
   )
@@ -52,13 +56,17 @@ describe('AppSidebar', () => {
     expect(within(userMenu).getByText('Recepcionista')).toBeInTheDocument()
   })
 
-  it('opens the user menu with the email, Tema and Cerrar sesión', async () => {
+  it('opens the user menu with the email, Mi perfil, Tema and Cerrar sesión', async () => {
     const { userEvents } = renderSidebar()
 
     await userEvents.click(userMenuButton())
 
     const menu = await screen.findByRole('menu')
     expect(within(menu).getByText(testUser.email)).toBeInTheDocument()
+    const items = within(menu)
+      .getAllByRole('menuitem')
+      .map((item) => item.textContent)
+    expect(items.indexOf('Mi perfil')).toBe(items.indexOf('Tema') - 1)
     expect(
       within(menu).getByRole('menuitem', { name: 'Tema' }),
     ).toBeInTheDocument()
@@ -84,6 +92,17 @@ describe('AppSidebar', () => {
 
     expect(document.documentElement).toHaveClass('dark')
     expect(localStorage.getItem('dispensario-theme')).toBe('dark')
+  })
+
+  it('goes to /profile from Mi perfil', async () => {
+    const { userEvents } = renderSidebar()
+
+    await userEvents.click(userMenuButton())
+    await userEvents.click(
+      await screen.findByRole('menuitem', { name: 'Mi perfil' }),
+    )
+
+    expect(await screen.findByText('Página del perfil')).toBeInTheDocument()
   })
 
   it('calls logout from Cerrar sesión', async () => {

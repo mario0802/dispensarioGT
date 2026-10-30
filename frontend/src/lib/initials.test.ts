@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { getInitials } from '@/features/layout/initials'
+import { getInitials } from '@/lib/initials'
 
 describe('getInitials', () => {
   it.each([

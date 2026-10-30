@@ -18,6 +18,7 @@ export function TestAuthProvider({
     login: vi.fn(),
     logout: vi.fn(),
     retry: vi.fn(),
+    refreshUser: vi.fn(),
   }
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }

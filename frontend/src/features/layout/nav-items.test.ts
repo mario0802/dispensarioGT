@@ -2,7 +2,11 @@ import { House } from 'lucide-react'
 import { describe, expect, it } from 'vitest'
 
 import type { UserRole } from '@/features/auth/auth-types'
-import { getNavItems, isNavItemActive } from '@/features/layout/nav-items'
+import {
+  getNavItems,
+  getPageTitle,
+  isNavItemActive,
+} from '@/features/layout/nav-items'
 
 const roles: UserRole[] = ['Admin', 'Doctor', 'Receptionist']
 
@@ -104,4 +108,21 @@ describe('isNavItemActive', () => {
     expect(isNavItemActive(patients, '/patients/42')).toBe(true)
     expect(isNavItemActive(patients, '/patients-archive')).toBe(false)
   })
+})
+
+describe('getPageTitle', () => {
+  it('uses the title of the active menu', () => {
+    expect(getPageTitle('Receptionist', '/patients')).toBe('Pacientes')
+  })
+
+  it.each(roles)('uses Mi perfil for /profile with %s', (role) => {
+    expect(getPageTitle(role, '/profile')).toBe('Mi perfil')
+  })
+
+  it.each(['/profile/x', '/unknown'])(
+    'falls back to Dispensario Médico for %s',
+    (pathname) => {
+      expect(getPageTitle('Admin', pathname)).toBe('Dispensario Médico')
+    },
+  )
 })

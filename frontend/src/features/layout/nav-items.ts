@@ -63,3 +63,24 @@ export function isNavItemActive(item: NavItem, pathname: string): boolean {
   }
   return pathname === item.url || pathname.startsWith(`${item.url}/`)
 }
+
+// Rutas sin NavItem que tienen título propio en la barra superior
+const routeTitles: { url: string; title: string }[] = [
+  { url: '/profile', title: 'Mi perfil' },
+]
+
+const defaultPageTitle = 'Dispensario Médico'
+
+// Título de la barra superior: el del NavItem activo; si no hay, el de routeTitles (ruta exacta)
+export function getPageTitle(role: UserRole, pathname: string): string {
+  const activeItem = getNavItems(role).find((item) =>
+    isNavItemActive(item, pathname),
+  )
+  if (activeItem) {
+    return activeItem.title
+  }
+  return (
+    routeTitles.find((route) => route.url === pathname)?.title ??
+    defaultPageTitle
+  )
+}

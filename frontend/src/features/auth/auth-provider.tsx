@@ -116,14 +116,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
+  // Vuelve a pedir /me sin pasar por loading (desmontaría las rutas). Nunca rechaza
+  const refreshUser = useCallback(async () => {
+    const requestId = ++requestIdRef.current
+    try {
+      const user = await getCurrentUser()
+      if (requestId === requestIdRef.current) {
+        setSession({ status: 'authenticated', user })
+      }
+    } catch (reason) {
+      if (requestId !== requestIdRef.current) {
+        return
+      }
+      const error = toApiError(reason)
+      if (error.status === 401 || error.status === 404) {
+        logout()
+      }
+      // Cualquier otro error conserva el usuario actual: los datos se verán en la próxima carga
+    }
+  }, [logout])
+
   const retry = useCallback(() => {
     setSession({ status: 'loading', user: null })
     void fetchCurrentUser()
   }, [fetchCurrentUser])
 
   const value = useMemo<AuthContextValue>(
-    () => ({ ...session, login, logout, retry }),
-    [session, login, logout, retry],
+    () => ({ ...session, login, logout, retry, refreshUser }),
+    [session, login, logout, retry, refreshUser],
   )
 
   return <AuthContext value={value}>{children}</AuthContext>

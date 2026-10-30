@@ -15,6 +15,8 @@ export interface AuthContextValue {
   logout: () => void
   // Vuelve a pedir /me tras un error de arranque
   retry: () => void
+  // Vuelve a pedir /me sin pasar por loading; nunca rechaza
+  refreshUser: () => Promise<void>
 }
 
 export const AuthContext = createContext<AuthContextValue | null>(null)

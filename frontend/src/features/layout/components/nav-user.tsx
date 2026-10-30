@@ -1,4 +1,5 @@
-import { ChevronsUpDown, LogOut, SunMoon } from 'lucide-react'
+import { ChevronsUpDown, LogOut, SunMoon, UserPen } from 'lucide-react'
+import { useNavigate } from 'react-router'
 
 import { useTheme, type Theme } from '@/components/theme-provider'
 import {
@@ -20,9 +21,9 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from '@/components/ui/sidebar'
+import { UserAvatar } from '@/components/user-avatar'
 import type { CurrentUserDto } from '@/features/auth/auth-types'
 import { roleLabels } from '@/features/auth/role-labels'
-import { UserAvatar } from '@/features/layout/components/user-avatar'
 
 const themeOptions: { value: Theme; label: string }[] = [
   { value: 'light', label: 'Claro' },
@@ -35,9 +36,10 @@ interface NavUserProps {
   onLogout: () => void
 }
 
-// Bloque del usuario al pie del sidebar: avatar, nombre y rol, con un menú de tema y cierre de sesión
+// Bloque del usuario al pie del sidebar: avatar, nombre y rol, con un menú de perfil, tema y cierre de sesión
 export function NavUser({ user, onLogout }: NavUserProps) {
-  const { isMobile } = useSidebar()
+  const { isMobile, setOpenMobile } = useSidebar()
+  const navigate = useNavigate()
   const { theme, setTheme } = useTheme()
   const fullName = `${user.firstName} ${user.lastName}`
 
@@ -82,6 +84,16 @@ export function NavUser({ user, onLogout }: NavUserProps) {
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onSelect={() => {
+                // En móvil el sidebar es un Sheet: se cierra al ir al perfil
+                setOpenMobile(false)
+                navigate('/profile')
+              }}
+            >
+              <UserPen />
+              Mi perfil
+            </DropdownMenuItem>
             <DropdownMenuSub>
               <DropdownMenuSubTrigger>
                 <SunMoon />

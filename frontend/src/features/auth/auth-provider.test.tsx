@@ -220,6 +220,55 @@ describe('AuthProvider', () => {
     expect(localStorage.getItem(TOKEN_STORAGE_KEY)).toBeNull()
   })
 
+  it('refreshUser updates the user from /me without going through loading', async () => {
+    storeValidToken()
+    fetchMock.mockResolvedValueOnce(jsonResponse(testUser))
+    const { result } = renderAuth()
+    await waitFor(() => expect(result.current.status).toBe('authenticated'))
+
+    const renamed = { ...testUser, lastName: 'Ruiz', phone: '0991234567' }
+    fetchMock.mockResolvedValueOnce(jsonResponse(renamed))
+    const statuses: string[] = []
+    await act(async () => {
+      const refresh = result.current.refreshUser()
+      statuses.push(result.current.status)
+      await refresh
+    })
+
+    expect(statuses).toEqual(['authenticated'])
+    expect(result.current.status).toBe('authenticated')
+    expect(result.current.user).toEqual(renamed)
+    expect(requestAt(1).url).toMatch(/\/api\/auth\/me$/)
+  })
+
+  it('refreshUser logs out when /me answers 401', async () => {
+    storeValidToken()
+    fetchMock.mockResolvedValueOnce(jsonResponse(testUser))
+    const { result } = renderAuth()
+    await waitFor(() => expect(result.current.status).toBe('authenticated'))
+
+    fetchMock.mockResolvedValueOnce(problemResponse(401))
+    await act(() => result.current.refreshUser())
+
+    expect(result.current.status).toBe('anonymous')
+    expect(result.current.user).toBeNull()
+    expect(localStorage.getItem(TOKEN_STORAGE_KEY)).toBeNull()
+  })
+
+  it('refreshUser keeps the user on a network error', async () => {
+    const token = storeValidToken()
+    fetchMock.mockResolvedValueOnce(jsonResponse(testUser))
+    const { result } = renderAuth()
+    await waitFor(() => expect(result.current.status).toBe('authenticated'))
+
+    fetchMock.mockRejectedValueOnce(new TypeError('Failed to fetch'))
+    await act(() => result.current.refreshUser())
+
+    expect(result.current.status).toBe('authenticated')
+    expect(result.current.user).toEqual(testUser)
+    expect(readStoredToken()).toEqual(token)
+  })
+
   it('useAuth throws outside an AuthProvider', () => {
     vi.spyOn(console, 'error').mockImplementation(() => undefined)
 

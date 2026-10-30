@@ -9,7 +9,7 @@ import {
 import { Toaster } from '@/components/ui/sonner'
 import { useAuth } from '@/features/auth/use-auth'
 import { AppSidebar } from '@/features/layout/components/app-sidebar'
-import { getNavItems, isNavItemActive } from '@/features/layout/nav-items'
+import { getPageTitle } from '@/features/layout/nav-items'
 import { readSidebarOpen } from '@/features/layout/sidebar-cookie'
 
 // Layout de las rutas protegidas: sidebar a la izquierda y, a la derecha, barra superior y la página activa
@@ -21,10 +21,6 @@ export function AppLayout() {
   if (!user) {
     return null
   }
-
-  const activeItem = getNavItems(user.role).find((item) =>
-    isNavItemActive(item, pathname),
-  )
 
   return (
     <SidebarProvider defaultOpen={readSidebarOpen()}>
@@ -40,7 +36,7 @@ export function AppLayout() {
             className="mr-2 data-[orientation=vertical]:h-4"
           />
           <h1 className="text-base font-semibold">
-            {activeItem?.title ?? 'Dispensario Médico'}
+            {getPageTitle(user.role, pathname)}
           </h1>
         </header>
         <div className="flex flex-1 flex-col">

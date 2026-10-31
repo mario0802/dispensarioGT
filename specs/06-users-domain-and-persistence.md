@@ -178,23 +178,23 @@ DbSet<User> Users { get; }
 
 ## Acceptance criteria
 
-- [ ] `dotnet build Dispensario.slnx` termina sin errores y sin warnings nuevos respecto a SPEC 05.
-- [ ] `dotnet test Dispensario.slnx` termina con éxito e incluye los tests de este spec y los anteriores.
-- [ ] `Document.Create` recorta el número y lanza `DomainException` con número vacío, `null`, de más de 20 caracteres o con tipo no definido (cubierto por `DocumentTests`).
-- [ ] `DocumentType` tiene exactamente `NationalId` y `Passport`.
-- [ ] `User.Create` devuelve un usuario activo, sin `DoctorId`, con un `UserCreatedDomainEvent` con su `UserId`, `Email` y `Role`.
-- [ ] `User` solo cambia de estado mediante sus métodos: todas sus propiedades tienen setter privado.
-- [ ] `Deactivate` sobre un usuario inactivo, `Activate` sobre uno activo, `LinkDoctor` con rol distinto de `Doctor` y `LinkDoctor` con un doctor ya vinculado lanzan `DomainException` (cubierto por `UserTests`).
-- [ ] `Dispensario.Domain` no referencia EF Core ni ningún paquete nuevo.
-- [ ] `IApplicationDbContext` y `DispensarioDbContext` exponen `DbSet<User> Users`.
-- [ ] La tabla `Users` tiene las columnas `Email`, `PasswordHash`, `FullName_FirstName`, `FullName_LastName`, `Identification_Type`, `Identification_Number`, `Phone`, `Role`, `DoctorId`, `IsActive` y las cuatro de auditoría.
-- [ ] Guardar dos usuarios con el mismo email lanza `DbUpdateException` (cubierto por `UserPersistenceTests`).
-- [ ] Guardar dos usuarios con el mismo tipo y número de documento lanza `DbUpdateException`, y con el mismo número y distinto tipo se guarda (cubierto por `UserPersistenceTests`).
-- [ ] Un usuario guardado se relee con VOs iguales a los originales, y `Phone` y `DoctorId` `null` se releen `null`.
-- [ ] `Role` e `Identification_Type` se guardan como texto en SQLite.
-- [ ] `CreatedAtUtc` se completa al guardar un usuario nuevo.
-- [ ] No existen en `src/` `IPasswordHasher`, referencias a `BCrypt` ni endpoints de usuarios.
-- [ ] `DOMAIN.md`, `INFRASTRUCTURE.md` y `CLAUDE.md` describen bcrypt y el modelo de Users de este spec, y `docs/PLAN.md` fila 06 apunta a `specs/06-users-domain-and-persistence.md`.
+- [x] `dotnet build Dispensario.slnx` termina sin errores y sin warnings nuevos respecto a SPEC 05.
+- [x] `dotnet test Dispensario.slnx` termina con éxito e incluye los tests de este spec y los anteriores.
+- [x] `Document.Create` recorta el número y lanza `DomainException` con número vacío, `null`, de más de 20 caracteres o con tipo no definido (cubierto por `DocumentTests`).
+- [x] `DocumentType` tiene exactamente `NationalId` y `Passport`.
+- [x] `User.Create` devuelve un usuario activo, sin `DoctorId`, con un `UserCreatedDomainEvent` con su `UserId`, `Email` y `Role`.
+- [x] `User` solo cambia de estado mediante sus métodos: todas sus propiedades tienen setter privado.
+- [x] `Deactivate` sobre un usuario inactivo, `Activate` sobre uno activo, `LinkDoctor` con rol distinto de `Doctor` y `LinkDoctor` con un doctor ya vinculado lanzan `DomainException` (cubierto por `UserTests`).
+- [x] `Dispensario.Domain` no referencia EF Core ni ningún paquete nuevo.
+- [x] `IApplicationDbContext` y `DispensarioDbContext` exponen `DbSet<User> Users`.
+- [x] La tabla `Users` tiene las columnas `Email`, `PasswordHash`, `FullName_FirstName`, `FullName_LastName`, `Identification_Type`, `Identification_Number`, `Phone`, `Role`, `DoctorId`, `IsActive` y las cuatro de auditoría.
+- [x] Guardar dos usuarios con el mismo email lanza `DbUpdateException` (cubierto por `UserPersistenceTests`).
+- [x] Guardar dos usuarios con el mismo tipo y número de documento lanza `DbUpdateException`, y con el mismo número y distinto tipo se guarda (cubierto por `UserPersistenceTests`).
+- [x] Un usuario guardado se relee con VOs iguales a los originales, y `Phone` y `DoctorId` `null` se releen `null`.
+- [x] `Role` e `Identification_Type` se guardan como texto en SQLite.
+- [x] `CreatedAtUtc` se completa al guardar un usuario nuevo.
+- [x] No existen en `src/` `IPasswordHasher`, referencias a `BCrypt` ni endpoints de usuarios.
+- [x] `DOMAIN.md`, `INFRASTRUCTURE.md` y `CLAUDE.md` describen bcrypt y el modelo de Users de este spec, y `docs/PLAN.md` fila 06 apunta a `specs/06-users-domain-and-persistence.md`.
 
 ## Decisions
 

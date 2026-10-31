@@ -275,26 +275,26 @@ Mismas pautas que los specs 09 y 10 (`fetch` simulado, `user-event`, `MemoryRout
 
 ## Acceptance criteria
 
-- [ ] Al abrir `/consultations/{id}` como el doctor de la consulta se piden `GET /api/consultations/{id}` y `GET /api/patients/{patientId}`, y se ven el encabezado "Consulta de {paciente}", la tarjeta **Paciente**, la tarjeta **Consulta** y la **Historia clínica**.
-- [ ] La tarjeta **Paciente** muestra documento, edad con fecha de nacimiento, género, tipo de sangre, teléfono y alergias; las alergias, si hay, en un aviso destacado; los nulos como "—".
-- [ ] La tarjeta **Consulta** muestra inicio, estado (Abierta/Cerrada), doctor y, si está cerrada, cierre.
-- [ ] Con la consulta abierta y propia, **Motivo**, **Diagnóstico** y **Observaciones** son editables con sus límites (500, 1000 y 4000) y el motivo es obligatorio.
-- [ ] **Guardar** está deshabilitado sin cambios; al guardar hace `PUT /api/consultations/{id}` con los tres textos (vacíos como `null`) y muestra "Cambios guardados.".
-- [ ] **Finalizar consulta** sin diagnóstico marca "El diagnóstico es obligatorio para finalizar." y no abre la confirmación.
-- [ ] Confirmar la finalización hace `PUT` solo si hay cambios y después `POST /api/consultations/{id}/close` con diagnóstico y observaciones; muestra "Consulta finalizada." y navega a `/appointments`.
-- [ ] Un error al guardar o finalizar muestra el toast de su mensaje; un 400 de consulta cerrada, un 403 o un 404 vuelven a pedir la consulta.
-- [ ] Una consulta cerrada o de otro doctor se ve en solo lectura, con su aviso y sin **Guardar** ni **Finalizar consulta**.
-- [ ] Un 404 o 403 al cargar la consulta muestra su mensaje y **Volver a citas**; un error de red muestra además **Reintentar**.
-- [ ] Un `Doctor` sin vincular ve el aviso de vinculación y no se hace ninguna petición.
-- [ ] Un error al cargar el paciente o la historia muestra su aviso con **Reintentar** sin ocultar el resto de la página.
-- [ ] **Volver a citas** con cambios sin guardar pide confirmar "¿Descartar los cambios?"; sin cambios navega directamente.
-- [ ] Con cambios sin guardar, cerrar o recargar la pestaña muestra el aviso del navegador.
-- [ ] La historia pide `pageSize=5`, no muestra la consulta actual, indica "{n} consultas previas", despliega diagnóstico y observaciones de cada consulta y pagina con **Anterior**/**Siguiente**.
-- [ ] El modal del cronograma y **Mi horario** siguen mostrando su aviso de descartar cambios igual que antes.
-- [ ] En móvil la página se ve en una columna sin desplazamiento horizontal y los diálogos se ven completos; bien en tema claro y oscuro.
-- [ ] `pnpm build`, `pnpm lint`, el chequeo de Prettier y `pnpm test` terminan sin errores.
-- [ ] `frontend/CLAUDE.md` refleja el estado, los componentes y la estructura nuevos y tiene la fila 11 en el backlog.
-- [ ] No hay cambios fuera de `frontend/`.
+- [x] Al abrir `/consultations/{id}` como el doctor de la consulta se piden `GET /api/consultations/{id}` y `GET /api/patients/{patientId}`, y se ven el encabezado "Consulta de {paciente}", la tarjeta **Paciente**, la tarjeta **Consulta** y la **Historia clínica**.
+- [x] La tarjeta **Paciente** muestra documento, edad con fecha de nacimiento, género, tipo de sangre, teléfono y alergias; las alergias, si hay, en un aviso destacado; los nulos como "—".
+- [x] La tarjeta **Consulta** muestra inicio, estado (Abierta/Cerrada), doctor y, si está cerrada, cierre.
+- [x] Con la consulta abierta y propia, **Motivo**, **Diagnóstico** y **Observaciones** son editables con sus límites (500, 1000 y 4000) y el motivo es obligatorio.
+- [x] **Guardar** está deshabilitado sin cambios; al guardar hace `PUT /api/consultations/{id}` con los tres textos (vacíos como `null`) y muestra "Cambios guardados.".
+- [x] **Finalizar consulta** sin diagnóstico marca "El diagnóstico es obligatorio para finalizar." y no abre la confirmación.
+- [x] Confirmar la finalización hace `PUT` solo si hay cambios y después `POST /api/consultations/{id}/close` con diagnóstico y observaciones; muestra "Consulta finalizada." y navega a `/appointments`.
+- [x] Un error al guardar o finalizar muestra el toast de su mensaje; un 400 de consulta cerrada, un 403 o un 404 vuelven a pedir la consulta.
+- [x] Una consulta cerrada o de otro doctor se ve en solo lectura, con su aviso y sin **Guardar** ni **Finalizar consulta**.
+- [x] Un 404 o 403 al cargar la consulta muestra su mensaje y **Volver a citas**; un error de red muestra además **Reintentar**.
+- [x] Un `Doctor` sin vincular ve el aviso de vinculación y no se hace ninguna petición.
+- [x] Un error al cargar el paciente o la historia muestra su aviso con **Reintentar** sin ocultar el resto de la página.
+- [x] **Volver a citas** con cambios sin guardar pide confirmar "¿Descartar los cambios?"; sin cambios navega directamente.
+- [x] Con cambios sin guardar, cerrar o recargar la pestaña muestra el aviso del navegador.
+- [x] La historia pide `pageSize=5`, no muestra la consulta actual, indica "{n} consultas previas", despliega diagnóstico y observaciones de cada consulta y pagina con **Anterior**/**Siguiente**.
+- [x] El modal del cronograma y **Mi horario** siguen mostrando su aviso de descartar cambios igual que antes.
+- [x] En móvil la página se ve en una columna sin desplazamiento horizontal y los diálogos se ven completos; bien en tema claro y oscuro.
+- [x] `pnpm build`, `pnpm lint`, el chequeo de Prettier y `pnpm test` terminan sin errores.
+- [x] `frontend/CLAUDE.md` refleja el estado, los componentes y la estructura nuevos y tiene la fila 11 en el backlog.
+- [x] No hay cambios fuera de `frontend/`.
 
 ## Decisions
 

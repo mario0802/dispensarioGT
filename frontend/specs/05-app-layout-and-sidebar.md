@@ -211,22 +211,22 @@ Mismas pautas que los specs 03 y 04: `fetch` simulado con `vi.stubGlobal`, `@tes
 
 ## Acceptance criteria
 
-- [ ] `package.json` no cambia (solo se añaden componentes en `src/components/ui/`, `src/hooks/use-mobile.ts` y variables en `index.css`).
-- [ ] Con sesión, `/` muestra a la izquierda el sidebar con **Dispensario Médico**, el menú **Inicio** marcado como activo y, al pie, el avatar con las iniciales, el nombre completo y el rol en español.
-- [ ] La barra superior muestra el botón de plegar y el título **Inicio**; el área principal, "Hola, {nombre} {apellido}" y el rol.
-- [ ] Las iniciales son la primera letra del nombre y la del apellido en mayúsculas ("María José Pérez" → "MP", "ángel ñuñez" → "ÁÑ").
-- [ ] Recepcionista, Admin y Doctor ven el mismo sidebar, solo con **Inicio**, cada uno con su rol.
-- [ ] Plegar el sidebar (botón, `Ctrl+B` o el rail) deja solo los iconos y el avatar, y los títulos salen como tooltip; al recargar, conserva el estado plegado o desplegado.
-- [ ] Por debajo de 768 px el sidebar no ocupa la pantalla: el botón de la barra superior lo abre como panel deslizante.
-- [ ] Pulsar el avatar abre un menú con el nombre y el email, **Tema** (Claro, Oscuro, Sistema, con el actual marcado) y **Cerrar sesión**.
-- [ ] Elegir un tema lo aplica y se conserva al recargar (como con el antiguo `ModeToggle`).
-- [ ] **Cerrar sesión** borra la sesión y lleva a `/login`.
-- [ ] `src/components/mode-toggle.tsx` ya no existe y nada lo importa.
-- [ ] Sin sesión, `/` sigue llevando a `/login`, y `/login` y `/register` no muestran el sidebar.
-- [ ] El sidebar se ve correctamente en tema claro y oscuro.
-- [ ] `pnpm build`, `pnpm lint`, `pnpm format:check` y `pnpm test` terminan sin errores.
-- [ ] `frontend/CLAUDE.md` refleja la estructura nueva y tiene la fila 05 en el backlog.
-- [ ] No hay cambios fuera de `frontend/`.
+- [x] `package.json` no cambia (solo se añaden componentes en `src/components/ui/`, `src/hooks/use-mobile.ts` y variables en `index.css`).
+- [x] Con sesión, `/` muestra a la izquierda el sidebar con **Dispensario Médico**, el menú **Inicio** marcado como activo y, al pie, el avatar con las iniciales, el nombre completo y el rol en español.
+- [x] La barra superior muestra el botón de plegar y el título **Inicio**; el área principal, "Hola, {nombre} {apellido}" y el rol.
+- [x] Las iniciales son la primera letra del nombre y la del apellido en mayúsculas ("María José Pérez" → "MP", "ángel ñuñez" → "ÁÑ").
+- [x] Recepcionista, Admin y Doctor ven el mismo sidebar, solo con **Inicio**, cada uno con su rol.
+- [x] Plegar el sidebar (botón, `Ctrl+B` o el rail) deja solo los iconos y el avatar, y los títulos salen como tooltip; al recargar, conserva el estado plegado o desplegado.
+- [x] Por debajo de 768 px el sidebar no ocupa la pantalla: el botón de la barra superior lo abre como panel deslizante.
+- [x] Pulsar el avatar abre un menú con el nombre y el email, **Tema** (Claro, Oscuro, Sistema, con el actual marcado) y **Cerrar sesión**.
+- [x] Elegir un tema lo aplica y se conserva al recargar (como con el antiguo `ModeToggle`).
+- [x] **Cerrar sesión** borra la sesión y lleva a `/login`.
+- [x] `src/components/mode-toggle.tsx` ya no existe y nada lo importa.
+- [x] Sin sesión, `/` sigue llevando a `/login`, y `/login` y `/register` no muestran el sidebar.
+- [x] El sidebar se ve correctamente en tema claro y oscuro.
+- [x] `pnpm build`, `pnpm lint`, `pnpm format:check` y `pnpm test` terminan sin errores.
+- [x] `frontend/CLAUDE.md` refleja la estructura nueva y tiene la fila 05 en el backlog.
+- [x] No hay cambios fuera de `frontend/`.
 
 ## Decisions
 

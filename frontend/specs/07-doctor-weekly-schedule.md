@@ -303,25 +303,25 @@ Mismas pautas que el spec 06: `fetch` simulado con `vi.stubGlobal`, `@testing-li
 
 ## Acceptance criteria
 
-- [ ] `package.json` no cambia; `switch.tsx` está en `src/components/ui/` con el import de `cn` desde `@/lib/utils`.
-- [ ] **Ver cronograma** abre el modal, pide `GET /api/doctors/{id}/schedule` y muestra 7 filas de lunes a domingo con los bloques "{inicio} – {fin}" o "No atiende".
-- [ ] Recepción ve el horario sin **Editar horario**; Admin ve **Editar horario** si el doctor está activo.
-- [ ] Con el doctor inactivo, el Admin ve el aviso "El doctor está inactivo: actívalo para editar su horario." y no puede editar.
-- [ ] En edición, cada día tiene un switch; encenderlo crea `08:00–12:00` y apagarlo quita sus bloques.
-- [ ] Un día admite varios bloques con **+ Añadir bloque** y **Quitar**; quitar el último apaga el día.
-- [ ] Los selectores solo ofrecen horas completas de `00:00` a `23:00`; una hora no completa que venga de la API se ve y bloquea el guardado con "Usa horas completas.".
-- [ ] Fin ≤ inicio, un bloque más corto que la duración de la cita o un solape muestran su mensaje bajo el bloque y no llaman a la API; dos bloques contiguos se pueden guardar.
-- [ ] **Guardar horario** hace `PUT /api/doctors/{id}/schedule` con los bloques de los días encendidos, de lunes a domingo y por hora de inicio (`blocks: []` si no hay ninguno); al terminar sale el toast "Horario actualizado." y se vuelve a lectura con el horario guardado.
-- [ ] Un 400, 403 o error de red al guardar muestra su mensaje en el formulario y conserva los cambios.
-- [ ] **Cancelar** o cerrar el modal con cambios pide "¿Descartar los cambios?"; sin cambios, vuelve a lectura o cierra sin preguntar. Mientras guarda, el modal no se cierra.
-- [ ] Un 404 en el modal lo cierra, muestra "El doctor ya no existe." y refresca la tabla.
-- [ ] Un `Doctor` ve el menú **Mi horario**; Admin y Recepción no, y en `/my-schedule` terminan en `/`.
-- [ ] En **Mi horario**, un doctor sin vincular ve el aviso de vínculo sin llamadas a la API; uno vinculado ve su nombre, especialidad, duración y horario, y puede editarlo y guardarlo.
-- [ ] Un 403 al guardar en **Mi horario** muestra "No puedes editar este horario. Si tu usuario se vinculó hace poco, cierra sesión y vuelve a entrar.".
-- [ ] El modal y la página se usan en móvil y se ven bien en tema claro y oscuro.
-- [ ] `pnpm build`, `pnpm lint`, `pnpm test` y `pnpm exec prettier --check . --end-of-line auto` terminan sin errores.
-- [ ] `frontend/CLAUDE.md` refleja la estructura nueva y tiene la fila 07 en el backlog.
-- [ ] No hay cambios fuera de `frontend/`.
+- [x] `package.json` no cambia; `switch.tsx` está en `src/components/ui/` con el import de `cn` desde `@/lib/utils`.
+- [x] **Ver cronograma** abre el modal, pide `GET /api/doctors/{id}/schedule` y muestra 7 filas de lunes a domingo con los bloques "{inicio} – {fin}" o "No atiende".
+- [x] Recepción ve el horario sin **Editar horario**; Admin ve **Editar horario** si el doctor está activo.
+- [x] Con el doctor inactivo, el Admin ve el aviso "El doctor está inactivo: actívalo para editar su horario." y no puede editar.
+- [x] En edición, cada día tiene un switch; encenderlo crea `08:00–12:00` y apagarlo quita sus bloques.
+- [x] Un día admite varios bloques con **+ Añadir bloque** y **Quitar**; quitar el último apaga el día.
+- [x] Los selectores solo ofrecen horas completas de `00:00` a `23:00`; una hora no completa que venga de la API se ve y bloquea el guardado con "Usa horas completas.".
+- [x] Fin ≤ inicio, un bloque más corto que la duración de la cita o un solape muestran su mensaje bajo el bloque y no llaman a la API; dos bloques contiguos se pueden guardar.
+- [x] **Guardar horario** hace `PUT /api/doctors/{id}/schedule` con los bloques de los días encendidos, de lunes a domingo y por hora de inicio (`blocks: []` si no hay ninguno); al terminar sale el toast "Horario actualizado." y se vuelve a lectura con el horario guardado.
+- [x] Un 400, 403 o error de red al guardar muestra su mensaje en el formulario y conserva los cambios.
+- [x] **Cancelar** o cerrar el modal con cambios pide "¿Descartar los cambios?"; sin cambios, vuelve a lectura o cierra sin preguntar. Mientras guarda, el modal no se cierra.
+- [x] Un 404 en el modal lo cierra, muestra "El doctor ya no existe." y refresca la tabla.
+- [x] Un `Doctor` ve el menú **Mi horario**; Admin y Recepción no, y en `/my-schedule` terminan en `/`.
+- [x] En **Mi horario**, un doctor sin vincular ve el aviso de vínculo sin llamadas a la API; uno vinculado ve su nombre, especialidad, duración y horario, y puede editarlo y guardarlo.
+- [x] Un 403 al guardar en **Mi horario** muestra "No puedes editar este horario. Si tu usuario se vinculó hace poco, cierra sesión y vuelve a entrar.".
+- [x] El modal y la página se usan en móvil y se ven bien en tema claro y oscuro.
+- [x] `pnpm build`, `pnpm lint`, `pnpm test` y `pnpm exec prettier --check . --end-of-line auto` terminan sin errores.
+- [x] `frontend/CLAUDE.md` refleja la estructura nueva y tiene la fila 07 en el backlog.
+- [x] No hay cambios fuera de `frontend/`.
 
 ## Decisions
 

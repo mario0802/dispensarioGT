@@ -268,23 +268,23 @@ Mismas pautas que los specs anteriores (`fetch` simulado, `user-event`, `MemoryR
 
 ## Acceptance criteria
 
-- [ ] El menú del avatar tiene **Mi perfil** encima de **Tema** y lleva a `/profile` con los tres roles; en móvil, el `Sheet` del sidebar se cierra.
-- [ ] En `/profile` la barra superior dice "Mi perfil" y los demás menús conservan su título.
-- [ ] El encabezado muestra el avatar grande con las iniciales, el nombre completo, el rol y el email.
-- [ ] `UserAvatar` sin `imageUrl` no renderiza `<img>` y muestra las iniciales; el avatar del sidebar se ve igual que antes.
-- [ ] La tarjeta **Datos personales** muestra email, documento y rol en solo lectura con la nota "El email, el documento y el rol no se pueden modificar.".
-- [ ] **Nombre**, **Apellido** y **Teléfono** se validan con las mismas reglas y mensajes que el registro.
-- [ ] **Guardar** está deshabilitado sin cambios; al guardar hace `PUT /api/users/me` (teléfono vacío como `null`), muestra "Datos actualizados." y el avatar y el menú muestran el nombre nuevo.
-- [ ] La tarjeta **Cambiar contraseña** tiene **Contraseña actual** sin botón del ojo y **Nueva contraseña** y **Confirmar nueva contraseña** con él.
-- [ ] La nueva contraseña se valida con las reglas del registro, debe coincidir con la confirmación y ser distinta de la actual.
-- [ ] Al cambiarla hace `PUT /api/users/me/password`, muestra "Contraseña cambiada.", vacía los campos y la sesión sigue abierta.
-- [ ] Con la contraseña actual incorrecta, el campo **Contraseña actual** muestra "La contraseña actual no es correcta." sin toast.
-- [ ] Los demás errores de las dos tarjetas muestran el toast de su mensaje y conservan lo escrito.
-- [ ] El registro sigue funcionando igual con `PasswordInput` y `passwordSchema` extraídos.
-- [ ] En móvil la página se ve en una columna sin desplazamiento horizontal; bien en tema claro y oscuro.
-- [ ] `pnpm build`, `pnpm lint`, el chequeo de Prettier y `pnpm test` terminan sin errores.
-- [ ] `frontend/CLAUDE.md` refleja el estado, la sesión y la estructura nuevos y tiene la fila 12 en el backlog.
-- [ ] No hay cambios fuera de `frontend/`.
+- [x] El menú del avatar tiene **Mi perfil** encima de **Tema** y lleva a `/profile` con los tres roles; en móvil, el `Sheet` del sidebar se cierra.
+- [x] En `/profile` la barra superior dice "Mi perfil" y los demás menús conservan su título.
+- [x] El encabezado muestra el avatar grande con las iniciales, el nombre completo, el rol y el email.
+- [x] `UserAvatar` sin `imageUrl` no renderiza `<img>` y muestra las iniciales; el avatar del sidebar se ve igual que antes.
+- [x] La tarjeta **Datos personales** muestra email, documento y rol en solo lectura con la nota "El email, el documento y el rol no se pueden modificar.".
+- [x] **Nombre**, **Apellido** y **Teléfono** se validan con las mismas reglas y mensajes que el registro.
+- [x] **Guardar** está deshabilitado sin cambios; al guardar hace `PUT /api/users/me` (teléfono vacío como `null`), muestra "Datos actualizados." y el avatar y el menú muestran el nombre nuevo.
+- [x] La tarjeta **Cambiar contraseña** tiene **Contraseña actual** sin botón del ojo y **Nueva contraseña** y **Confirmar nueva contraseña** con él.
+- [x] La nueva contraseña se valida con las reglas del registro, debe coincidir con la confirmación y ser distinta de la actual.
+- [x] Al cambiarla hace `PUT /api/users/me/password`, muestra "Contraseña cambiada.", vacía los campos y la sesión sigue abierta.
+- [x] Con la contraseña actual incorrecta, el campo **Contraseña actual** muestra "La contraseña actual no es correcta." sin toast.
+- [x] Los demás errores de las dos tarjetas muestran el toast de su mensaje y conservan lo escrito.
+- [x] El registro sigue funcionando igual con `PasswordInput` y `passwordSchema` extraídos.
+- [x] En móvil la página se ve en una columna sin desplazamiento horizontal; bien en tema claro y oscuro.
+- [x] `pnpm build`, `pnpm lint`, el chequeo de Prettier y `pnpm test` terminan sin errores.
+- [x] `frontend/CLAUDE.md` refleja el estado, la sesión y la estructura nuevos y tiene la fila 12 en el backlog.
+- [x] No hay cambios fuera de `frontend/`.
 
 ## Decisions
 

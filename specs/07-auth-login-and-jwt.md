@@ -303,27 +303,27 @@ if (app.Environment.IsDevelopment())
 
 ## Acceptance criteria
 
-- [ ] `dotnet build Dispensario.slnx` termina sin errores y sin warnings nuevos respecto a SPEC 06.
-- [ ] `dotnet test Dispensario.slnx` termina con éxito e incluye los tests de este spec y los anteriores.
-- [ ] `ICurrentUser` expone exactamente `UserId?`, `Role?`, `DoctorId?` e `IsAuthenticated`, y `AnonymousCurrentUser` ya no existe en `src/`.
-- [ ] `BcryptPasswordHasher` genera hashes bcrypt de coste 12 que `Verify` acepta con la contraseña correcta y rechaza con otra (cubierto por `BcryptPasswordHasherTests`).
-- [ ] El JWT es HS256, caduca a los `ExpirationMinutes` y lleva `sub`, `email`, `name`, `role` y `jti`, más `doctor_id` solo si el usuario tiene doctor (cubierto por `JwtTokenGeneratorTests`).
-- [ ] Sin `Jwt:Key`, o con menos de 32 caracteres, la aplicación no arranca (`ValidateOnStart`).
-- [ ] `POST /api/auth/login` con las credenciales del Admin sembrado devuelve 200 con `accessToken`, `tokenType = "Bearer"` y `expiresAtUtc`.
-- [ ] Email inexistente, contraseña incorrecta y usuario inactivo devuelven 401 `application/problem+json` con el mismo mensaje `Invalid credentials.`.
-- [ ] El login encuentra al usuario aunque el email llegue en mayúsculas.
-- [ ] Un login con email vacío devuelve 400 con errores de validación.
-- [ ] `GET /api/auth/me` con token válido devuelve 200 con los datos del usuario, y `role` e `identificationType` como texto.
-- [ ] `GET /api/auth/me` sin token, con token alterado o firmado con otra clave devuelve 401 `application/problem+json`.
-- [ ] `GET /api/auth/me` de un usuario desactivado después del login devuelve 401, y de un usuario inexistente devuelve 404.
-- [ ] Las políticas `AdminOnly` (Admin), `Reception` (Admin, Receptionist) y `Clinical` (Doctor) están registradas (cubierto por `AuthorizationPoliciesTests`).
-- [ ] En Development, al arrancar se crea el esquema y el Admin de `Seed:Admin`; una segunda ejecución no lo duplica; con `Seed:Admin:Password` vacío se registra un warning y no se crea (cubierto por `DatabaseSeederTests`).
-- [ ] Fuera de Development no se llama a `InitialiseDatabaseAsync`.
-- [ ] `CreatedBy` de un aggregate guardado en una petición autenticada es el `UserId` del token, y en el seed es `null`.
-- [ ] `appsettings.json` contiene las secciones `Jwt` y `Seed` con `Jwt:Key` y `Seed:Admin:Password` vacíos, y no contiene `Clinic`.
-- [ ] `AuthenticateAsAsync(Role)` devuelve un `HttpClient` autenticado para cualquiera de los tres roles.
-- [ ] Los tests de integración no crean `dispensario.db` en disco.
-- [ ] `APPLICATION.md`, `INFRASTRUCTURE.md`, `API.md`, `TESTING.md` y `CLAUDE.md` describen la autenticación de este spec, y `docs/PLAN.md` fila 07 apunta a `specs/07-auth-login-and-jwt.md`.
+- [x] `dotnet build Dispensario.slnx` termina sin errores y sin warnings nuevos respecto a SPEC 06.
+- [x] `dotnet test Dispensario.slnx` termina con éxito e incluye los tests de este spec y los anteriores.
+- [x] `ICurrentUser` expone exactamente `UserId?`, `Role?`, `DoctorId?` e `IsAuthenticated`, y `AnonymousCurrentUser` ya no existe en `src/`.
+- [x] `BcryptPasswordHasher` genera hashes bcrypt de coste 12 que `Verify` acepta con la contraseña correcta y rechaza con otra (cubierto por `BcryptPasswordHasherTests`).
+- [x] El JWT es HS256, caduca a los `ExpirationMinutes` y lleva `sub`, `email`, `name`, `role` y `jti`, más `doctor_id` solo si el usuario tiene doctor (cubierto por `JwtTokenGeneratorTests`).
+- [x] Sin `Jwt:Key`, o con menos de 32 caracteres, la aplicación no arranca (`ValidateOnStart`).
+- [x] `POST /api/auth/login` con las credenciales del Admin sembrado devuelve 200 con `accessToken`, `tokenType = "Bearer"` y `expiresAtUtc`.
+- [x] Email inexistente, contraseña incorrecta y usuario inactivo devuelven 401 `application/problem+json` con el mismo mensaje `Invalid credentials.`.
+- [x] El login encuentra al usuario aunque el email llegue en mayúsculas.
+- [x] Un login con email vacío devuelve 400 con errores de validación.
+- [x] `GET /api/auth/me` con token válido devuelve 200 con los datos del usuario, y `role` e `identificationType` como texto.
+- [x] `GET /api/auth/me` sin token, con token alterado o firmado con otra clave devuelve 401 `application/problem+json`.
+- [x] `GET /api/auth/me` de un usuario desactivado después del login devuelve 401, y de un usuario inexistente devuelve 404.
+- [x] Las políticas `AdminOnly` (Admin), `Reception` (Admin, Receptionist) y `Clinical` (Doctor) están registradas (cubierto por `AuthorizationPoliciesTests`).
+- [x] En Development, al arrancar se crea el esquema y el Admin de `Seed:Admin`; una segunda ejecución no lo duplica; con `Seed:Admin:Password` vacío se registra un warning y no se crea (cubierto por `DatabaseSeederTests`).
+- [x] Fuera de Development no se llama a `InitialiseDatabaseAsync`.
+- [x] `CreatedBy` de un aggregate guardado en una petición autenticada es el `UserId` del token, y en el seed es `null`.
+- [x] `appsettings.json` contiene las secciones `Jwt` y `Seed` con `Jwt:Key` y `Seed:Admin:Password` vacíos, y no contiene `Clinic`.
+- [x] `AuthenticateAsAsync(Role)` devuelve un `HttpClient` autenticado para cualquiera de los tres roles.
+- [x] Los tests de integración no crean `dispensario.db` en disco.
+- [x] `APPLICATION.md`, `INFRASTRUCTURE.md`, `API.md`, `TESTING.md` y `CLAUDE.md` describen la autenticación de este spec, y `docs/PLAN.md` fila 07 apunta a `specs/07-auth-login-and-jwt.md`.
 
 ## Decisions
 

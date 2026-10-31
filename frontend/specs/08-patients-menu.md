@@ -360,26 +360,26 @@ Mismas pautas que el spec 06 (`fetch` simulado, `user-event`, `MemoryRouter`, `T
 
 ## Acceptance criteria
 
-- [ ] `package.json` no cambia; `textarea.tsx` está en `src/components/ui/`.
-- [ ] `PaginatedResult` vive en `src/lib/api/paginated-result.ts` y `useDebouncedValue` en `src/hooks/`; `features/doctors/` ya no los declara y sus tests siguen pasando.
-- [ ] Admin y Recepción ven el menú **Pacientes** en el sidebar; un `Doctor` no lo ve y, si entra a `/patients`, termina en `/`.
-- [ ] `/patients` muestra el título **Pacientes** y la tabla con Paciente (nombre y email), Documento ("Cédula 0102030405"), Edad ("35 años" y la fecha "dd/MM/yyyy"), Teléfono ("—" si no tiene) y Estado (**Activo**/**Inactivo**).
-- [ ] La primera carga hace `GET /api/patients?pageIndex=0&pageSize=10` y muestra un skeleton mientras tanto.
-- [ ] Escribir en la búsqueda hace una sola petición con `search` 300 ms después de dejar de escribir y vuelve a la primera página.
-- [ ] El filtro **Activos**/**Inactivos** envía `isActive=true`/`false`; **Todos** no envía `isActive`.
-- [ ] La paginación muestra "Página X de Y · N pacientes" y **Anterior**/**Siguiente** se deshabilitan en los extremos.
-- [ ] Sin pacientes se ve "Todavía no hay pacientes registrados."; sin resultados con filtros, "No se encontraron pacientes con esos filtros."; un error de carga muestra un aviso con **Reintentar**.
-- [ ] **Nuevo paciente** abre un modal con las secciones Identificación, Contacto, Dirección y Datos clínicos; enviarlo vacío o con fecha futura, email, teléfono, dirección incompleta o longitudes inválidas muestra los mensajes sin hacer peticiones.
-- [ ] Con datos válidos se hace `POST /api/patients` con textos recortados, opcionales vacíos como `null`, `address: null` sin dirección y `bloodType` en notación (`"O+"`) o `null`; se cierra el modal, sale el toast "Paciente creado." y la tabla se refresca.
-- [ ] Un documento repetido (409) muestra "Ya existe un paciente con ese documento." bajo el número y conserva los valores.
-- [ ] El botón lápiz de cada fila pide `GET /api/patients/{id}`, rellena el formulario y guarda con `PUT /api/patients/{id}`; toast "Paciente actualizado." y refresco. Vaciar un opcional al editar lo envía como `null`.
-- [ ] **Desactivar** y **Activar** (menú ⋯) piden confirmación; **Cancelar** no hace nada; confirmar llama a `POST …/deactivate` o `…/activate`, muestra el toast y actualiza el estado en la tabla.
-- [ ] Un 404 en editar, activar o desactivar muestra "El paciente ya no existe." y refresca la tabla.
-- [ ] Sin conexión, las acciones muestran "No se pudo conectar con el servidor.".
-- [ ] En móvil la tabla se desplaza en horizontal y el modal tiene scroll con los botones visibles; se ve bien en tema claro y oscuro.
-- [ ] `pnpm build`, `pnpm lint`, el chequeo de Prettier y `pnpm test` terminan sin errores.
-- [ ] `frontend/CLAUDE.md` refleja la estructura nueva y tiene la fila 08 en el backlog.
-- [ ] No hay cambios fuera de `frontend/`.
+- [x] `package.json` no cambia; `textarea.tsx` está en `src/components/ui/`.
+- [x] `PaginatedResult` vive en `src/lib/api/paginated-result.ts` y `useDebouncedValue` en `src/hooks/`; `features/doctors/` ya no los declara y sus tests siguen pasando.
+- [x] Admin y Recepción ven el menú **Pacientes** en el sidebar; un `Doctor` no lo ve y, si entra a `/patients`, termina en `/`.
+- [x] `/patients` muestra el título **Pacientes** y la tabla con Paciente (nombre y email), Documento ("Cédula 0102030405"), Edad ("35 años" y la fecha "dd/MM/yyyy"), Teléfono ("—" si no tiene) y Estado (**Activo**/**Inactivo**).
+- [x] La primera carga hace `GET /api/patients?pageIndex=0&pageSize=10` y muestra un skeleton mientras tanto.
+- [x] Escribir en la búsqueda hace una sola petición con `search` 300 ms después de dejar de escribir y vuelve a la primera página.
+- [x] El filtro **Activos**/**Inactivos** envía `isActive=true`/`false`; **Todos** no envía `isActive`.
+- [x] La paginación muestra "Página X de Y · N pacientes" y **Anterior**/**Siguiente** se deshabilitan en los extremos.
+- [x] Sin pacientes se ve "Todavía no hay pacientes registrados."; sin resultados con filtros, "No se encontraron pacientes con esos filtros."; un error de carga muestra un aviso con **Reintentar**.
+- [x] **Nuevo paciente** abre un modal con las secciones Identificación, Contacto, Dirección y Datos clínicos; enviarlo vacío o con fecha futura, email, teléfono, dirección incompleta o longitudes inválidas muestra los mensajes sin hacer peticiones.
+- [x] Con datos válidos se hace `POST /api/patients` con textos recortados, opcionales vacíos como `null`, `address: null` sin dirección y `bloodType` en notación (`"O+"`) o `null`; se cierra el modal, sale el toast "Paciente creado." y la tabla se refresca.
+- [x] Un documento repetido (409) muestra "Ya existe un paciente con ese documento." bajo el número y conserva los valores.
+- [x] El botón lápiz de cada fila pide `GET /api/patients/{id}`, rellena el formulario y guarda con `PUT /api/patients/{id}`; toast "Paciente actualizado." y refresco. Vaciar un opcional al editar lo envía como `null`.
+- [x] **Desactivar** y **Activar** (menú ⋯) piden confirmación; **Cancelar** no hace nada; confirmar llama a `POST …/deactivate` o `…/activate`, muestra el toast y actualiza el estado en la tabla.
+- [x] Un 404 en editar, activar o desactivar muestra "El paciente ya no existe." y refresca la tabla.
+- [x] Sin conexión, las acciones muestran "No se pudo conectar con el servidor.".
+- [x] En móvil la tabla se desplaza en horizontal y el modal tiene scroll con los botones visibles; se ve bien en tema claro y oscuro.
+- [x] `pnpm build`, `pnpm lint`, el chequeo de Prettier y `pnpm test` terminan sin errores.
+- [x] `frontend/CLAUDE.md` refleja la estructura nueva y tiene la fila 08 en el backlog.
+- [x] No hay cambios fuera de `frontend/`.
 
 ## Decisions
 

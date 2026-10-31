@@ -124,17 +124,17 @@ Convenciones:
 
 ## Acceptance criteria
 
-- [ ] Existen `global.json`, `Directory.Build.props`, `Directory.Packages.props` y `Dispensario.slnx` en la raíz del repositorio.
-- [ ] `dotnet --version` ejecutado en la raíz devuelve una versión 10.0.x.
-- [ ] `dotnet build Dispensario.slnx` termina sin errores.
-- [ ] La salida del build está en `bin/Debug/net10.0/` de `BuildingBlocks`.
-- [ ] `BuildingBlocks.csproj` no contiene `TargetFramework`, `Nullable`, `ImplicitUsings` ni ningún atributo `Version`.
-- [ ] `BuildingBlocks.csproj` contiene `<FrameworkReference Include="Microsoft.AspNetCore.App" />`.
-- [ ] Ni `BuildingBlocks.csproj` ni `Directory.Packages.props` mencionan `StackExchange.Redis` ni `Microsoft.FeatureManagement.AspNetCore`.
-- [ ] `Directory.Packages.props` tiene `ManagePackageVersionsCentrally` en `true` y JwtBearer en una versión 10.0.x.
-- [ ] `dotnet sln Dispensario.slnx list` muestra `BuildingBlocks.csproj`.
-- [ ] Ningún archivo `.cs` de `BuildingBlocks` ha cambiado.
-- [ ] `docs/PLAN.md` tiene la nueva fila 02 y las demás renumeradas, y la fila 01 apunta a `specs/01-solution-and-buildingblocks-net10.md`.
+- [x] Existen `global.json`, `Directory.Build.props`, `Directory.Packages.props` y `Dispensario.slnx` en la raíz del repositorio.
+- [x] `dotnet --version` ejecutado en la raíz devuelve una versión 10.0.x.
+- [x] `dotnet build Dispensario.slnx` termina sin errores.
+- [x] La salida del build está en `bin/Debug/net10.0/` de `BuildingBlocks`.
+- [x] `BuildingBlocks.csproj` no contiene `TargetFramework`, `Nullable`, `ImplicitUsings` ni ningún atributo `Version`.
+- [x] `BuildingBlocks.csproj` contiene `<FrameworkReference Include="Microsoft.AspNetCore.App" />`.
+- [x] Ni `BuildingBlocks.csproj` ni `Directory.Packages.props` mencionan `StackExchange.Redis` ni `Microsoft.FeatureManagement.AspNetCore`.
+- [x] `Directory.Packages.props` tiene `ManagePackageVersionsCentrally` en `true` y JwtBearer en una versión 10.0.x.
+- [x] `dotnet sln Dispensario.slnx list` muestra `BuildingBlocks.csproj`.
+- [x] Ningún archivo `.cs` de `BuildingBlocks` ha cambiado.
+- [x] `docs/PLAN.md` tiene la nueva fila 02 y las demás renumeradas, y la fila 01 apunta a `specs/01-solution-and-buildingblocks-net10.md`.
 
 ## Decisions
 

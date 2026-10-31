@@ -243,23 +243,23 @@ Ejemplos de cuerpo:
 
 ## Acceptance criteria
 
-- [ ] `dotnet build Dispensario.slnx` termina sin errores y sin warnings nuevos respecto a SPEC 12.
-- [ ] `dotnet test Dispensario.slnx` termina con éxito e incluye los tests de este spec y los anteriores, con `ScheduleAppointmentHandlerTests` sin modificar.
-- [ ] Tras borrar `dispensario.db`, `dotnet run` crea la columna `CancellationReason` nullable en `Appointments`.
-- [ ] `POST /api/appointments/{id}/confirm` como `Receptionist` o Admin sobre una cita `Scheduled` futura devuelve 204 y la cita queda `Confirmed`; sobre una cita `Confirmed`, `Cancelled` o ya empezada devuelve 400.
-- [ ] `POST /api/appointments/{id}/cancel` con motivo sobre una cita `Scheduled` o `Confirmed` futura devuelve 204, la cita queda `Cancelled` y el detalle muestra `cancellationReason`; sin motivo o con más de 500 caracteres devuelve 400.
-- [ ] Una cita cancelada deja libre su horario: se puede agendar otra en la misma hora con el mismo doctor.
-- [ ] `POST /api/appointments/{id}/no-show` sobre una cita `Scheduled` o `Confirmed` ya empezada devuelve 204 y la cita queda `NoShow`; sobre una cita futura devuelve 400.
-- [ ] `PUT /api/appointments/{id}/schedule` con un `startLocal` válido devuelve 204, la cita queda `Scheduled` con las nuevas horas y el fin calculado con la duración vigente del doctor.
-- [ ] `PUT /api/appointments/{id}/schedule` devuelve 400 con la misma hora, en el pasado, fuera del horario, desalineado, con `Z` u offset, o con doctor o paciente inactivo; 409 si cruza con otra cita del doctor o del paciente.
-- [ ] Mover una cita a un horario que solo se solapa con ella misma se acepta.
-- [ ] Cualquier transición sobre una cita `Cancelled` o `NoShow` devuelve 400.
-- [ ] Las cuatro rutas devuelven 404 con una cita inexistente y 401 sin token.
-- [ ] Un `Doctor` vinculado recibe 204 al cancelar o marcar no asistida una cita suya y 403 sobre una ajena; recibe 403 en `confirm` y `PUT schedule`; un `Doctor` sin vincular recibe 403 en `cancel` y `no-show`.
-- [ ] Todos los errores salen como `application/problem+json`.
-- [ ] Las cuatro rutas nuevas aparecen en `/openapi/v1.json` con tag `Appointments`, nombre y resumen.
-- [ ] La sección **Endpoints** del `README.md` documenta las cuatro rutas nuevas con acceso, petición y códigos de error, y `cancellationReason` en la respuesta.
-- [ ] `DOMAIN.md`, `APPLICATION.md`, `INFRASTRUCTURE.md`, `API.md` y `CLAUDE.md` describen el ciclo de vida tal como se implementó, y `docs/PLAN.md` fila 13 apunta a `specs/13-appointments-lifecycle.md`.
+- [x] `dotnet build Dispensario.slnx` termina sin errores y sin warnings nuevos respecto a SPEC 12.
+- [x] `dotnet test Dispensario.slnx` termina con éxito e incluye los tests de este spec y los anteriores, con `ScheduleAppointmentHandlerTests` sin modificar.
+- [x] Tras borrar `dispensario.db`, `dotnet run` crea la columna `CancellationReason` nullable en `Appointments`.
+- [x] `POST /api/appointments/{id}/confirm` como `Receptionist` o Admin sobre una cita `Scheduled` futura devuelve 204 y la cita queda `Confirmed`; sobre una cita `Confirmed`, `Cancelled` o ya empezada devuelve 400.
+- [x] `POST /api/appointments/{id}/cancel` con motivo sobre una cita `Scheduled` o `Confirmed` futura devuelve 204, la cita queda `Cancelled` y el detalle muestra `cancellationReason`; sin motivo o con más de 500 caracteres devuelve 400.
+- [x] Una cita cancelada deja libre su horario: se puede agendar otra en la misma hora con el mismo doctor.
+- [x] `POST /api/appointments/{id}/no-show` sobre una cita `Scheduled` o `Confirmed` ya empezada devuelve 204 y la cita queda `NoShow`; sobre una cita futura devuelve 400.
+- [x] `PUT /api/appointments/{id}/schedule` con un `startLocal` válido devuelve 204, la cita queda `Scheduled` con las nuevas horas y el fin calculado con la duración vigente del doctor.
+- [x] `PUT /api/appointments/{id}/schedule` devuelve 400 con la misma hora, en el pasado, fuera del horario, desalineado, con `Z` u offset, o con doctor o paciente inactivo; 409 si cruza con otra cita del doctor o del paciente.
+- [x] Mover una cita a un horario que solo se solapa con ella misma se acepta.
+- [x] Cualquier transición sobre una cita `Cancelled` o `NoShow` devuelve 400.
+- [x] Las cuatro rutas devuelven 404 con una cita inexistente y 401 sin token.
+- [x] Un `Doctor` vinculado recibe 204 al cancelar o marcar no asistida una cita suya y 403 sobre una ajena; recibe 403 en `confirm` y `PUT schedule`; un `Doctor` sin vincular recibe 403 en `cancel` y `no-show`.
+- [x] Todos los errores salen como `application/problem+json`.
+- [x] Las cuatro rutas nuevas aparecen en `/openapi/v1.json` con tag `Appointments`, nombre y resumen.
+- [x] La sección **Endpoints** del `README.md` documenta las cuatro rutas nuevas con acceso, petición y códigos de error, y `cancellationReason` en la respuesta.
+- [x] `DOMAIN.md`, `APPLICATION.md`, `INFRASTRUCTURE.md`, `API.md` y `CLAUDE.md` describen el ciclo de vida tal como se implementó, y `docs/PLAN.md` fila 13 apunta a `specs/13-appointments-lifecycle.md`.
 
 ## Decisions
 

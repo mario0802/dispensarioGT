@@ -177,21 +177,21 @@ Tests existentes:
 
 ## Acceptance criteria
 
-- [ ] `Dispensario.Infrastructure/Data/Migrations/` contiene `*_InitialCreate.cs`, `*_InitialCreate.Designer.cs` y `DispensarioDbContextModelSnapshot.cs`, generados con `dotnet ef`.
-- [ ] La migración crea `Users`, `Doctors`, `DoctorScheduleBlocks`, `Patients`, `Appointments` y `Consultations` con los índices de `INFRASTRUCTURE.md` §3, la FK en cascada de `DoctorScheduleBlocks` y ninguna FK entre módulos.
-- [ ] `Model_HasNoPendingChanges` está en verde.
-- [ ] Ningún archivo de `src/` llama a `EnsureCreated` ni a `EnsureCreatedAsync`.
-- [ ] Los tests `Migrate_*` de persistencia (antes `EnsureCreated_*`) pasan sobre el esquema migrado sin cambiar sus asertos.
-- [ ] Con `dispensario.db` borrada, `dotnet run` crea la base con `__EFMigrationsHistory` que contiene `InitialCreate`.
-- [ ] Un segundo `dotnet run` sobre la misma base arranca sin errores y sin duplicar el Admin ni los datos de ejemplo.
-- [ ] Con `Seed:SampleData:Password` configurada, tras el arranque hay 3 doctores con horario, 5 pacientes, `recepcion@dispensario.local` (`Receptionist`) y `doctor@dispensario.local` (`Doctor`) vinculado al doctor `MG-0001`, y ambos pueden hacer login.
-- [ ] Con `Seed:SampleData:Password` vacía, se siembran doctores y pacientes, no se crean usuarios y el log muestra `Sample users skipped: 'Seed:SampleData:Password' is empty.`.
-- [ ] Con `Seed:SampleData:Enabled=false` no se siembran datos de ejemplo.
-- [ ] Si ya hay algún doctor o paciente, `SampleDataSeeder` no crea nada.
-- [ ] Los tests de integración arrancan con la migración y sin datos de ejemplo.
-- [ ] `dotnet build Dispensario.slnx` sin errores ni advertencias nuevas.
-- [ ] `dotnet test Dispensario.slnx` en verde.
-- [ ] `INFRASTRUCTURE.md`, `API.md`, `TESTING.md`, `CLAUDE.md`, `README.md` y la fila 17 de `PLAN.md` reflejan las migraciones y los datos de ejemplo.
+- [x] `Dispensario.Infrastructure/Data/Migrations/` contiene `*_InitialCreate.cs`, `*_InitialCreate.Designer.cs` y `DispensarioDbContextModelSnapshot.cs`, generados con `dotnet ef`.
+- [x] La migración crea `Users`, `Doctors`, `DoctorScheduleBlocks`, `Patients`, `Appointments` y `Consultations` con los índices de `INFRASTRUCTURE.md` §3, la FK en cascada de `DoctorScheduleBlocks` y ninguna FK entre módulos.
+- [x] `Model_HasNoPendingChanges` está en verde.
+- [x] Ningún archivo de `src/` llama a `EnsureCreated` ni a `EnsureCreatedAsync`.
+- [x] Los tests `Migrate_*` de persistencia (antes `EnsureCreated_*`) pasan sobre el esquema migrado sin cambiar sus asertos.
+- [x] Con `dispensario.db` borrada, `dotnet run` crea la base con `__EFMigrationsHistory` que contiene `InitialCreate`.
+- [x] Un segundo `dotnet run` sobre la misma base arranca sin errores y sin duplicar el Admin ni los datos de ejemplo.
+- [x] Con `Seed:SampleData:Password` configurada, tras el arranque hay 3 doctores con horario, 5 pacientes, `recepcion@dispensario.local` (`Receptionist`) y `doctor@dispensario.local` (`Doctor`) vinculado al doctor `MG-0001`, y ambos pueden hacer login.
+- [x] Con `Seed:SampleData:Password` vacía, se siembran doctores y pacientes, no se crean usuarios y el log muestra `Sample users skipped: 'Seed:SampleData:Password' is empty.`.
+- [x] Con `Seed:SampleData:Enabled=false` no se siembran datos de ejemplo.
+- [x] Si ya hay algún doctor o paciente, `SampleDataSeeder` no crea nada.
+- [x] Los tests de integración arrancan con la migración y sin datos de ejemplo.
+- [x] `dotnet build Dispensario.slnx` sin errores ni advertencias nuevas.
+- [x] `dotnet test Dispensario.slnx` en verde.
+- [x] `INFRASTRUCTURE.md`, `API.md`, `TESTING.md`, `CLAUDE.md`, `README.md` y la fila 17 de `PLAN.md` reflejan las migraciones y los datos de ejemplo.
 
 ## Decisions
 

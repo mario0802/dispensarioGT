@@ -224,27 +224,27 @@ Tipos de apoyo en `Persistence/Fakes/`:
 
 ## Acceptance criteria
 
-- [ ] `dotnet build Dispensario.slnx` termina sin errores y sin warnings nuevos respecto a SPEC 03.
-- [ ] `dotnet test Dispensario.slnx` termina con éxito e incluye las seis clases de tests de `Persistence/` y los tests de SPEC 03.
-- [ ] `Directory.Packages.props` declara `Microsoft.EntityFrameworkCore`, `Microsoft.EntityFrameworkCore.Sqlite` y `Microsoft.Extensions.TimeProvider.Testing`, y ningún `.csproj` lleva atributo `Version`.
-- [ ] `BuildingBlocks.Domain` sigue sin más paquetes que `MediatR.Contracts` y contiene `IStronglyTypedId` e `IHasDomainEvents`.
-- [ ] `Dispensario.Domain` no referencia EF Core.
-- [ ] `AggregateRoot<TId>` implementa `IHasDomainEvents`.
-- [ ] `IApplicationDbContext` e `ICurrentUser` existen en `Dispensario.Application/Abstractions/` con los miembros del data model.
-- [ ] `DispensarioDbContext` implementa `IApplicationDbContext` y no declara ningún `DbSet`.
-- [ ] Un ID tipado y un ID tipado nullable se guardan y se releen iguales, y se pueden usar en un `Where` (cubierto por `StronglyTypedIdConventionTests`).
-- [ ] Todo `DateTime` y `DateTime?` releído de SQLite tiene `Kind == DateTimeKind.Utc` (cubierto por `UtcDateTimeConventionTests`).
-- [ ] `FullName` y `Address?` se mapean con `ComplexProperty` y se releen iguales, incluido `Address` null (cubierto por `ComplexValueObjectMappingTests`).
-- [ ] Con `FakeTimeProvider` fijado a una fecha, `CreatedAtUtc` toma esa fecha al insertar y `LastModifiedAtUtc` la nueva fecha al modificar, también cuando solo cambia una entidad propia.
-- [ ] `CreatedBy` es el `UserId` del `ICurrentUser` como texto, y `null` con un usuario anónimo.
-- [ ] Tras `SaveChangesAsync`, `IPublisher.Publish` recibe cada evento una vez y en orden, y `DomainEvents` queda vacío.
-- [ ] Si `SaveChangesAsync` falla, no se publica ningún evento y los eventos siguen en el aggregate.
-- [ ] `SaveChanges` síncrono con eventos pendientes lanza `InvalidOperationException`.
-- [ ] `AddInfrastructure` sin `ConnectionStrings:Database` lanza `InvalidOperationException`; con ella, `IApplicationDbContext` y `DispensarioDbContext` resuelven la misma instancia en un scope.
-- [ ] Ningún archivo nuevo de `src/` contiene `DateTime.Now` ni `DateTime.UtcNow`.
-- [ ] `Program.cs` no ha cambiado.
-- [ ] `INFRASTRUCTURE.md`, `APPLICATION.md`, `DOMAIN.md`, `TESTING.md` y `CLAUDE.md` describen las convenciones genéricas, el `ICurrentUser` mínimo y los tests de persistencia, y `INFRASTRUCTURE.md` ya no propone un `HaveConversion` por cada ID.
-- [ ] `docs/PLAN.md` fila 04 apunta a `specs/04-persistence-base.md`.
+- [x] `dotnet build Dispensario.slnx` termina sin errores y sin warnings nuevos respecto a SPEC 03.
+- [x] `dotnet test Dispensario.slnx` termina con éxito e incluye las seis clases de tests de `Persistence/` y los tests de SPEC 03.
+- [x] `Directory.Packages.props` declara `Microsoft.EntityFrameworkCore`, `Microsoft.EntityFrameworkCore.Sqlite` y `Microsoft.Extensions.TimeProvider.Testing`, y ningún `.csproj` lleva atributo `Version`.
+- [x] `BuildingBlocks.Domain` sigue sin más paquetes que `MediatR.Contracts` y contiene `IStronglyTypedId` e `IHasDomainEvents`.
+- [x] `Dispensario.Domain` no referencia EF Core.
+- [x] `AggregateRoot<TId>` implementa `IHasDomainEvents`.
+- [x] `IApplicationDbContext` e `ICurrentUser` existen en `Dispensario.Application/Abstractions/` con los miembros del data model.
+- [x] `DispensarioDbContext` implementa `IApplicationDbContext` y no declara ningún `DbSet`.
+- [x] Un ID tipado y un ID tipado nullable se guardan y se releen iguales, y se pueden usar en un `Where` (cubierto por `StronglyTypedIdConventionTests`).
+- [x] Todo `DateTime` y `DateTime?` releído de SQLite tiene `Kind == DateTimeKind.Utc` (cubierto por `UtcDateTimeConventionTests`).
+- [x] `FullName` y `Address?` se mapean con `ComplexProperty` y se releen iguales, incluido `Address` null (cubierto por `ComplexValueObjectMappingTests`).
+- [x] Con `FakeTimeProvider` fijado a una fecha, `CreatedAtUtc` toma esa fecha al insertar y `LastModifiedAtUtc` la nueva fecha al modificar, también cuando solo cambia una entidad propia.
+- [x] `CreatedBy` es el `UserId` del `ICurrentUser` como texto, y `null` con un usuario anónimo.
+- [x] Tras `SaveChangesAsync`, `IPublisher.Publish` recibe cada evento una vez y en orden, y `DomainEvents` queda vacío.
+- [x] Si `SaveChangesAsync` falla, no se publica ningún evento y los eventos siguen en el aggregate.
+- [x] `SaveChanges` síncrono con eventos pendientes lanza `InvalidOperationException`.
+- [x] `AddInfrastructure` sin `ConnectionStrings:Database` lanza `InvalidOperationException`; con ella, `IApplicationDbContext` y `DispensarioDbContext` resuelven la misma instancia en un scope.
+- [x] Ningún archivo nuevo de `src/` contiene `DateTime.Now` ni `DateTime.UtcNow`.
+- [x] `Program.cs` no ha cambiado.
+- [x] `INFRASTRUCTURE.md`, `APPLICATION.md`, `DOMAIN.md`, `TESTING.md` y `CLAUDE.md` describen las convenciones genéricas, el `ICurrentUser` mínimo y los tests de persistencia, y `INFRASTRUCTURE.md` ya no propone un `HaveConversion` por cada ID.
+- [x] `docs/PLAN.md` fila 04 apunta a `specs/04-persistence-base.md`.
 
 ## Decisions
 

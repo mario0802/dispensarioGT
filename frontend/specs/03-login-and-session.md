@@ -274,24 +274,24 @@ Provisional hasta el spec del layout por rol: cabecera con **Dispensario Médico
 
 ## Acceptance criteria
 
-- [ ] `package.json` añade `react-router`, `react-hook-form`, `zod` y `@hookform/resolvers`, y ninguna otra dependencia.
-- [ ] Sin token guardado, abrir `/` lleva a `/login`, y la página muestra **Dispensario Médico**, los campos Email y Contraseña y el botón **Iniciar sesión**.
-- [ ] Enviar el formulario vacío muestra "Ingresa tu email." y "Ingresa tu contraseña." y no hace ninguna petición.
-- [ ] Con credenciales válidas se hace `POST /api/auth/login`, después `GET /api/auth/me` con `Authorization: Bearer <token>`, se guarda `{ accessToken, expiresAtUtc }` en `localStorage` (`dispensario-auth`) y se muestra el inicio con el nombre y el rol en español.
-- [ ] Con credenciales inválidas (401) se muestra "Email o contraseña incorrectos.", la contraseña queda vacía y no se guarda nada.
-- [ ] Sin conexión con el backend, el login muestra "No se pudo conectar con el servidor.".
-- [ ] Mientras se envía, el botón está deshabilitado y muestra "Iniciando sesión…".
-- [ ] El botón del ojo alterna la contraseña entre oculta y visible.
-- [ ] Recargar con una sesión vigente mantiene al usuario dentro, sin pasar por el login.
-- [ ] Un token caducado en `localStorage` se descarta al arrancar sin llamar a la API.
-- [ ] Si `/me` falla por red al arrancar, se muestra la pantalla de error con **Reintentar**, y el token sigue guardado.
-- [ ] Un 401 de cualquier petición con token cierra la sesión y lleva a `/login`.
-- [ ] Tras ser redirigido al login desde una ruta protegida, el login vuelve a esa ruta.
-- [ ] `/login` con sesión redirige al inicio, y una ruta desconocida va a `/`.
-- [ ] **Cerrar sesión** borra `dispensario-auth` y lleva a `/login`.
-- [ ] `pnpm build`, `pnpm lint`, `pnpm format:check` y `pnpm test` terminan sin errores.
-- [ ] `frontend/CLAUDE.md` refleja la estructura nueva, tiene la fila 03 en el backlog y las preguntas de router, formularios, guardado del token e idioma están cerradas.
-- [ ] No hay cambios fuera de `frontend/`.
+- [x] `package.json` añade `react-router`, `react-hook-form`, `zod` y `@hookform/resolvers`, y ninguna otra dependencia.
+- [x] Sin token guardado, abrir `/` lleva a `/login`, y la página muestra **Dispensario Médico**, los campos Email y Contraseña y el botón **Iniciar sesión**.
+- [x] Enviar el formulario vacío muestra "Ingresa tu email." y "Ingresa tu contraseña." y no hace ninguna petición.
+- [x] Con credenciales válidas se hace `POST /api/auth/login`, después `GET /api/auth/me` con `Authorization: Bearer <token>`, se guarda `{ accessToken, expiresAtUtc }` en `localStorage` (`dispensario-auth`) y se muestra el inicio con el nombre y el rol en español.
+- [x] Con credenciales inválidas (401) se muestra "Email o contraseña incorrectos.", la contraseña queda vacía y no se guarda nada.
+- [x] Sin conexión con el backend, el login muestra "No se pudo conectar con el servidor.".
+- [x] Mientras se envía, el botón está deshabilitado y muestra "Iniciando sesión…".
+- [x] El botón del ojo alterna la contraseña entre oculta y visible.
+- [x] Recargar con una sesión vigente mantiene al usuario dentro, sin pasar por el login.
+- [x] Un token caducado en `localStorage` se descarta al arrancar sin llamar a la API.
+- [x] Si `/me` falla por red al arrancar, se muestra la pantalla de error con **Reintentar**, y el token sigue guardado.
+- [x] Un 401 de cualquier petición con token cierra la sesión y lleva a `/login`.
+- [x] Tras ser redirigido al login desde una ruta protegida, el login vuelve a esa ruta.
+- [x] `/login` con sesión redirige al inicio, y una ruta desconocida va a `/`.
+- [x] **Cerrar sesión** borra `dispensario-auth` y lleva a `/login`.
+- [x] `pnpm build`, `pnpm lint`, `pnpm format:check` y `pnpm test` terminan sin errores.
+- [x] `frontend/CLAUDE.md` refleja la estructura nueva, tiene la fila 03 en el backlog y las preguntas de router, formularios, guardado del token e idioma están cerradas.
+- [x] No hay cambios fuera de `frontend/`.
 
 ## Decisions
 

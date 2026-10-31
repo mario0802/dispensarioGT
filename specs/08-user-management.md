@@ -209,25 +209,25 @@ Users/
 
 ## Acceptance criteria
 
-- [ ] `dotnet build Dispensario.slnx` termina sin errores y sin warnings nuevos respecto a SPEC 07.
-- [ ] `dotnet test Dispensario.slnx` termina con éxito e incluye los tests de este spec y los anteriores.
-- [ ] `User.cs`, `UserConfiguration.cs` y la carpeta `Dispensario.Domain/Users/` no cambian.
-- [ ] `POST /api/auth/register` sin token devuelve 201 con `Location: /api/users/{id}`, y el usuario creado tiene rol `Receptionist` aunque el cuerpo traiga otro `role`.
-- [ ] `POST /api/users` como Admin crea usuarios `Admin`, `Doctor` y `Receptionist`; un `Doctor` queda con `doctorId = null`.
-- [ ] Registrar un email ya usado (también con otras mayúsculas) o una identificación ya usada devuelve 409.
-- [ ] Una contraseña de menos de 8 o más de 72 caracteres, sin letra o sin dígito devuelve 400 con errores de validación en el registro, el cambio y el reseteo.
-- [ ] `GET /api/users` devuelve `pageIndex`, `pageSize`, `count` y `data`, filtra por `role`, `isActive` y `search`, y responde 400 con `pageSize` fuera de 1–100.
-- [ ] `GET /api/users/{id}` devuelve el usuario con `createdAtUtc`, y 404 si no existe.
-- [ ] `PUT /api/users/{id}` y `PUT /api/users/me` cambian nombre y teléfono y responden 204; un `phone` null borra el teléfono.
-- [ ] `PUT /api/users/me/password` con la contraseña actual correcta responde 204 y el login funciona con la nueva; con la actual incorrecta responde 400 `Current password is incorrect.`.
-- [ ] `PUT /api/users/{id}/password` responde 204 y el login funciona con la nueva; sobre el propio Admin responde 400.
-- [ ] `POST /api/users/{id}/deactivate` responde 204 y después el login de ese usuario devuelve 401; sobre sí mismo responde 400; sobre el último Admin activo responde 409; sobre un inactivo responde 400.
-- [ ] `POST /api/users/{id}/activate` sobre un inactivo responde 204 y el login vuelve a funcionar; sobre un activo responde 400.
-- [ ] Los endpoints `AdminOnly` responden 403 a `Receptionist` y `Doctor`, y todos los de `/api/users` responden 401 sin token.
-- [ ] Todos los errores salen como `application/problem+json`.
-- [ ] Todas las rutas nuevas aparecen en `/openapi/v1.json` con su tag, nombre y resumen.
-- [ ] La sección **Endpoints** del `README.md` documenta las diez rutas nuevas con acceso, petición, respuesta y códigos de error.
-- [ ] `APPLICATION.md`, `API.md` y `CLAUDE.md` describen la gestión de usuarios, y `docs/PLAN.md` fila 08 apunta a `specs/08-user-management.md`.
+- [x] `dotnet build Dispensario.slnx` termina sin errores y sin warnings nuevos respecto a SPEC 07.
+- [x] `dotnet test Dispensario.slnx` termina con éxito e incluye los tests de este spec y los anteriores.
+- [x] `User.cs`, `UserConfiguration.cs` y la carpeta `Dispensario.Domain/Users/` no cambian.
+- [x] `POST /api/auth/register` sin token devuelve 201 con `Location: /api/users/{id}`, y el usuario creado tiene rol `Receptionist` aunque el cuerpo traiga otro `role`.
+- [x] `POST /api/users` como Admin crea usuarios `Admin`, `Doctor` y `Receptionist`; un `Doctor` queda con `doctorId = null`.
+- [x] Registrar un email ya usado (también con otras mayúsculas) o una identificación ya usada devuelve 409.
+- [x] Una contraseña de menos de 8 o más de 72 caracteres, sin letra o sin dígito devuelve 400 con errores de validación en el registro, el cambio y el reseteo.
+- [x] `GET /api/users` devuelve `pageIndex`, `pageSize`, `count` y `data`, filtra por `role`, `isActive` y `search`, y responde 400 con `pageSize` fuera de 1–100.
+- [x] `GET /api/users/{id}` devuelve el usuario con `createdAtUtc`, y 404 si no existe.
+- [x] `PUT /api/users/{id}` y `PUT /api/users/me` cambian nombre y teléfono y responden 204; un `phone` null borra el teléfono.
+- [x] `PUT /api/users/me/password` con la contraseña actual correcta responde 204 y el login funciona con la nueva; con la actual incorrecta responde 400 `Current password is incorrect.`.
+- [x] `PUT /api/users/{id}/password` responde 204 y el login funciona con la nueva; sobre el propio Admin responde 400.
+- [x] `POST /api/users/{id}/deactivate` responde 204 y después el login de ese usuario devuelve 401; sobre sí mismo responde 400; sobre el último Admin activo responde 409; sobre un inactivo responde 400.
+- [x] `POST /api/users/{id}/activate` sobre un inactivo responde 204 y el login vuelve a funcionar; sobre un activo responde 400.
+- [x] Los endpoints `AdminOnly` responden 403 a `Receptionist` y `Doctor`, y todos los de `/api/users` responden 401 sin token.
+- [x] Todos los errores salen como `application/problem+json`.
+- [x] Todas las rutas nuevas aparecen en `/openapi/v1.json` con su tag, nombre y resumen.
+- [x] La sección **Endpoints** del `README.md` documenta las diez rutas nuevas con acceso, petición, respuesta y códigos de error.
+- [x] `APPLICATION.md`, `API.md` y `CLAUDE.md` describen la gestión de usuarios, y `docs/PLAN.md` fila 08 apunta a `specs/08-user-management.md`.
 
 ## Decisions
 

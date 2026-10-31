@@ -240,23 +240,23 @@ Mismas pautas que el spec 09 (`fetch` simulado, `user-event`, `MemoryRouter`, `T
 
 ## Acceptance criteria
 
-- [ ] El `Doctor` ve el menú **Citas** antes de **Mi horario**; Admin y Recepción siguen viendo su menú sin cambios.
-- [ ] Un `Doctor` sin vincular ve en `/appointments` el aviso de vinculación y no se hace ninguna petición.
-- [ ] Un `Doctor` vinculado entra a `/appointments` y la primera carga hace `GET /api/appointments?pageIndex=0&pageSize=10&from={hoy}&to={hoy}` sin `doctorId`.
-- [ ] El doctor no ve **Nueva cita**, ni el filtro ni la columna **Doctor**; sí **Desde**, **Hasta**, **Estado**, **Paciente** y **Limpiar filtros** (que vuelve a hoy–hoy).
-- [ ] Sin citas con los filtros por defecto se ve "No tienes citas hoy.".
-- [ ] Solo las citas de hoy `Scheduled` o `Confirmed` tienen el botón **Iniciar** y la fila clicable; las demás no reaccionan al clic.
-- [ ] Pulsar una fila iniciable o su **Iniciar** abre "Iniciar consulta" con el paciente, la franja y el motivo; **Cancelar** la cierra sin petición.
-- [ ] Confirmar hace `POST /api/consultations` con `patientId`, `appointmentId` y el `reason` de la cita, muestra "Iniciando…" y navega a `/consultations/{id}`.
-- [ ] Si la cita ya tiene consulta (409), se navega a la consulta existente encontrada en `GET /api/patients/{patientId}/consultations`; si no aparece, toast "La cita ya tiene una consulta, pero no se pudo abrir.".
-- [ ] Un 400, 403, 404 o fallo de red al iniciar muestra el toast de su mensaje y recarga el listado.
-- [ ] Un 403 del listado para el doctor muestra el mensaje de volver a iniciar sesión.
-- [ ] `/consultations/{id}` muestra "Consulta", el texto provisional y **Volver a citas**; Admin y Recepción que entran terminan en `/`.
-- [ ] La vista de Admin y Recepción de `/appointments` no cambia (los tests del spec 09 siguen pasando).
-- [ ] En móvil la tabla se desplaza en horizontal y el diálogo se ve completo; bien en tema claro y oscuro.
-- [ ] `pnpm build`, `pnpm lint`, el chequeo de Prettier y `pnpm test` terminan sin errores.
-- [ ] `frontend/CLAUDE.md` refleja el estado y la estructura nuevos y tiene la fila 10 en el backlog.
-- [ ] No hay cambios fuera de `frontend/`.
+- [x] El `Doctor` ve el menú **Citas** antes de **Mi horario**; Admin y Recepción siguen viendo su menú sin cambios.
+- [x] Un `Doctor` sin vincular ve en `/appointments` el aviso de vinculación y no se hace ninguna petición.
+- [x] Un `Doctor` vinculado entra a `/appointments` y la primera carga hace `GET /api/appointments?pageIndex=0&pageSize=10&from={hoy}&to={hoy}` sin `doctorId`.
+- [x] El doctor no ve **Nueva cita**, ni el filtro ni la columna **Doctor**; sí **Desde**, **Hasta**, **Estado**, **Paciente** y **Limpiar filtros** (que vuelve a hoy–hoy).
+- [x] Sin citas con los filtros por defecto se ve "No tienes citas hoy.".
+- [x] Solo las citas de hoy `Scheduled` o `Confirmed` tienen el botón **Iniciar** y la fila clicable; las demás no reaccionan al clic.
+- [x] Pulsar una fila iniciable o su **Iniciar** abre "Iniciar consulta" con el paciente, la franja y el motivo; **Cancelar** la cierra sin petición.
+- [x] Confirmar hace `POST /api/consultations` con `patientId`, `appointmentId` y el `reason` de la cita, muestra "Iniciando…" y navega a `/consultations/{id}`.
+- [x] Si la cita ya tiene consulta (409), se navega a la consulta existente encontrada en `GET /api/patients/{patientId}/consultations`; si no aparece, toast "La cita ya tiene una consulta, pero no se pudo abrir.".
+- [x] Un 400, 403, 404 o fallo de red al iniciar muestra el toast de su mensaje y recarga el listado.
+- [x] Un 403 del listado para el doctor muestra el mensaje de volver a iniciar sesión.
+- [x] `/consultations/{id}` muestra "Consulta", el texto provisional y **Volver a citas**; Admin y Recepción que entran terminan en `/`.
+- [x] La vista de Admin y Recepción de `/appointments` no cambia (los tests del spec 09 siguen pasando).
+- [x] En móvil la tabla se desplaza en horizontal y el diálogo se ve completo; bien en tema claro y oscuro.
+- [x] `pnpm build`, `pnpm lint`, el chequeo de Prettier y `pnpm test` terminan sin errores.
+- [x] `frontend/CLAUDE.md` refleja el estado y la estructura nuevos y tiene la fila 10 en el backlog.
+- [x] No hay cambios fuera de `frontend/`.
 
 ## Decisions
 

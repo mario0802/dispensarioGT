@@ -147,19 +147,19 @@ Ejemplo: `GET /api/doctors/0193f1b8-…/available-slots?date=2026-11-03`
 
 ## Acceptance criteria
 
-- [ ] `dotnet build Dispensario.slnx` termina sin errores y sin warnings nuevos respecto a SPEC 13.
-- [ ] `dotnet test Dispensario.slnx` termina con éxito e incluye los tests de este spec y los anteriores, con `ScheduleAppointmentHandlerTests` y `RescheduleAppointmentHandlerTests` sin modificar.
-- [ ] `GET /api/doctors/{id}/available-slots?date=` de un doctor activo con horario ese día devuelve 200 con `doctorId`, `date`, `durationMinutes` y los slots alineados desde el inicio de cada bloque, en hora local sin offset y ordenados por inicio.
-- [ ] Un slot ocupado por una cita `Scheduled` o `Confirmed` del doctor no aparece; con la cita cancelada, vuelve a aparecer.
-- [ ] Todo slot devuelto se puede agendar con `POST /api/appointments` (salvo cruce con otra cita del paciente).
-- [ ] Para la fecha de hoy solo aparecen slots con inicio posterior a la hora actual.
-- [ ] Un día sin bloques en el horario devuelve 200 con `slots: []`.
-- [ ] Una fecha anterior a hoy (fecha local del dispensario), una `date` ausente o mal formada y un doctor inactivo devuelven 400; un doctor inexistente devuelve 404; sin token devuelve 401.
-- [ ] Cualquier rol autenticado (`Admin`, `Receptionist`, `Doctor`, vinculado o no) obtiene 200.
-- [ ] Todos los errores salen como `application/problem+json`.
-- [ ] La ruta aparece en `/openapi/v1.json` con tag `Appointments`, nombre `GetAvailableSlots` y resumen.
-- [ ] La sección **Endpoints** del `README.md` documenta la ruta con acceso, parámetro, respuesta y códigos de error.
-- [ ] `APPLICATION.md`, `API.md` y `CLAUDE.md` describen los slots disponibles tal como se implementaron, y `docs/PLAN.md` fila 14 apunta a `specs/14-available-slots.md`.
+- [x] `dotnet build Dispensario.slnx` termina sin errores y sin warnings nuevos respecto a SPEC 13.
+- [x] `dotnet test Dispensario.slnx` termina con éxito e incluye los tests de este spec y los anteriores, con `ScheduleAppointmentHandlerTests` y `RescheduleAppointmentHandlerTests` sin modificar.
+- [x] `GET /api/doctors/{id}/available-slots?date=` de un doctor activo con horario ese día devuelve 200 con `doctorId`, `date`, `durationMinutes` y los slots alineados desde el inicio de cada bloque, en hora local sin offset y ordenados por inicio.
+- [x] Un slot ocupado por una cita `Scheduled` o `Confirmed` del doctor no aparece; con la cita cancelada, vuelve a aparecer.
+- [x] Todo slot devuelto se puede agendar con `POST /api/appointments` (salvo cruce con otra cita del paciente).
+- [x] Para la fecha de hoy solo aparecen slots con inicio posterior a la hora actual.
+- [x] Un día sin bloques en el horario devuelve 200 con `slots: []`.
+- [x] Una fecha anterior a hoy (fecha local del dispensario), una `date` ausente o mal formada y un doctor inactivo devuelven 400; un doctor inexistente devuelve 404; sin token devuelve 401.
+- [x] Cualquier rol autenticado (`Admin`, `Receptionist`, `Doctor`, vinculado o no) obtiene 200.
+- [x] Todos los errores salen como `application/problem+json`.
+- [x] La ruta aparece en `/openapi/v1.json` con tag `Appointments`, nombre `GetAvailableSlots` y resumen.
+- [x] La sección **Endpoints** del `README.md` documenta la ruta con acceso, parámetro, respuesta y códigos de error.
+- [x] `APPLICATION.md`, `API.md` y `CLAUDE.md` describen los slots disponibles tal como se implementaron, y `docs/PLAN.md` fila 14 apunta a `specs/14-available-slots.md`.
 
 ## Decisions
 

@@ -298,24 +298,24 @@ Ejemplos de cuerpo:
 
 ## Acceptance criteria
 
-- [ ] `dotnet build Dispensario.slnx` termina sin errores y sin warnings nuevos respecto a SPEC 14.
-- [ ] `dotnet test Dispensario.slnx` termina con éxito e incluye los tests de este spec y los anteriores.
-- [ ] Tras borrar `dispensario.db`, `dotnet run` crea la tabla `Consultations` con las columnas del spec, el índice único `AppointmentId` y el índice (`PatientId`, `StartedAtUtc`).
-- [ ] `POST /api/consultations` como `Doctor` vinculado y activo, con un paciente activo y sin cita, devuelve 201 con `Location` y la consulta queda `Open` con ese doctor.
-- [ ] Con un `appointmentId` de una cita `Scheduled` o `Confirmed` del mismo doctor y paciente y de la fecha local de hoy, devuelve 201 y la cita no cambia de estado.
-- [ ] Con una cita de otro día, de otro paciente o en estado `Cancelled`, `NoShow` o `Completed` devuelve 400; de otro doctor, 403; inexistente, 404; con una cita que ya tiene consulta (abierta o cerrada), 409.
-- [ ] Un paciente inexistente devuelve 404; un paciente o un doctor inactivo, 400; un motivo vacío o de más de 500 caracteres, 400.
-- [ ] `PUT /api/consultations/{id}` del doctor dueño sobre una consulta `Open` devuelve 204 y reemplaza motivo, diagnóstico y notas (un opcional `null` borra el valor).
-- [ ] `POST /api/consultations/{id}/close` con diagnóstico devuelve 204, la consulta queda `Closed` con `closedAtUtc`; sin diagnóstico devuelve 400.
-- [ ] `PUT` y `close` sobre una consulta `Closed` devuelven 400; sobre la consulta de otro doctor, 403.
-- [ ] `GET /api/consultations/{id}` como cualquier `Doctor` vinculado o como Admin devuelve 200 con nombres del paciente y del doctor, horas UTC y locales, y `status`.
-- [ ] `GET /api/patients/{id}/consultations` como `Doctor` vinculado o Admin devuelve 200 con todas las consultas del paciente (de cualquier doctor, `Open` y `Closed`), de la más reciente a la más antigua y paginadas; paginación inválida, 400; paciente inexistente, 404.
-- [ ] Un `Receptionist` recibe 403 en las cinco rutas; el Admin recibe 403 en `POST`, `PUT` y `close`; un `Doctor` sin vincular recibe 403 en las cinco rutas.
-- [ ] Las cinco rutas devuelven 401 sin token y las de `{id}`, 404 con una consulta inexistente.
-- [ ] Todos los errores salen como `application/problem+json`.
-- [ ] Las cinco rutas aparecen en `/openapi/v1.json` con tag `Consultations`, nombre y resumen.
-- [ ] La sección **Endpoints** del `README.md` documenta las cinco rutas con acceso, petición, respuesta y códigos de error.
-- [ ] `DOMAIN.md`, `APPLICATION.md`, `INFRASTRUCTURE.md`, `API.md` y `CLAUDE.md` describen las consultas tal como se implementaron, y `docs/PLAN.md` fila 15 apunta a `specs/15-consultations.md`.
+- [x] `dotnet build Dispensario.slnx` termina sin errores y sin warnings nuevos respecto a SPEC 14.
+- [x] `dotnet test Dispensario.slnx` termina con éxito e incluye los tests de este spec y los anteriores.
+- [x] Tras borrar `dispensario.db`, `dotnet run` crea la tabla `Consultations` con las columnas del spec, el índice único `AppointmentId` y el índice (`PatientId`, `StartedAtUtc`).
+- [x] `POST /api/consultations` como `Doctor` vinculado y activo, con un paciente activo y sin cita, devuelve 201 con `Location` y la consulta queda `Open` con ese doctor.
+- [x] Con un `appointmentId` de una cita `Scheduled` o `Confirmed` del mismo doctor y paciente y de la fecha local de hoy, devuelve 201 y la cita no cambia de estado.
+- [x] Con una cita de otro día, de otro paciente o en estado `Cancelled`, `NoShow` o `Completed` devuelve 400; de otro doctor, 403; inexistente, 404; con una cita que ya tiene consulta (abierta o cerrada), 409.
+- [x] Un paciente inexistente devuelve 404; un paciente o un doctor inactivo, 400; un motivo vacío o de más de 500 caracteres, 400.
+- [x] `PUT /api/consultations/{id}` del doctor dueño sobre una consulta `Open` devuelve 204 y reemplaza motivo, diagnóstico y notas (un opcional `null` borra el valor).
+- [x] `POST /api/consultations/{id}/close` con diagnóstico devuelve 204, la consulta queda `Closed` con `closedAtUtc`; sin diagnóstico devuelve 400.
+- [x] `PUT` y `close` sobre una consulta `Closed` devuelven 400; sobre la consulta de otro doctor, 403.
+- [x] `GET /api/consultations/{id}` como cualquier `Doctor` vinculado o como Admin devuelve 200 con nombres del paciente y del doctor, horas UTC y locales, y `status`.
+- [x] `GET /api/patients/{id}/consultations` como `Doctor` vinculado o Admin devuelve 200 con todas las consultas del paciente (de cualquier doctor, `Open` y `Closed`), de la más reciente a la más antigua y paginadas; paginación inválida, 400; paciente inexistente, 404.
+- [x] Un `Receptionist` recibe 403 en las cinco rutas; el Admin recibe 403 en `POST`, `PUT` y `close`; un `Doctor` sin vincular recibe 403 en las cinco rutas.
+- [x] Las cinco rutas devuelven 401 sin token y las de `{id}`, 404 con una consulta inexistente.
+- [x] Todos los errores salen como `application/problem+json`.
+- [x] Las cinco rutas aparecen en `/openapi/v1.json` con tag `Consultations`, nombre y resumen.
+- [x] La sección **Endpoints** del `README.md` documenta las cinco rutas con acceso, petición, respuesta y códigos de error.
+- [x] `DOMAIN.md`, `APPLICATION.md`, `INFRASTRUCTURE.md`, `API.md` y `CLAUDE.md` describen las consultas tal como se implementaron, y `docs/PLAN.md` fila 15 apunta a `specs/15-consultations.md`.
 
 ## Decisions
 

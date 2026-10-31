@@ -118,20 +118,20 @@ POST /api/consultations/{id}/close
 
 ## Acceptance criteria
 
-- [ ] `Consultation.Close` deja en `DomainEvents` un único `ConsultationClosedDomainEvent` con el `Id` y el `AppointmentId` de la consulta, también cuando `AppointmentId` es `null`.
-- [ ] Un `Close` que lanza `DomainException` no deja eventos.
-- [ ] Existe `ConsultationClosedHandler` en el namespace `Dispensario.Application.Appointments.EventHandlers` e implementa `INotificationHandler<ConsultationClosedDomainEvent>`.
-- [ ] Cerrar por `POST /api/consultations/{id}/close` una consulta con cita `Scheduled` o `Confirmed` responde 204 y deja la cita `Completed`.
-- [ ] Cerrar una consulta con la cita `NoShow` responde 204, la consulta queda `Closed` y la cita sigue `NoShow`.
-- [ ] Con la cita inexistente o no pendiente, el handler no lanza excepción, no guarda y registra un `Warning`.
-- [ ] Cerrar una consulta sin cita responde 204 y no cambia ninguna cita.
-- [ ] Iniciar una consulta con cita deja la cita `Scheduled` (el test del spec 15 sigue en verde).
-- [ ] `CloseConsultationHandler` no lee ni escribe `Appointments`.
-- [ ] No cambia `DispatchDomainEventsInterceptor` ni ningún archivo de `Dispensario.Infrastructure` o `Dispensario.Api`.
-- [ ] `MigrationsTests.Model_HasNoPendingChanges` sigue en verde (sin migración nueva).
-- [ ] `dotnet build Dispensario.slnx` sin errores ni advertencias nuevas.
-- [ ] `dotnet test Dispensario.slnx` en verde.
-- [ ] `DOMAIN.md`, `APPLICATION.md`, `README.md`, `CLAUDE.md` y la fila 16 de `PLAN.md` dicen que cerrar una consulta completa la cita.
+- [x] `Consultation.Close` deja en `DomainEvents` un único `ConsultationClosedDomainEvent` con el `Id` y el `AppointmentId` de la consulta, también cuando `AppointmentId` es `null`.
+- [x] Un `Close` que lanza `DomainException` no deja eventos.
+- [x] Existe `ConsultationClosedHandler` en el namespace `Dispensario.Application.Appointments.EventHandlers` e implementa `INotificationHandler<ConsultationClosedDomainEvent>`.
+- [x] Cerrar por `POST /api/consultations/{id}/close` una consulta con cita `Scheduled` o `Confirmed` responde 204 y deja la cita `Completed`.
+- [x] Cerrar una consulta con la cita `NoShow` responde 204, la consulta queda `Closed` y la cita sigue `NoShow`.
+- [x] Con la cita inexistente o no pendiente, el handler no lanza excepción, no guarda y registra un `Warning`.
+- [x] Cerrar una consulta sin cita responde 204 y no cambia ninguna cita.
+- [x] Iniciar una consulta con cita deja la cita `Scheduled` (el test del spec 15 sigue en verde).
+- [x] `CloseConsultationHandler` no lee ni escribe `Appointments`.
+- [x] No cambia `DispatchDomainEventsInterceptor` ni ningún archivo de `Dispensario.Infrastructure` o `Dispensario.Api`.
+- [x] `MigrationsTests.Model_HasNoPendingChanges` sigue en verde (sin migración nueva).
+- [x] `dotnet build Dispensario.slnx` sin errores ni advertencias nuevas.
+- [x] `dotnet test Dispensario.slnx` en verde.
+- [x] `DOMAIN.md`, `APPLICATION.md`, `README.md`, `CLAUDE.md` y la fila 16 de `PLAN.md` dicen que cerrar una consulta completa la cita.
 
 ## Decisions
 

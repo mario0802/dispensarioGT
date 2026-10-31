@@ -214,22 +214,22 @@ Reglas del hook:
 
 ## Acceptance criteria
 
-- [ ] Existen `src/lib/api/api-error.ts`, `src/lib/api/access-token.ts`, `src/lib/api/api-client.ts` y `src/hooks/use-api.ts`, con sus tests.
-- [ ] `api.get<T>('/api/x', { a: 1, b: undefined })` llama a `fetch` con `<apiBaseUrl>/api/x?a=1`, método `GET` y `Accept: application/json`.
-- [ ] `api.post('/api/x', { name: 'A' })` envía `{"name":"A"}` con `Content-Type: application/json`; `api.post('/api/x')` no envía cuerpo ni `Content-Type`.
-- [ ] Con `setAccessTokenProvider(() => 'abc')`, las peticiones llevan `Authorization: Bearer abc`; sin proveedor, no llevan `Authorization`.
-- [ ] Una respuesta 400 `application/problem+json` con `ValidationErrors` produce un `ApiError` con `kind: 'http'`, `status: 400`, el `title` y el `detail` del cuerpo, y la lista de `{ propertyName, errorMessage }`.
-- [ ] Un `fetch` que rechaza produce un `ApiError` con `kind: 'network'` y `status: 0`.
-- [ ] Una respuesta 204 resuelve `undefined`, una JSON resuelve el objeto y una de texto resuelve la cadena.
-- [ ] `useApi(fn).execute()` nunca rechaza: con un fallo resuelve `{ data: null, error }` y deja `status: 'error'`.
-- [ ] Con dos `execute` seguidos en los que la primera respuesta llega después, el estado final es el de la segunda.
-- [ ] `reset()` deja `status: 'idle'`, `data: null` y `error: null`, y una respuesta posterior de una llamada anterior no lo cambia.
-- [ ] `setData` actualiza `data` sin cambiar `status`.
-- [ ] `execute`, `reset` y `setData` son la misma referencia en dos renders consecutivos.
-- [ ] `pnpm build`, `pnpm lint`, `pnpm format:check` y `pnpm test` terminan sin errores.
-- [ ] `package.json` no tiene dependencias nuevas.
-- [ ] `frontend/CLAUDE.md` refleja `hooks/` y `lib/api/`, tiene la fila 02 en el backlog y la pregunta de estado de servidor está cerrada.
-- [ ] No hay cambios fuera de `frontend/`.
+- [x] Existen `src/lib/api/api-error.ts`, `src/lib/api/access-token.ts`, `src/lib/api/api-client.ts` y `src/hooks/use-api.ts`, con sus tests.
+- [x] `api.get<T>('/api/x', { a: 1, b: undefined })` llama a `fetch` con `<apiBaseUrl>/api/x?a=1`, método `GET` y `Accept: application/json`.
+- [x] `api.post('/api/x', { name: 'A' })` envía `{"name":"A"}` con `Content-Type: application/json`; `api.post('/api/x')` no envía cuerpo ni `Content-Type`.
+- [x] Con `setAccessTokenProvider(() => 'abc')`, las peticiones llevan `Authorization: Bearer abc`; sin proveedor, no llevan `Authorization`.
+- [x] Una respuesta 400 `application/problem+json` con `ValidationErrors` produce un `ApiError` con `kind: 'http'`, `status: 400`, el `title` y el `detail` del cuerpo, y la lista de `{ propertyName, errorMessage }`.
+- [x] Un `fetch` que rechaza produce un `ApiError` con `kind: 'network'` y `status: 0`.
+- [x] Una respuesta 204 resuelve `undefined`, una JSON resuelve el objeto y una de texto resuelve la cadena.
+- [x] `useApi(fn).execute()` nunca rechaza: con un fallo resuelve `{ data: null, error }` y deja `status: 'error'`.
+- [x] Con dos `execute` seguidos en los que la primera respuesta llega después, el estado final es el de la segunda.
+- [x] `reset()` deja `status: 'idle'`, `data: null` y `error: null`, y una respuesta posterior de una llamada anterior no lo cambia.
+- [x] `setData` actualiza `data` sin cambiar `status`.
+- [x] `execute`, `reset` y `setData` son la misma referencia en dos renders consecutivos.
+- [x] `pnpm build`, `pnpm lint`, `pnpm format:check` y `pnpm test` terminan sin errores.
+- [x] `package.json` no tiene dependencias nuevas.
+- [x] `frontend/CLAUDE.md` refleja `hooks/` y `lib/api/`, tiene la fila 02 en el backlog y la pregunta de estado de servidor está cerrada.
+- [x] No hay cambios fuera de `frontend/`.
 
 ## Decisions
 

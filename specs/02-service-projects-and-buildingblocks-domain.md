@@ -163,23 +163,23 @@ Convenciones:
 
 ## Acceptance criteria
 
-- [ ] `.gitignore` contiene `*.db`, `*.db-shm` y `*.db-wal`.
-- [ ] `dotnet build Dispensario.slnx` termina sin errores y sin warnings nuevos respecto a SPEC 01.
-- [ ] `dotnet sln Dispensario.slnx list` muestra los 10 proyectos de la tabla del data model.
-- [ ] Las referencias de cada `.csproj` coinciden exactamente con las de la tabla del data model.
-- [ ] `BuildingBlocks.Domain.csproj` solo tiene el paquete `MediatR.Contracts` y ninguna referencia a proyectos ni `FrameworkReference`.
-- [ ] Ningún `.csproj` nuevo contiene `TargetFramework`, `Nullable`, `ImplicitUsings`, `LangVersion` ni atributos `Version`.
-- [ ] Los proyectos `Dispensario.Domain`, `Dispensario.Application`, `Dispensario.Infrastructure` y `Dispensario.Api` no tienen `PackageReference`.
-- [ ] No queda ningún `Class1.cs` ni `UnitTest1.cs` en el repositorio.
-- [ ] Existe `BuildingBlocks.Domain.DomainException`.
-- [ ] Existe `BuildingBlocks.Exceptions.ForbiddenException`.
-- [ ] `CustomExceptionHandler` responde 400 a `DomainException`, 401 a `UnauthorizedException` y 403 a `ForbiddenException` (cubierto por `CustomExceptionHandlerTests`).
-- [ ] `CustomExceptionHandler.cs` no contiene `DateTime`.
-- [ ] `LoggingBehavior.cs` usa `TotalSeconds` y no contiene `.Seconds`.
-- [ ] `dotnet test Dispensario.slnx` termina con éxito y ejecuta los tres tests de `BuildingBlocks.UnitTests`.
-- [ ] `dotnet run --project src/Services/Dispensario/Dispensario.Api` arranca y escucha sin excepciones.
-- [ ] `docs/PLAN.md` fila 02 apunta a `specs/02-service-projects-and-buildingblocks-domain.md`.
-- [ ] `docs/ARCHITECTURE.md` §5 y `CLAUDE.md` ya no listan como pendientes los ajustes de `CustomExceptionHandler` y `LoggingBehavior`.
+- [x] `.gitignore` contiene `*.db`, `*.db-shm` y `*.db-wal`.
+- [x] `dotnet build Dispensario.slnx` termina sin errores y sin warnings nuevos respecto a SPEC 01.
+- [x] `dotnet sln Dispensario.slnx list` muestra los 10 proyectos de la tabla del data model.
+- [x] Las referencias de cada `.csproj` coinciden exactamente con las de la tabla del data model.
+- [x] `BuildingBlocks.Domain.csproj` solo tiene el paquete `MediatR.Contracts` y ninguna referencia a proyectos ni `FrameworkReference`.
+- [x] Ningún `.csproj` nuevo contiene `TargetFramework`, `Nullable`, `ImplicitUsings`, `LangVersion` ni atributos `Version`.
+- [x] Los proyectos `Dispensario.Domain`, `Dispensario.Application`, `Dispensario.Infrastructure` y `Dispensario.Api` no tienen `PackageReference`.
+- [x] No queda ningún `Class1.cs` ni `UnitTest1.cs` en el repositorio.
+- [x] Existe `BuildingBlocks.Domain.DomainException`.
+- [x] Existe `BuildingBlocks.Exceptions.ForbiddenException`.
+- [x] `CustomExceptionHandler` responde 400 a `DomainException`, 401 a `UnauthorizedException` y 403 a `ForbiddenException` (cubierto por `CustomExceptionHandlerTests`).
+- [x] `CustomExceptionHandler.cs` no contiene `DateTime`.
+- [x] `LoggingBehavior.cs` usa `TotalSeconds` y no contiene `.Seconds`.
+- [x] `dotnet test Dispensario.slnx` termina con éxito y ejecuta los tres tests de `BuildingBlocks.UnitTests`.
+- [x] `dotnet run --project src/Services/Dispensario/Dispensario.Api` arranca y escucha sin excepciones.
+- [x] `docs/PLAN.md` fila 02 apunta a `specs/02-service-projects-and-buildingblocks-domain.md`.
+- [x] `docs/ARCHITECTURE.md` §5 y `CLAUDE.md` ya no listan como pendientes los ajustes de `CustomExceptionHandler` y `LoggingBehavior`.
 
 ## Decisions
 

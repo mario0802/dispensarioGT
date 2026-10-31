@@ -173,24 +173,24 @@ Address.Create(string street, string city, string? state = null, string? referen
 
 ## Acceptance criteria
 
-- [ ] Existen `tests/BuildingBlocks.UnitTests`, `tests/Dispensario.Domain.UnitTests`, `tests/Dispensario.Application.UnitTests` y `tests/Dispensario.Api.IntegrationTests`.
-- [ ] No existen `src/BuildingBlocks/tests/` ni `src/Services/Dispensario/tests/`.
-- [ ] `dotnet sln Dispensario.slnx list` muestra los 10 proyectos, y los cuatro de tests con ruta `tests/...`.
-- [ ] `dotnet build Dispensario.slnx` termina sin errores y sin warnings nuevos respecto a SPEC 02.
-- [ ] `dotnet test Dispensario.slnx` termina con éxito e incluye los tests de `CustomExceptionHandlerTests` y de las siete clases de tests de este spec.
-- [ ] `BuildingBlocks.Domain` contiene `IDomainEvent`, `IAuditable`, `Entity<TId>`, `AggregateRoot<TId>` y `ValueObject`, y sigue sin referencias a proyectos ni más paquetes que `MediatR.Contracts`.
-- [ ] `IDomainEvent` hereda de `INotification` y no declara miembros.
-- [ ] Ningún archivo de `BuildingBlocks.Domain` ni de `Dispensario.Domain` contiene `DateTime.Now`, `DateTime.UtcNow` ni `Guid.NewGuid`.
-- [ ] Dos entidades del mismo tipo y mismo Id son iguales con `Equals` y con `==`; con distinto tipo o distinto Id no lo son (cubierto por `EntityTests`).
-- [ ] `AggregateRoot<TId>` implementa `IAuditable` con `CreatedAtUtc`, `CreatedBy`, `LastModifiedAtUtc` y `LastModifiedBy`.
-- [ ] Tras `Raise` de dos eventos, `DomainEvents` los contiene en orden; tras `ClearDomainEvents`, está vacío (cubierto por `AggregateRootTests`).
-- [ ] `FullName.Create(" Ana ", " Pérez ").ToString()` devuelve `"Ana Pérez"`; un nombre vacío o de 101 caracteres lanza `DomainException`.
-- [ ] `Email.Create(" Ana@Mail.COM ")` tiene `Value == "ana@mail.com"`; `"ana"`, `"ana@mail"` y uno de 255 caracteres lanzan `DomainException`.
-- [ ] `PhoneNumber.Create("+51 999-111-222")` conserva ese valor; `"12345a7"`, uno de 6 caracteres y uno de 21 lanzan `DomainException`.
-- [ ] `Address.Create("Av. Sol 123", "Lima", "  ", null)` tiene `State == null`; `Street` vacío, `City` vacío o un campo por encima de su máximo lanzan `DomainException`.
-- [ ] Los cuatro VOs son `sealed record` que heredan de `ValueObject` y no tienen constructor público.
-- [ ] `DOMAIN.md`, `INFRASTRUCTURE.md`, `TESTING.md`, `ARCHITECTURE.md` y `CLAUDE.md` ya no mencionan `CreatedAt` sin sufijo, `DateTime.UtcNow` en `IDomainEvent` ni las rutas `src/.../tests/`.
-- [ ] `docs/PLAN.md` fila 03 apunta a `specs/03-domain-abstractions-and-common-value-objects.md`.
+- [x] Existen `tests/BuildingBlocks.UnitTests`, `tests/Dispensario.Domain.UnitTests`, `tests/Dispensario.Application.UnitTests` y `tests/Dispensario.Api.IntegrationTests`.
+- [x] No existen `src/BuildingBlocks/tests/` ni `src/Services/Dispensario/tests/`.
+- [x] `dotnet sln Dispensario.slnx list` muestra los 10 proyectos, y los cuatro de tests con ruta `tests/...`.
+- [x] `dotnet build Dispensario.slnx` termina sin errores y sin warnings nuevos respecto a SPEC 02.
+- [x] `dotnet test Dispensario.slnx` termina con éxito e incluye los tests de `CustomExceptionHandlerTests` y de las siete clases de tests de este spec.
+- [x] `BuildingBlocks.Domain` contiene `IDomainEvent`, `IAuditable`, `Entity<TId>`, `AggregateRoot<TId>` y `ValueObject`, y sigue sin referencias a proyectos ni más paquetes que `MediatR.Contracts`.
+- [x] `IDomainEvent` hereda de `INotification` y no declara miembros.
+- [x] Ningún archivo de `BuildingBlocks.Domain` ni de `Dispensario.Domain` contiene `DateTime.Now`, `DateTime.UtcNow` ni `Guid.NewGuid`.
+- [x] Dos entidades del mismo tipo y mismo Id son iguales con `Equals` y con `==`; con distinto tipo o distinto Id no lo son (cubierto por `EntityTests`).
+- [x] `AggregateRoot<TId>` implementa `IAuditable` con `CreatedAtUtc`, `CreatedBy`, `LastModifiedAtUtc` y `LastModifiedBy`.
+- [x] Tras `Raise` de dos eventos, `DomainEvents` los contiene en orden; tras `ClearDomainEvents`, está vacío (cubierto por `AggregateRootTests`).
+- [x] `FullName.Create(" Ana ", " Pérez ").ToString()` devuelve `"Ana Pérez"`; un nombre vacío o de 101 caracteres lanza `DomainException`.
+- [x] `Email.Create(" Ana@Mail.COM ")` tiene `Value == "ana@mail.com"`; `"ana"`, `"ana@mail"` y uno de 255 caracteres lanzan `DomainException`.
+- [x] `PhoneNumber.Create("+51 999-111-222")` conserva ese valor; `"12345a7"`, uno de 6 caracteres y uno de 21 lanzan `DomainException`.
+- [x] `Address.Create("Av. Sol 123", "Lima", "  ", null)` tiene `State == null`; `Street` vacío, `City` vacío o un campo por encima de su máximo lanzan `DomainException`.
+- [x] Los cuatro VOs son `sealed record` que heredan de `ValueObject` y no tienen constructor público.
+- [x] `DOMAIN.md`, `INFRASTRUCTURE.md`, `TESTING.md`, `ARCHITECTURE.md` y `CLAUDE.md` ya no mencionan `CreatedAt` sin sufijo, `DateTime.UtcNow` en `IDomainEvent` ni las rutas `src/.../tests/`.
+- [x] `docs/PLAN.md` fila 03 apunta a `specs/03-domain-abstractions-and-common-value-objects.md`.
 
 ## Decisions
 

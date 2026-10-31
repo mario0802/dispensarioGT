@@ -230,21 +230,21 @@ Mismas pautas que el spec 03: `fetch` simulado con `vi.stubGlobal`, `@testing-li
 
 ## Acceptance criteria
 
-- [ ] `package.json` no cambia (solo se añade `src/components/ui/select.tsx`).
-- [ ] Sin sesión, `/register` muestra **Dispensario Médico**, "Crea una cuenta de recepcionista.", los campos Nombre, Apellido, Tipo de documento (Cédula por defecto), Número de documento, Email, Teléfono (opcional), Contraseña y Confirmar contraseña, y el botón **Crear cuenta**.
-- [ ] Enviar el formulario vacío muestra los mensajes de los campos obligatorios y no hace ninguna petición.
-- [ ] Una contraseña sin letra, sin dígito o de menos de 8 caracteres, una confirmación distinta, un email inválido o un teléfono con formato inválido muestran su mensaje y no hacen ninguna petición.
-- [ ] Con datos válidos se hace `POST /api/auth/register` con `{ email, password, firstName, lastName, documentType, documentNumber, phone }`, los textos recortados, sin `confirmPassword` y con `phone: null` si se dejó vacío.
-- [ ] Mientras se envía, el botón está deshabilitado y muestra "Creando cuenta…".
-- [ ] Un 409 muestra "Ya existe un usuario con ese email o esa identificación." y conserva los valores; un 400, "Revisa los datos e inténtalo de nuevo."; sin conexión, "No se pudo conectar con el servidor."; otro error, "Ocurrió un error inesperado. Inténtalo de nuevo.".
-- [ ] Tras un 201 se llega a `/login` con el aviso "Cuenta creada. Inicia sesión para continuar." y el email ya escrito, y al recargar el aviso desaparece.
-- [ ] Con la cuenta recién creada se puede iniciar sesión y se ve el inicio con el rol **Recepcionista**.
-- [ ] El login enlaza a `/register` ("Regístrate") y el registro enlaza a `/login` ("Inicia sesión").
-- [ ] Con sesión, `/register` redirige al inicio.
-- [ ] Los botones del ojo alternan cada contraseña entre oculta y visible.
-- [ ] `pnpm build`, `pnpm lint`, `pnpm format:check` y `pnpm test` terminan sin errores.
-- [ ] `frontend/CLAUDE.md` refleja la estructura nueva y tiene la fila 04 en el backlog.
-- [ ] No hay cambios fuera de `frontend/`.
+- [x] `package.json` no cambia (solo se añade `src/components/ui/select.tsx`).
+- [x] Sin sesión, `/register` muestra **Dispensario Médico**, "Crea una cuenta de recepcionista.", los campos Nombre, Apellido, Tipo de documento (Cédula por defecto), Número de documento, Email, Teléfono (opcional), Contraseña y Confirmar contraseña, y el botón **Crear cuenta**.
+- [x] Enviar el formulario vacío muestra los mensajes de los campos obligatorios y no hace ninguna petición.
+- [x] Una contraseña sin letra, sin dígito o de menos de 8 caracteres, una confirmación distinta, un email inválido o un teléfono con formato inválido muestran su mensaje y no hacen ninguna petición.
+- [x] Con datos válidos se hace `POST /api/auth/register` con `{ email, password, firstName, lastName, documentType, documentNumber, phone }`, los textos recortados, sin `confirmPassword` y con `phone: null` si se dejó vacío.
+- [x] Mientras se envía, el botón está deshabilitado y muestra "Creando cuenta…".
+- [x] Un 409 muestra "Ya existe un usuario con ese email o esa identificación." y conserva los valores; un 400, "Revisa los datos e inténtalo de nuevo."; sin conexión, "No se pudo conectar con el servidor."; otro error, "Ocurrió un error inesperado. Inténtalo de nuevo.".
+- [x] Tras un 201 se llega a `/login` con el aviso "Cuenta creada. Inicia sesión para continuar." y el email ya escrito, y al recargar el aviso desaparece.
+- [x] Con la cuenta recién creada se puede iniciar sesión y se ve el inicio con el rol **Recepcionista**.
+- [x] El login enlaza a `/register` ("Regístrate") y el registro enlaza a `/login` ("Inicia sesión").
+- [x] Con sesión, `/register` redirige al inicio.
+- [x] Los botones del ojo alternan cada contraseña entre oculta y visible.
+- [x] `pnpm build`, `pnpm lint`, `pnpm format:check` y `pnpm test` terminan sin errores.
+- [x] `frontend/CLAUDE.md` refleja la estructura nueva y tiene la fila 04 en el backlog.
+- [x] No hay cambios fuera de `frontend/`.
 
 ## Decisions
 

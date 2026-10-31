@@ -175,20 +175,20 @@ interface ThemeProviderProps {
 
 ## Acceptance criteria
 
-- [ ] `frontend/CLAUDE.md` sigue existiendo con su contenido previo más lo añadido en el paso 8, y `frontend/.gitkeep` ya no existe.
-- [ ] `pnpm install` desde `frontend/` termina sin errores y `pnpm-lock.yaml` está versionado.
-- [ ] `pnpm dev` sirve la app en `http://localhost:5173`; con el puerto ocupado, falla en lugar de usar otro.
-- [ ] La página muestra `Dispensario Médico`, `Frontend en construcción.`, el botón `Comenzar` y el `ModeToggle`, sin errores en la consola del navegador.
-- [ ] Elegir `Oscuro` añade la clase `dark` a `<html>` y guarda `dark` en `localStorage["dispensario-theme"]`; tras recargar, sigue en oscuro.
-- [ ] Con `Sistema` y el sistema operativo en oscuro, la página se ve en oscuro.
-- [ ] La app no hace ninguna petición a `http://localhost:5168` (pestaña Red del navegador).
-- [ ] `import.meta.env.VITE_API_BASE_URL` está tipada: un error de escritura en el nombre no compila.
-- [ ] `pnpm build` termina sin errores de TypeScript y genera `dist/`.
-- [ ] `pnpm lint` y `pnpm format:check` terminan sin errores.
-- [ ] `pnpm test` ejecuta los tests de `App`, `ThemeProvider` y `config`, y todos pasan.
-- [ ] Una importación con `@/` (por ejemplo `@/components/ui/button`) compila y funciona en los tests.
-- [ ] `git status` no muestra `node_modules/`, `dist/` ni `.env.local`.
-- [ ] No hay cambios fuera de `frontend/`.
+- [x] `frontend/CLAUDE.md` sigue existiendo con su contenido previo más lo añadido en el paso 8, y `frontend/.gitkeep` ya no existe.
+- [x] `pnpm install` desde `frontend/` termina sin errores y `pnpm-lock.yaml` está versionado.
+- [x] `pnpm dev` sirve la app en `http://localhost:5173`; con el puerto ocupado, falla en lugar de usar otro.
+- [x] La página muestra `Dispensario Médico`, `Frontend en construcción.`, el botón `Comenzar` y el `ModeToggle`, sin errores en la consola del navegador.
+- [x] Elegir `Oscuro` añade la clase `dark` a `<html>` y guarda `dark` en `localStorage["dispensario-theme"]`; tras recargar, sigue en oscuro.
+- [x] Con `Sistema` y el sistema operativo en oscuro, la página se ve en oscuro.
+- [x] La app no hace ninguna petición a `http://localhost:5168` (pestaña Red del navegador).
+- [x] `import.meta.env.VITE_API_BASE_URL` está tipada: un error de escritura en el nombre no compila.
+- [x] `pnpm build` termina sin errores de TypeScript y genera `dist/`.
+- [x] `pnpm lint` y `pnpm format:check` terminan sin errores.
+- [x] `pnpm test` ejecuta los tests de `App`, `ThemeProvider` y `config`, y todos pasan.
+- [x] Una importación con `@/` (por ejemplo `@/components/ui/button`) compila y funciona en los tests.
+- [x] `git status` no muestra `node_modules/`, `dist/` ni `.env.local`.
+- [x] No hay cambios fuera de `frontend/`.
 
 ## Decisions
 

@@ -259,25 +259,25 @@ Users/
 
 ## Acceptance criteria
 
-- [ ] `dotnet build Dispensario.slnx` termina sin errores y sin warnings nuevos respecto a SPEC 08.
-- [ ] `dotnet test Dispensario.slnx` termina con éxito e incluye los tests de este spec y los anteriores.
-- [ ] `User.cs` no cambia; `UserConfiguration.cs` solo añade el índice único de `DoctorId` y cambia su comentario.
-- [ ] Tras borrar `dispensario.db`, `dotnet run` crea la tabla `Doctors` con el índice único de `LicenseNumber` y el índice único de `Users.DoctorId`.
-- [ ] `POST /api/doctors` como Admin devuelve 201 con `Location: /api/doctors/{id}`; sin `appointmentDurationMinutes` el doctor queda con 30.
-- [ ] La matrícula se guarda recortada y en mayúsculas, y una matrícula ya usada (también con otras mayúsculas) devuelve 409 en el alta y en la edición.
-- [ ] Una duración fuera de 10–120 o no múltiplo de 5 devuelve 400 con errores de validación en el alta y en la edición.
-- [ ] Sin `email`, con un email inválido, sin matrícula o sin especialidad, el alta devuelve 400.
-- [ ] `PUT /api/doctors/{id}` responde 204; sin `appointmentDurationMinutes` conserva la duración actual y un `phone` null borra el teléfono.
-- [ ] `GET /api/doctors` devuelve `pageIndex`, `pageSize`, `count` y `data`, filtra por `search`, `specialty` e `isActive`, y responde 400 con `pageSize` fuera de 1–100.
-- [ ] `GET /api/doctors/{id}` devuelve el doctor con `userId` (o `null`) y `createdAtUtc`, y 404 si no existe.
-- [ ] `POST /api/doctors/{id}/deactivate` y `/activate` responden 204, y 400 si el doctor ya está en ese estado; el usuario vinculado no cambia.
-- [ ] `POST /api/users/{id}/link-doctor` responde 204 y, tras un nuevo login, `GET /api/auth/me` devuelve el `doctorId`.
-- [ ] Vincular un doctor ya vinculado a otro usuario devuelve 409; un usuario sin rol `Doctor`, un usuario ya vinculado o un doctor inactivo devuelven 400; un usuario o doctor inexistente devuelve 404.
-- [ ] Los endpoints de escritura de doctores y el de vínculo responden 403 a `Receptionist` y `Doctor`; `GET /api/doctors` y `GET /api/doctors/{id}` responden 200 a cualquier rol; todos responden 401 sin token.
-- [ ] Todos los errores salen como `application/problem+json`.
-- [ ] Todas las rutas nuevas aparecen en `/openapi/v1.json` con su tag, nombre y resumen.
-- [ ] La sección **Endpoints** del `README.md` documenta las siete rutas nuevas con acceso, petición, respuesta y códigos de error.
-- [ ] `DOMAIN.md`, `APPLICATION.md`, `INFRASTRUCTURE.md`, `API.md` y `CLAUDE.md` describen el módulo Doctors y el vínculo, y `docs/PLAN.md` fila 09 apunta a `specs/09-doctors-crud.md`.
+- [x] `dotnet build Dispensario.slnx` termina sin errores y sin warnings nuevos respecto a SPEC 08.
+- [x] `dotnet test Dispensario.slnx` termina con éxito e incluye los tests de este spec y los anteriores.
+- [x] `User.cs` no cambia; `UserConfiguration.cs` solo añade el índice único de `DoctorId` y cambia su comentario.
+- [x] Tras borrar `dispensario.db`, `dotnet run` crea la tabla `Doctors` con el índice único de `LicenseNumber` y el índice único de `Users.DoctorId`.
+- [x] `POST /api/doctors` como Admin devuelve 201 con `Location: /api/doctors/{id}`; sin `appointmentDurationMinutes` el doctor queda con 30.
+- [x] La matrícula se guarda recortada y en mayúsculas, y una matrícula ya usada (también con otras mayúsculas) devuelve 409 en el alta y en la edición.
+- [x] Una duración fuera de 10–120 o no múltiplo de 5 devuelve 400 con errores de validación en el alta y en la edición.
+- [x] Sin `email`, con un email inválido, sin matrícula o sin especialidad, el alta devuelve 400.
+- [x] `PUT /api/doctors/{id}` responde 204; sin `appointmentDurationMinutes` conserva la duración actual y un `phone` null borra el teléfono.
+- [x] `GET /api/doctors` devuelve `pageIndex`, `pageSize`, `count` y `data`, filtra por `search`, `specialty` e `isActive`, y responde 400 con `pageSize` fuera de 1–100.
+- [x] `GET /api/doctors/{id}` devuelve el doctor con `userId` (o `null`) y `createdAtUtc`, y 404 si no existe.
+- [x] `POST /api/doctors/{id}/deactivate` y `/activate` responden 204, y 400 si el doctor ya está en ese estado; el usuario vinculado no cambia.
+- [x] `POST /api/users/{id}/link-doctor` responde 204 y, tras un nuevo login, `GET /api/auth/me` devuelve el `doctorId`.
+- [x] Vincular un doctor ya vinculado a otro usuario devuelve 409; un usuario sin rol `Doctor`, un usuario ya vinculado o un doctor inactivo devuelven 400; un usuario o doctor inexistente devuelve 404.
+- [x] Los endpoints de escritura de doctores y el de vínculo responden 403 a `Receptionist` y `Doctor`; `GET /api/doctors` y `GET /api/doctors/{id}` responden 200 a cualquier rol; todos responden 401 sin token.
+- [x] Todos los errores salen como `application/problem+json`.
+- [x] Todas las rutas nuevas aparecen en `/openapi/v1.json` con su tag, nombre y resumen.
+- [x] La sección **Endpoints** del `README.md` documenta las siete rutas nuevas con acceso, petición, respuesta y códigos de error.
+- [x] `DOMAIN.md`, `APPLICATION.md`, `INFRASTRUCTURE.md`, `API.md` y `CLAUDE.md` describen el módulo Doctors y el vínculo, y `docs/PLAN.md` fila 09 apunta a `specs/09-doctors-crud.md`.
 
 ## Decisions
 

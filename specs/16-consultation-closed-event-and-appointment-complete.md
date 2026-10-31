@@ -107,18 +107,18 @@ No hace falta borrar `dispensario.db`.
 
 ## Acceptance criteria
 
-- [ ] Existe `ConsultationClosedDomainEvent` en el namespace `Dispensario.Domain.Consultations.Events`, con `ConsultationId` y `AppointmentId?`, e implementa `IDomainEvent`.
-- [ ] Ningún código de `src/` crea una instancia de `ConsultationClosedDomainEvent`.
-- [ ] No existe ningún `INotificationHandler` en `src/`.
-- [ ] `Consultation.Close` deja `DomainEvents` vacío (test en verde).
-- [ ] `Appointment.Complete()` lleva una cita `Scheduled` o `Confirmed` a `Completed`, también antes de su hora de inicio.
-- [ ] `Complete` sobre una cita `Cancelled`, `NoShow` o `Completed` lanza `DomainException` con `Only scheduled or confirmed appointments can be completed.` y la cita no cambia.
-- [ ] `Confirm`, `Cancel`, `MarkNoShow` y `Reschedule` sobre una cita `Completed` lanzan `DomainException`.
-- [ ] Cerrar una consulta con cita por `POST /api/consultations/{id}/close` deja la cita en su estado anterior (los tests de integración del spec 15 siguen en verde).
-- [ ] No cambia ningún archivo de `Dispensario.Application`, `Dispensario.Infrastructure` ni `Dispensario.Api`.
-- [ ] `dotnet build Dispensario.slnx` sin errores ni advertencias nuevas.
-- [ ] `dotnet test Dispensario.slnx` en verde.
-- [ ] `DOMAIN.md`, `CLAUDE.md`, `README.md` y la fila 16 de `PLAN.md` reflejan el estado parcial.
+- [x] Existe `ConsultationClosedDomainEvent` en el namespace `Dispensario.Domain.Consultations.Events`, con `ConsultationId` y `AppointmentId?`, e implementa `IDomainEvent`.
+- [x] Ningún código de `src/` crea una instancia de `ConsultationClosedDomainEvent`.
+- [x] No existe ningún `INotificationHandler` en `src/`.
+- [x] `Consultation.Close` deja `DomainEvents` vacío (test en verde).
+- [x] `Appointment.Complete()` lleva una cita `Scheduled` o `Confirmed` a `Completed`, también antes de su hora de inicio.
+- [x] `Complete` sobre una cita `Cancelled`, `NoShow` o `Completed` lanza `DomainException` con `Only scheduled or confirmed appointments can be completed.` y la cita no cambia.
+- [x] `Confirm`, `Cancel`, `MarkNoShow` y `Reschedule` sobre una cita `Completed` lanzan `DomainException`.
+- [x] Cerrar una consulta con cita por `POST /api/consultations/{id}/close` deja la cita en su estado anterior (los tests de integración del spec 15 siguen en verde).
+- [x] No cambia ningún archivo de `Dispensario.Application`, `Dispensario.Infrastructure` ni `Dispensario.Api`.
+- [x] `dotnet build Dispensario.slnx` sin errores ni advertencias nuevas.
+- [x] `dotnet test Dispensario.slnx` en verde.
+- [x] `DOMAIN.md`, `CLAUDE.md`, `README.md` y la fila 16 de `PLAN.md` reflejan el estado parcial.
 
 ## Decisions
 

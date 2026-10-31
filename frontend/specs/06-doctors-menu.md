@@ -360,27 +360,27 @@ Mismas pautas que los specs 03–05: `fetch` simulado con `vi.stubGlobal`, `@tes
 
 ## Acceptance criteria
 
-- [ ] `package.json` solo añade `sonner` (sin `next-themes`); los componentes nuevos están en `src/components/ui/`.
-- [ ] Admin y Recepción ven el menú **Doctores** en el sidebar; un `Doctor` no lo ve y, si entra a `/doctors`, termina en `/`.
-- [ ] `/doctors` muestra el título **Doctores** en la barra superior y la tabla con Doctor (nombre y email), Matrícula, Especialidad, Teléfono ("—" si no tiene), Duración ("30 min") y Estado (**Activo**/**Inactivo**).
-- [ ] La primera carga hace `GET /api/doctors?pageIndex=0&pageSize=10` y muestra un skeleton mientras tanto.
-- [ ] Escribir en la búsqueda hace una sola petición con `search` 300 ms después de dejar de escribir y vuelve a la primera página.
-- [ ] El filtro **Activos**/**Inactivos** envía `isActive=true`/`false`; **Todos** no envía `isActive`.
-- [ ] La paginación muestra "Página X de Y · N doctores", y **Anterior**/**Siguiente** cambian de página y se deshabilitan en los extremos.
-- [ ] Sin doctores se ve "Todavía no hay doctores registrados."; sin resultados con filtros, "No se encontraron doctores con esos filtros."; un error de carga muestra un aviso con **Reintentar**.
-- [ ] Recepción no ve **Nuevo doctor** ni el menú ⋯ de las filas; Admin sí.
-- [ ] Cada fila tiene **Ver cronograma**, que abre un modal con "Cronograma de {nombre}", la especialidad y "El cronograma de disponibilidad estará disponible próximamente.", sin llamadas a la API.
-- [ ] **Nuevo doctor** abre un modal; enviarlo vacío o con email, teléfono o longitudes inválidas muestra los mensajes sin hacer peticiones.
-- [ ] Con datos válidos se hace `POST /api/doctors` con los textos recortados, `phone: null` si está vacío y la duración elegida (30 por defecto); al terminar se cierra el modal, sale el toast "Doctor creado." y la tabla se refresca.
-- [ ] Una matrícula repetida (409) muestra "Ya existe un doctor con esa matrícula." bajo el campo y conserva los valores.
-- [ ] **Editar** pide `GET /api/doctors/{id}`, rellena el formulario y guarda con `PUT /api/doctors/{id}`; toast "Doctor actualizado." y refresco. Un 400 al editar muestra el aviso de la duración.
-- [ ] **Desactivar** y **Activar** piden confirmación; **Cancelar** no hace nada; confirmar llama a `POST …/deactivate` o `…/activate`, muestra el toast y actualiza el estado en la tabla.
-- [ ] Un 404 en editar, activar o desactivar muestra "El doctor ya no existe." y refresca la tabla.
-- [ ] Sin conexión, las acciones muestran "No se pudo conectar con el servidor.".
-- [ ] La página se usa en móvil (la tabla se desplaza en horizontal) y se ve bien en tema claro y oscuro, incluidos los toasts.
-- [ ] `pnpm build`, `pnpm lint`, `pnpm format:check` y `pnpm test` terminan sin errores.
-- [ ] `frontend/CLAUDE.md` refleja la estructura nueva y tiene la fila 06 en el backlog.
-- [ ] No hay cambios fuera de `frontend/`.
+- [x] `package.json` solo añade `sonner` (sin `next-themes`); los componentes nuevos están en `src/components/ui/`.
+- [x] Admin y Recepción ven el menú **Doctores** en el sidebar; un `Doctor` no lo ve y, si entra a `/doctors`, termina en `/`.
+- [x] `/doctors` muestra el título **Doctores** en la barra superior y la tabla con Doctor (nombre y email), Matrícula, Especialidad, Teléfono ("—" si no tiene), Duración ("30 min") y Estado (**Activo**/**Inactivo**).
+- [x] La primera carga hace `GET /api/doctors?pageIndex=0&pageSize=10` y muestra un skeleton mientras tanto.
+- [x] Escribir en la búsqueda hace una sola petición con `search` 300 ms después de dejar de escribir y vuelve a la primera página.
+- [x] El filtro **Activos**/**Inactivos** envía `isActive=true`/`false`; **Todos** no envía `isActive`.
+- [x] La paginación muestra "Página X de Y · N doctores", y **Anterior**/**Siguiente** cambian de página y se deshabilitan en los extremos.
+- [x] Sin doctores se ve "Todavía no hay doctores registrados."; sin resultados con filtros, "No se encontraron doctores con esos filtros."; un error de carga muestra un aviso con **Reintentar**.
+- [x] Recepción no ve **Nuevo doctor** ni el menú ⋯ de las filas; Admin sí.
+- [x] Cada fila tiene **Ver cronograma**, que abre un modal con "Cronograma de {nombre}", la especialidad y "El cronograma de disponibilidad estará disponible próximamente.", sin llamadas a la API.
+- [x] **Nuevo doctor** abre un modal; enviarlo vacío o con email, teléfono o longitudes inválidas muestra los mensajes sin hacer peticiones.
+- [x] Con datos válidos se hace `POST /api/doctors` con los textos recortados, `phone: null` si está vacío y la duración elegida (30 por defecto); al terminar se cierra el modal, sale el toast "Doctor creado." y la tabla se refresca.
+- [x] Una matrícula repetida (409) muestra "Ya existe un doctor con esa matrícula." bajo el campo y conserva los valores.
+- [x] **Editar** pide `GET /api/doctors/{id}`, rellena el formulario y guarda con `PUT /api/doctors/{id}`; toast "Doctor actualizado." y refresco. Un 400 al editar muestra el aviso de la duración.
+- [x] **Desactivar** y **Activar** piden confirmación; **Cancelar** no hace nada; confirmar llama a `POST …/deactivate` o `…/activate`, muestra el toast y actualiza el estado en la tabla.
+- [x] Un 404 en editar, activar o desactivar muestra "El doctor ya no existe." y refresca la tabla.
+- [x] Sin conexión, las acciones muestran "No se pudo conectar con el servidor.".
+- [x] La página se usa en móvil (la tabla se desplaza en horizontal) y se ve bien en tema claro y oscuro, incluidos los toasts.
+- [x] `pnpm build`, `pnpm lint`, `pnpm format:check` y `pnpm test` terminan sin errores.
+- [x] `frontend/CLAUDE.md` refleja la estructura nueva y tiene la fila 06 en el backlog.
+- [x] No hay cambios fuera de `frontend/`.
 
 ## Decisions
 

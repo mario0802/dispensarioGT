@@ -411,25 +411,25 @@ Mismas pautas que los specs 06 y 08 (`fetch` simulado con `vi.stubGlobal`, `user
 
 ## Acceptance criteria
 
-- [ ] `popover.tsx` y `command.tsx` están en `src/components/ui/` con el import de `cn` desde `@/lib/utils`; `package.json` solo añade `cmdk`.
-- [ ] Admin y Recepción ven el menú **Citas** en el sidebar, después de **Pacientes**; un `Doctor` no lo ve y, si entra a `/appointments`, termina en `/`.
-- [ ] `/appointments` muestra el título **Citas** y la primera carga hace `GET /api/appointments?pageIndex=0&pageSize=10&from={hoy}` con un skeleton mientras tanto.
-- [ ] La tabla muestra Fecha y hora ("03/11/2026" y "09:30 – 10:00"), Paciente, Doctor, Motivo truncado (completo al pasar el ratón) y Estado con su etiqueta en español y su color.
-- [ ] Vaciar **Desde** o elegir una fecha anterior permite ver citas pasadas; **Hasta** anterior a **Desde** muestra "La fecha final no puede ser anterior a la inicial." y no hace la petición.
-- [ ] Los filtros de estado, doctor y paciente envían `status`, `doctorId` y `patientId`, y vuelven a la primera página; los combobox buscan en la API 300 ms después de dejar de escribir y solo ofrecen activos.
-- [ ] **Limpiar filtros** vuelve a `from` = hoy sin el resto de filtros.
-- [ ] La paginación muestra "Página X de Y · N citas" y **Anterior**/**Siguiente** se deshabilitan en los extremos.
-- [ ] Sin citas se ve "No hay citas próximas." (filtros por defecto) o "No se encontraron citas con esos filtros."; un error de carga muestra un aviso con **Reintentar**.
-- [ ] **Nueva cita** abre el modal; enviarlo vacío muestra los mensajes de paciente, doctor, horario y motivo sin hacer el `POST`.
-- [ ] Al elegir un doctor se ve "{especialidad} · Citas de {n} min"; con doctor y fecha se pide `GET /api/doctors/{id}/available-slots?date=…` y los slots libres salen como botones; un día sin slots muestra "El doctor no tiene horarios libres ese día.".
-- [ ] La fecha no admite días anteriores a hoy; cambiar el doctor o la fecha quita el slot elegido y recarga los slots.
-- [ ] Con datos válidos se hace `POST /api/appointments` con `startLocal` "yyyy-MM-ddTHH:mm" sin offset y el motivo recortado; se cierra el modal, sale el toast "Cita agendada." y la tabla se refresca.
-- [ ] Un 409 o un 400 al agendar muestra su aviso, conserva paciente, doctor, fecha y motivo, quita el slot y recarga los slots.
-- [ ] Sin conexión, el listado, los slots y el alta muestran "No se pudo conectar con el servidor.".
-- [ ] En móvil la tabla se desplaza en horizontal, los filtros se apilan y el modal tiene scroll con los botones visibles; se ve bien en tema claro y oscuro.
-- [ ] `pnpm build`, `pnpm lint`, el chequeo de Prettier y `pnpm test` terminan sin errores.
-- [ ] `frontend/CLAUDE.md` refleja el stack y la estructura nuevos y tiene la fila 09 en el backlog.
-- [ ] No hay cambios fuera de `frontend/`.
+- [x] `popover.tsx` y `command.tsx` están en `src/components/ui/` con el import de `cn` desde `@/lib/utils`; `package.json` solo añade `cmdk`.
+- [x] Admin y Recepción ven el menú **Citas** en el sidebar, después de **Pacientes**; un `Doctor` no lo ve y, si entra a `/appointments`, termina en `/`.
+- [x] `/appointments` muestra el título **Citas** y la primera carga hace `GET /api/appointments?pageIndex=0&pageSize=10&from={hoy}` con un skeleton mientras tanto.
+- [x] La tabla muestra Fecha y hora ("03/11/2026" y "09:30 – 10:00"), Paciente, Doctor, Motivo truncado (completo al pasar el ratón) y Estado con su etiqueta en español y su color.
+- [x] Vaciar **Desde** o elegir una fecha anterior permite ver citas pasadas; **Hasta** anterior a **Desde** muestra "La fecha final no puede ser anterior a la inicial." y no hace la petición.
+- [x] Los filtros de estado, doctor y paciente envían `status`, `doctorId` y `patientId`, y vuelven a la primera página; los combobox buscan en la API 300 ms después de dejar de escribir y solo ofrecen activos.
+- [x] **Limpiar filtros** vuelve a `from` = hoy sin el resto de filtros.
+- [x] La paginación muestra "Página X de Y · N citas" y **Anterior**/**Siguiente** se deshabilitan en los extremos.
+- [x] Sin citas se ve "No hay citas próximas." (filtros por defecto) o "No se encontraron citas con esos filtros."; un error de carga muestra un aviso con **Reintentar**.
+- [x] **Nueva cita** abre el modal; enviarlo vacío muestra los mensajes de paciente, doctor, horario y motivo sin hacer el `POST`.
+- [x] Al elegir un doctor se ve "{especialidad} · Citas de {n} min"; con doctor y fecha se pide `GET /api/doctors/{id}/available-slots?date=…` y los slots libres salen como botones; un día sin slots muestra "El doctor no tiene horarios libres ese día.".
+- [x] La fecha no admite días anteriores a hoy; cambiar el doctor o la fecha quita el slot elegido y recarga los slots.
+- [x] Con datos válidos se hace `POST /api/appointments` con `startLocal` "yyyy-MM-ddTHH:mm" sin offset y el motivo recortado; se cierra el modal, sale el toast "Cita agendada." y la tabla se refresca.
+- [x] Un 409 o un 400 al agendar muestra su aviso, conserva paciente, doctor, fecha y motivo, quita el slot y recarga los slots.
+- [x] Sin conexión, el listado, los slots y el alta muestran "No se pudo conectar con el servidor.".
+- [x] En móvil la tabla se desplaza en horizontal, los filtros se apilan y el modal tiene scroll con los botones visibles; se ve bien en tema claro y oscuro.
+- [x] `pnpm build`, `pnpm lint`, el chequeo de Prettier y `pnpm test` terminan sin errores.
+- [x] `frontend/CLAUDE.md` refleja el stack y la estructura nuevos y tiene la fila 09 en el backlog.
+- [x] No hay cambios fuera de `frontend/`.
 
 ## Decisions
 

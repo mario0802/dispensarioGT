@@ -279,24 +279,24 @@ Ejemplo de respuesta del detalle:
 
 ## Acceptance criteria
 
-- [ ] `dotnet build Dispensario.slnx` termina sin errores y sin warnings nuevos respecto a SPEC 11.
-- [ ] `dotnet test Dispensario.slnx` termina con éxito e incluye los tests de este spec y los anteriores.
-- [ ] Tras borrar `dispensario.db`, `dotnet run` crea la tabla `Appointments` con los índices (`DoctorId`, `StartUtc`) y (`PatientId`, `StartUtc`) y sin FKs.
-- [ ] Con `Clinic:TimeZone` inexistente la aplicación no arranca; con `America/Guayaquil` arranca.
-- [ ] `POST /api/appointments` como `Receptionist` o Admin devuelve 201 con `Location: /api/appointments/{id}`, y la cita queda `Scheduled` con `startUtc` = `startLocal` + 5 horas y `endUtc` = `startUtc` + la duración del doctor.
-- [ ] Una cita fuera del horario del doctor, que sobresale de su bloque o cuyo inicio no está alineado desde el inicio del bloque devuelve 400.
-- [ ] Una cita en el pasado, con motivo vacío o de más de 500 caracteres devuelve 400.
-- [ ] Un `startLocal` con `Z` u offset devuelve 400 con errores de validación.
-- [ ] Un paciente o doctor inexistente devuelve 404; inactivo, 400.
-- [ ] Un cruce con otra cita `Scheduled` del mismo doctor o del mismo paciente devuelve 409; una cita contigua se acepta.
-- [ ] `GET /api/appointments/{id}` devuelve la cita con `patientFullName`, `doctorFullName`, horas UTC y locales, `status` como texto y `createdAtUtc`; 404 si no existe.
-- [ ] `GET /api/appointments` devuelve `pageIndex`, `pageSize`, `count` y `data` ordenados por inicio; filtra por `doctorId`, `patientId`, `status` y `from`/`to` en fechas locales; responde 400 con `from > to` o `pageSize` fuera de 1–100.
-- [ ] Un `Doctor` vinculado recibe 403 en el alta; en el listado sin filtro solo ve sus citas; recibe 403 con un `doctorId` ajeno y en el detalle de una cita ajena; un `Doctor` sin vincular recibe 403 en ambas lecturas.
-- [ ] Las tres rutas responden 401 sin token.
-- [ ] Todos los errores salen como `application/problem+json`.
-- [ ] Las tres rutas nuevas aparecen en `/openapi/v1.json` con tag `Appointments`, nombre y resumen.
-- [ ] La sección **Endpoints** del `README.md` documenta las tres rutas nuevas con acceso, petición, respuesta y códigos de error.
-- [ ] `DOMAIN.md`, `APPLICATION.md`, `INFRASTRUCTURE.md`, `API.md` y `CLAUDE.md` describen el módulo Appointments y la zona horaria tal como se implementaron, y `docs/PLAN.md` fila 12 apunta a `specs/12-appointments-scheduling.md`.
+- [x] `dotnet build Dispensario.slnx` termina sin errores y sin warnings nuevos respecto a SPEC 11.
+- [x] `dotnet test Dispensario.slnx` termina con éxito e incluye los tests de este spec y los anteriores.
+- [x] Tras borrar `dispensario.db`, `dotnet run` crea la tabla `Appointments` con los índices (`DoctorId`, `StartUtc`) y (`PatientId`, `StartUtc`) y sin FKs.
+- [x] Con `Clinic:TimeZone` inexistente la aplicación no arranca; con `America/Guayaquil` arranca.
+- [x] `POST /api/appointments` como `Receptionist` o Admin devuelve 201 con `Location: /api/appointments/{id}`, y la cita queda `Scheduled` con `startUtc` = `startLocal` + 5 horas y `endUtc` = `startUtc` + la duración del doctor.
+- [x] Una cita fuera del horario del doctor, que sobresale de su bloque o cuyo inicio no está alineado desde el inicio del bloque devuelve 400.
+- [x] Una cita en el pasado, con motivo vacío o de más de 500 caracteres devuelve 400.
+- [x] Un `startLocal` con `Z` u offset devuelve 400 con errores de validación.
+- [x] Un paciente o doctor inexistente devuelve 404; inactivo, 400.
+- [x] Un cruce con otra cita `Scheduled` del mismo doctor o del mismo paciente devuelve 409; una cita contigua se acepta.
+- [x] `GET /api/appointments/{id}` devuelve la cita con `patientFullName`, `doctorFullName`, horas UTC y locales, `status` como texto y `createdAtUtc`; 404 si no existe.
+- [x] `GET /api/appointments` devuelve `pageIndex`, `pageSize`, `count` y `data` ordenados por inicio; filtra por `doctorId`, `patientId`, `status` y `from`/`to` en fechas locales; responde 400 con `from > to` o `pageSize` fuera de 1–100.
+- [x] Un `Doctor` vinculado recibe 403 en el alta; en el listado sin filtro solo ve sus citas; recibe 403 con un `doctorId` ajeno y en el detalle de una cita ajena; un `Doctor` sin vincular recibe 403 en ambas lecturas.
+- [x] Las tres rutas responden 401 sin token.
+- [x] Todos los errores salen como `application/problem+json`.
+- [x] Las tres rutas nuevas aparecen en `/openapi/v1.json` con tag `Appointments`, nombre y resumen.
+- [x] La sección **Endpoints** del `README.md` documenta las tres rutas nuevas con acceso, petición, respuesta y códigos de error.
+- [x] `DOMAIN.md`, `APPLICATION.md`, `INFRASTRUCTURE.md`, `API.md` y `CLAUDE.md` describen el módulo Appointments y la zona horaria tal como se implementaron, y `docs/PLAN.md` fila 12 apunta a `specs/12-appointments-scheduling.md`.
 
 ## Decisions
 

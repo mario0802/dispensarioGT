@@ -178,22 +178,22 @@ public partial class Program;   // necesario para WebApplicationFactory en los t
 
 ## Acceptance criteria
 
-- [ ] `dotnet build Dispensario.slnx` termina sin errores y sin warnings nuevos respecto a SPEC 04.
-- [ ] `dotnet test Dispensario.slnx` termina con éxito e incluye los tests de este spec y los anteriores; `Dispensario.Api.IntegrationTests` ya no informa "no hay ninguna prueba disponible".
-- [ ] `Directory.Packages.props` declara `Carter`, `Scalar.AspNetCore`, `Microsoft.AspNetCore.OpenApi` y `Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore`, y ningún `.csproj` lleva atributo `Version`.
-- [ ] `AddApplication` registra MediatR con `LoggingBehavior` antes que `ValidationBehavior`, los validadores del ensamblado y el escaneo de Mapster (cubierto por `ApplicationDependencyInjectionTests`).
-- [ ] Con `MediatR:LicenseKey` vacío la aplicación arranca, y `cfg.LicenseKey` no se asigna.
-- [ ] `Program.cs` llama a `AddApplication`, `AddInfrastructure` y `AddApiServices`, y declara `public partial class Program;`.
-- [ ] `GET /health` devuelve 200 y `Healthy` (cubierto por `HealthEndpointTests`).
-- [ ] En Development, `GET /openapi/v1.json` devuelve el documento con el esquema `Bearer` (`http`, `bearer`, `JWT`) y `GET /scalar` devuelve HTML (cubierto por `OpenApiEndpointTests`).
-- [ ] Fuera de Development no se mapean `/openapi/v1.json` ni `/scalar` (`Program.cs` los registra dentro de `IsDevelopment()`).
-- [ ] Una ruta inexistente devuelve 404 con `application/problem+json` (cubierto por `ProblemDetailsTests`).
-- [ ] `CustomExceptionHandler` está registrado con `AddExceptionHandler` y `app.UseExceptionHandler()` está en la tubería.
-- [ ] `appsettings.json` contiene `ConnectionStrings:Database = "Data Source=dispensario.db"` y `MediatR:LicenseKey = ""`, y no contiene `Jwt`, `Seed` ni `Clinic`.
-- [ ] Los perfiles de `launchSettings.json` abren `/scalar`.
-- [ ] Los tests de integración no crean `dispensario.db` en disco.
-- [ ] No existen `AddAuthentication`, `AddJwtBearer`, `UseAuthentication`, `UseAuthorization` ni `Policies` en `src/`.
-- [ ] `API.md`, `APPLICATION.md`, `TESTING.md` y `CLAUDE.md` describen el host actual, y `docs/PLAN.md` fila 05 apunta a `specs/05-api-host.md`.
+- [x] `dotnet build Dispensario.slnx` termina sin errores y sin warnings nuevos respecto a SPEC 04.
+- [x] `dotnet test Dispensario.slnx` termina con éxito e incluye los tests de este spec y los anteriores; `Dispensario.Api.IntegrationTests` ya no informa "no hay ninguna prueba disponible".
+- [x] `Directory.Packages.props` declara `Carter`, `Scalar.AspNetCore`, `Microsoft.AspNetCore.OpenApi` y `Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore`, y ningún `.csproj` lleva atributo `Version`.
+- [x] `AddApplication` registra MediatR con `LoggingBehavior` antes que `ValidationBehavior`, los validadores del ensamblado y el escaneo de Mapster (cubierto por `ApplicationDependencyInjectionTests`).
+- [x] Con `MediatR:LicenseKey` vacío la aplicación arranca, y `cfg.LicenseKey` no se asigna.
+- [x] `Program.cs` llama a `AddApplication`, `AddInfrastructure` y `AddApiServices`, y declara `public partial class Program;`.
+- [x] `GET /health` devuelve 200 y `Healthy` (cubierto por `HealthEndpointTests`).
+- [x] En Development, `GET /openapi/v1.json` devuelve el documento con el esquema `Bearer` (`http`, `bearer`, `JWT`) y `GET /scalar` devuelve HTML (cubierto por `OpenApiEndpointTests`).
+- [x] Fuera de Development no se mapean `/openapi/v1.json` ni `/scalar` (`Program.cs` los registra dentro de `IsDevelopment()`).
+- [x] Una ruta inexistente devuelve 404 con `application/problem+json` (cubierto por `ProblemDetailsTests`).
+- [x] `CustomExceptionHandler` está registrado con `AddExceptionHandler` y `app.UseExceptionHandler()` está en la tubería.
+- [x] `appsettings.json` contiene `ConnectionStrings:Database = "Data Source=dispensario.db"` y `MediatR:LicenseKey = ""`, y no contiene `Jwt`, `Seed` ni `Clinic`.
+- [x] Los perfiles de `launchSettings.json` abren `/scalar`.
+- [x] Los tests de integración no crean `dispensario.db` en disco.
+- [x] No existen `AddAuthentication`, `AddJwtBearer`, `UseAuthentication`, `UseAuthorization` ni `Policies` en `src/`.
+- [x] `API.md`, `APPLICATION.md`, `TESTING.md` y `CLAUDE.md` describen el host actual, y `docs/PLAN.md` fila 05 apunta a `specs/05-api-host.md`.
 
 ## Decisions
 

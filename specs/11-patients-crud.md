@@ -293,23 +293,23 @@ Ejemplo de cuerpo del alta (`documentType` y `gender` viajan como texto por el `
 
 ## Acceptance criteria
 
-- [ ] `dotnet build Dispensario.slnx` termina sin errores y sin warnings nuevos respecto a SPEC 10.
-- [ ] `dotnet test Dispensario.slnx` termina con éxito e incluye los tests de este spec y los anteriores.
-- [ ] Tras borrar `dispensario.db`, `dotnet run` crea la tabla `Patients` con el índice único de (`Document_Type`, `Document_Number`).
-- [ ] `POST /api/patients` como `Receptionist` o Admin devuelve 201 con `Location: /api/patients/{id}`; solo documento, nombre, apellido, nacimiento y género son obligatorios.
-- [ ] Un documento ya usado (mismo tipo y número) devuelve 409 en el alta y en la edición; el mismo número con otro tipo se acepta.
-- [ ] Una fecha de nacimiento futura devuelve 400; la de hoy se acepta.
-- [ ] `bloodType` acepta solo `A+`, `A-`, `B+`, `B-`, `AB+`, `AB-`, `O+` y `O-` (otro valor → 400 con errores de validación), se guarda como nombre del enum y se devuelve en notación clínica.
-- [ ] `PUT /api/patients/{id}` responde 204, puede cambiar el documento, y un opcional null (`email`, `phone`, `address`, `bloodType`, `allergies`) borra el valor actual.
-- [ ] `GET /api/patients` devuelve `pageIndex`, `pageSize`, `count` y `data`, filtra por `search` (nombre, apellido, número de documento) e `isActive`, y responde 400 con `pageSize` fuera de 1–100.
-- [ ] `GET /api/patients/{id}` devuelve el paciente con `address` (o `null`) y `createdAtUtc`, y 404 si no existe.
-- [ ] `GET /api/patients/by-document?type=…&number=…` devuelve el paciente (también inactivo) y 404 si no existe.
-- [ ] `POST /api/patients/{id}/deactivate` y `/activate` responden 204, y 400 si el paciente ya está en ese estado.
-- [ ] Los endpoints de escritura responden 403 al rol `Doctor`; las tres lecturas responden 200 a cualquier rol; todos responden 401 sin token.
-- [ ] Todos los errores salen como `application/problem+json`.
-- [ ] Las siete rutas nuevas aparecen en `/openapi/v1.json` con tag `Patients`, nombre y resumen.
-- [ ] La sección **Endpoints** del `README.md` documenta las siete rutas nuevas con acceso, petición, respuesta y códigos de error.
-- [ ] `DOMAIN.md`, `APPLICATION.md`, `INFRASTRUCTURE.md`, `API.md` y `CLAUDE.md` describen el módulo Patients tal como se implementó, y `docs/PLAN.md` fila 11 apunta a `specs/11-patients-crud.md`.
+- [x] `dotnet build Dispensario.slnx` termina sin errores y sin warnings nuevos respecto a SPEC 10.
+- [x] `dotnet test Dispensario.slnx` termina con éxito e incluye los tests de este spec y los anteriores.
+- [x] Tras borrar `dispensario.db`, `dotnet run` crea la tabla `Patients` con el índice único de (`Document_Type`, `Document_Number`).
+- [x] `POST /api/patients` como `Receptionist` o Admin devuelve 201 con `Location: /api/patients/{id}`; solo documento, nombre, apellido, nacimiento y género son obligatorios.
+- [x] Un documento ya usado (mismo tipo y número) devuelve 409 en el alta y en la edición; el mismo número con otro tipo se acepta.
+- [x] Una fecha de nacimiento futura devuelve 400; la de hoy se acepta.
+- [x] `bloodType` acepta solo `A+`, `A-`, `B+`, `B-`, `AB+`, `AB-`, `O+` y `O-` (otro valor → 400 con errores de validación), se guarda como nombre del enum y se devuelve en notación clínica.
+- [x] `PUT /api/patients/{id}` responde 204, puede cambiar el documento, y un opcional null (`email`, `phone`, `address`, `bloodType`, `allergies`) borra el valor actual.
+- [x] `GET /api/patients` devuelve `pageIndex`, `pageSize`, `count` y `data`, filtra por `search` (nombre, apellido, número de documento) e `isActive`, y responde 400 con `pageSize` fuera de 1–100.
+- [x] `GET /api/patients/{id}` devuelve el paciente con `address` (o `null`) y `createdAtUtc`, y 404 si no existe.
+- [x] `GET /api/patients/by-document?type=…&number=…` devuelve el paciente (también inactivo) y 404 si no existe.
+- [x] `POST /api/patients/{id}/deactivate` y `/activate` responden 204, y 400 si el paciente ya está en ese estado.
+- [x] Los endpoints de escritura responden 403 al rol `Doctor`; las tres lecturas responden 200 a cualquier rol; todos responden 401 sin token.
+- [x] Todos los errores salen como `application/problem+json`.
+- [x] Las siete rutas nuevas aparecen en `/openapi/v1.json` con tag `Patients`, nombre y resumen.
+- [x] La sección **Endpoints** del `README.md` documenta las siete rutas nuevas con acceso, petición, respuesta y códigos de error.
+- [x] `DOMAIN.md`, `APPLICATION.md`, `INFRASTRUCTURE.md`, `API.md` y `CLAUDE.md` describen el módulo Patients tal como se implementó, y `docs/PLAN.md` fila 11 apunta a `specs/11-patients-crud.md`.
 
 ## Decisions
 

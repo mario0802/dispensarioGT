@@ -228,23 +228,23 @@ Ejemplo de cuerpo (`dayOfWeek` viaja como texto por el `JsonStringEnumConverter`
 
 ## Acceptance criteria
 
-- [ ] `dotnet build Dispensario.slnx` termina sin errores y sin warnings nuevos respecto a SPEC 09.
-- [ ] `dotnet test Dispensario.slnx` termina con éxito e incluye los tests de este spec y los anteriores.
-- [ ] Tras borrar `dispensario.db`, `dotnet run` crea la tabla `DoctorScheduleBlocks` con `DoctorId`, `Id`, `DayOfWeek` (texto), `StartTime` y `EndTime`.
-- [ ] `PUT /api/doctors/{id}/schedule` como Admin responde 204 y `GET /api/doctors/{id}/schedule` devuelve exactamente los bloques enviados, ordenados de lunes a domingo y por hora, con horas `"HH:mm"`.
-- [ ] Un segundo `PUT` reemplaza el horario entero, y un `PUT` con `blocks: []` lo deja vacío.
-- [ ] Dos bloques solapados del mismo día devuelven 400; dos bloques contiguos se aceptan.
-- [ ] Un bloque más corto que `appointmentDurationMinutes`, con minutos que no son múltiplo de 5 o con inicio ≥ fin devuelve 400.
-- [ ] Una hora que no sigue `"HH:mm"` devuelve 400 con errores de validación; un `dayOfWeek` inválido devuelve 400 (ProblemDetails de `BadHttpRequestException`).
-- [ ] Fijar el horario de un doctor inactivo devuelve 400; leerlo devuelve 200.
-- [ ] `PUT /api/doctors/{id}` con una duración mayor que algún bloque del horario devuelve 400 y no cambia el doctor.
-- [ ] Un usuario `Doctor` vinculado puede fijar su propio horario (204) y recibe 403 sobre otro doctor, también si ese ID no existe; un `Doctor` sin vincular recibe 403.
-- [ ] `Receptionist` recibe 403 en el `PUT`; cualquier rol autenticado recibe 200 en el `GET`; sin token ambos responden 401; un ID inexistente da 404 al Admin.
-- [ ] `Doctor.IsAvailableAt` devuelve true solo si el rango local cabe entero en un bloque de ese día, según `DoctorTests`.
-- [ ] Todos los errores salen como `application/problem+json`.
-- [ ] Las dos rutas nuevas aparecen en `/openapi/v1.json` con tag `Doctors`, nombre y resumen.
-- [ ] La sección **Endpoints** del `README.md` documenta las dos rutas nuevas y el nuevo 400 de `PUT /api/doctors/{id}`.
-- [ ] `DOMAIN.md`, `APPLICATION.md`, `INFRASTRUCTURE.md`, `API.md`, `CONVENTIONS.md` y `CLAUDE.md` usan `ScheduleBlock` y `DoctorScheduleBlocks` (ya no `WeeklySchedule` ni `DoctorSchedules`), y `docs/PLAN.md` fila 10 apunta a `specs/10-doctor-weekly-schedule.md`.
+- [x] `dotnet build Dispensario.slnx` termina sin errores y sin warnings nuevos respecto a SPEC 09.
+- [x] `dotnet test Dispensario.slnx` termina con éxito e incluye los tests de este spec y los anteriores.
+- [x] Tras borrar `dispensario.db`, `dotnet run` crea la tabla `DoctorScheduleBlocks` con `DoctorId`, `Id`, `DayOfWeek` (texto), `StartTime` y `EndTime`.
+- [x] `PUT /api/doctors/{id}/schedule` como Admin responde 204 y `GET /api/doctors/{id}/schedule` devuelve exactamente los bloques enviados, ordenados de lunes a domingo y por hora, con horas `"HH:mm"`.
+- [x] Un segundo `PUT` reemplaza el horario entero, y un `PUT` con `blocks: []` lo deja vacío.
+- [x] Dos bloques solapados del mismo día devuelven 400; dos bloques contiguos se aceptan.
+- [x] Un bloque más corto que `appointmentDurationMinutes`, con minutos que no son múltiplo de 5 o con inicio ≥ fin devuelve 400.
+- [x] Una hora que no sigue `"HH:mm"` devuelve 400 con errores de validación; un `dayOfWeek` inválido devuelve 400 (ProblemDetails de `BadHttpRequestException`).
+- [x] Fijar el horario de un doctor inactivo devuelve 400; leerlo devuelve 200.
+- [x] `PUT /api/doctors/{id}` con una duración mayor que algún bloque del horario devuelve 400 y no cambia el doctor.
+- [x] Un usuario `Doctor` vinculado puede fijar su propio horario (204) y recibe 403 sobre otro doctor, también si ese ID no existe; un `Doctor` sin vincular recibe 403.
+- [x] `Receptionist` recibe 403 en el `PUT`; cualquier rol autenticado recibe 200 en el `GET`; sin token ambos responden 401; un ID inexistente da 404 al Admin.
+- [x] `Doctor.IsAvailableAt` devuelve true solo si el rango local cabe entero en un bloque de ese día, según `DoctorTests`.
+- [x] Todos los errores salen como `application/problem+json`.
+- [x] Las dos rutas nuevas aparecen en `/openapi/v1.json` con tag `Doctors`, nombre y resumen.
+- [x] La sección **Endpoints** del `README.md` documenta las dos rutas nuevas y el nuevo 400 de `PUT /api/doctors/{id}`.
+- [x] `DOMAIN.md`, `APPLICATION.md`, `INFRASTRUCTURE.md`, `API.md`, `CONVENTIONS.md` y `CLAUDE.md` usan `ScheduleBlock` y `DoctorScheduleBlocks` (ya no `WeeklySchedule` ni `DoctorSchedules`), y `docs/PLAN.md` fila 10 apunta a `specs/10-doctor-weekly-schedule.md`.
 
 ## Decisions
 
